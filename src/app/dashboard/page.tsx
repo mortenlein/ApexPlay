@@ -71,16 +71,16 @@ export default function Dashboard() {
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-white font-sans p-8">
             <div className="max-w-6xl mx-auto">
-                <header className="flex justify-between items-center mb-12">
+                <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
                     <div>
-                        <h1 className="text-4xl font-black bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+                        <h1 className="text-3xl md:text-4xl font-black bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
                             APEXPLAY
                         </h1>
-                        <p className="text-gray-400 mt-1 uppercase tracking-widest text-sm">Management Dashboard</p>
+                        <p className="text-gray-400 mt-1 uppercase tracking-widest text-[10px] md:text-sm">Management Dashboard</p>
                     </div>
                     <button
                         onClick={() => setIsCreating(true)}
-                        className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-105 transition-all text-white px-6 py-3 rounded-xl font-bold"
+                        className="w-full md:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-105 transition-all text-white px-6 py-3 rounded-xl font-bold"
                     >
                         <Plus size={20} />
                         CREATE TOURNAMENT
