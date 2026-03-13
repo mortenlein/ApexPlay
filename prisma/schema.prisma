@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Tournament {
+  id              String   @id @default(uuid())
+  name            String
+  type            String   // DEPRECATED: use format, keeping for backward compat
+  format          String   @default("SINGLE_ELIMINATION") // SINGLE_ELIMINATION, DOUBLE_ELIMINATION
+  teamSize        Int      @default(5) // 2 for 2v2, 5 for 5v5
+  bo3StartRound   Int?     // Round number where BO3 starts
+  bo5StartRound   Int?     // Round number where BO5 starts
+  hasThirdPlace   Boolean  @default(false)
+  matches         Match[]
+  teams           Team[]
+  createdAt       DateTime @default(now())
+}
+
+model Team {
+  id           String      @id @default(uuid())
+  name         String
+  logoUrl      String?
+  seed         Int?
+  tournament   Tournament  @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  tournamentId String
+  players      Player[]
+  
+  matchHome    Match[]     @relation("HomeTeam")
+  matchAway    Match[]     @relation("AwayTeam")
+}
+
+model Player {
+  id        String @id @default(uuid())
+  name      String
+  seating   String? // e.g., "A1"
+  team      Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId    String
+}
+
+model Match {
+  id           String      @id @default(uuid())
+  tournament   Tournament  @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  tournamentId String
+  
+  homeTeam     Team?       @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  homeTeamId   String?
+  awayTeam     Team?       @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  awayTeamId   String?
+
+  homeScore    Int         @default(0) // Series Score
+  awayScore    Int         @default(0) // Series Score
+  mapScores    String      @default("[]") // JSON string of map scores, e.g. [{"home": 13, "away": 11}]
+  
+  bestOf       Int         @default(1) // 1, 3, or 5 maps
+  scoreLimit   Int         @default(1) // Points needed to win
+
+  winnerId     String?     
+  
+  bracketType  String      @default("WINNERS") // WINNERS, LOSERS, THIRD_PLACE
+  round        Int         // 1 = Quarter Finals, 2 = Semi, etc.
+  matchOrder   Int         
+  nextMatchId  String?     // ID of the next match the winner advances to
+  loserNextMatchId String? // ID of the next match the loser advances to (for Double Elim)
+  
+  status       String      @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+}
