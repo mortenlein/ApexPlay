@@ -1,6 +1,6 @@
 # ApexPlay 🎯
 
-**Streamer-first tournament bracket management for Apex Legends (and any team-based esport).**
+**Streamer-first tournament bracket management for CS2 (and any team-based esport).**
 
 ApexPlay lets you create and manage single-elimination brackets, track live match scores, and display a real-time OBS overlay — all from a clean, dark-mode dashboard.
 
