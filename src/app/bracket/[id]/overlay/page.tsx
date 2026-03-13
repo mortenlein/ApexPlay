@@ -36,15 +36,15 @@ const StreamMatchNode = ({ data }: any) => {
                 </>
             )}
 
-            {isCenter && !isThirdPlace && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-yellow-500 text-black px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap z-10">
-                    Grand Final
-                </div>
-            )}
-
-            {isThirdPlace && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gray-700 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap z-10">
-                    Third Place Decider
+            {data.stageName && (
+                <div className={`absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap z-10 ${
+                    isThirdPlace
+                        ? 'bg-gray-700 text-white'
+                        : isCenter
+                        ? 'bg-yellow-500 text-black'
+                        : 'bg-yellow-500/80 text-black'
+                }`}>
+                    {data.stageName}
                 </div>
             )}
 
@@ -134,6 +134,21 @@ export default function StreamOverlay({ params }: { params: { id: string } }) {
                 // Find total rounds by looking at the main bracket max round
                 const totalRounds = Math.max(...matches.filter(m => m.bracketType === 'WINNERS').map(m => m.round));
 
+                // Helper: map a round number to a stage name
+                const getStageName = (round: number, bracketType: string): string => {
+                    if (bracketType === 'THIRD_PLACE') return 'Third Place Decider';
+                    const stepsFromFinal = totalRounds - round;
+                    switch (stepsFromFinal) {
+                        case 0: return 'Grand Final';
+                        case 1: return 'Semi-Finals';
+                        case 2: return 'Quarter-Finals';
+                        case 3: return 'Round of 16';
+                        case 4: return 'Round of 32';
+                        case 5: return 'Round of 64';
+                        default: return `Round ${round}`;
+                    }
+                };
+
                 const newNodes: Node[] = matches.map((match: any) => {
                     const r = match.round;
                     const m = match.matchOrder;
@@ -183,7 +198,8 @@ export default function StreamOverlay({ params }: { params: { id: string } }) {
                             status: match.status,
                             isRightSide,
                             isCenter,
-                            isThirdPlace
+                            isThirdPlace,
+                            stageName: getStageName(match.round, match.bracketType)
                         }
                     };
                 });
@@ -248,10 +264,12 @@ export default function StreamOverlay({ params }: { params: { id: string } }) {
 
     if (loading) return null;
 
+    const bgColor = chromaKey === 'transparent' ? 'transparent' : chromaKey;
+
     return (
         <div
             className={`w-screen h-screen overflow-hidden ${compact ? 'scale-75 origin-top-left' : ''}`}
-            style={{ backgroundColor: chromaKey === 'transparent' ? 'transparent' : chromaKey }}
+            style={{ backgroundColor: bgColor }}
         >
             <ReactFlow
                 nodes={nodes}
@@ -261,11 +279,19 @@ export default function StreamOverlay({ params }: { params: { id: string } }) {
                 fitViewOptions={{ padding: 0.1 }}
                 proOptions={{ hideAttribution: true }}
             >
-                <Background color="#fff" gap={20} variant={chromaKey === 'transparent' ? 'dots' as any : 'none' as any} />
+                <Background variant={'none' as any} />
             </ReactFlow>
 
             <style jsx global>{`
-                .react-flow__pane {
+                html, body {
+                    background: ${bgColor} !important;
+                    margin: 0;
+                    padding: 0;
+                }
+                .react-flow__renderer,
+                .react-flow__container,
+                .react-flow__pane,
+                .react-flow__viewport {
                     background: transparent !important;
                 }
                 .react-flow__handle {

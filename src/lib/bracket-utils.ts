@@ -32,8 +32,12 @@ export function generateSingleElimination(
 
     // Helper for Best-Of logic
     const getFormat = (round: number) => {
-        if (options.bo5StartRound && round >= options.bo5StartRound) return { bestOf: 5, limit: 3 };
-        if (options.bo3StartRound && round >= options.bo3StartRound) return { bestOf: 3, limit: 2 };
+        // boXStartRound: 1 = Grand Final, 2 = Semi, 3 = Quarter, 4 = Ro16
+        const bo5Start = options.bo5StartRound ? rounds - options.bo5StartRound + 1 : null;
+        const bo3Start = options.bo3StartRound ? rounds - options.bo3StartRound + 1 : null;
+
+        if (bo5Start !== null && round >= bo5Start) return { bestOf: 5, limit: 3 };
+        if (bo3Start !== null && round >= bo3Start) return { bestOf: 3, limit: 2 };
         return { bestOf: 1, limit: 1 };
     };
 

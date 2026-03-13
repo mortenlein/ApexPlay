@@ -131,25 +131,32 @@ export default function Dashboard() {
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-400 mb-2">BO3 Starts At Round (Optional)</label>
-                                        <input
-                                            type="number"
+                                        <select
                                             value={newTournament.bo3StartRound}
                                             onChange={(e) => setNewTournament({ ...newTournament, bo3StartRound: e.target.value })}
                                             className="w-full bg-[#2a2a2a] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
-                                            placeholder="e.g. 2 for Semi-Finals in 4-team"
-                                        />
-                                        <p className="text-xs text-gray-500 mt-1">Leave empty for BO1 default</p>
+                                        >
+                                            <option value="">None (BO1 Only)</option>
+                                            <option value="1">Grand Final</option>
+                                            <option value="2">Semi-Finals</option>
+                                            <option value="3">Quarter-Finals</option>
+                                            <option value="4">Round of 16</option>
+                                        </select>
                                     </div>
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-400 mb-2">BO5 Starts At Round (Optional)</label>
-                                        <input
-                                            type="number"
+                                        <select
                                             value={newTournament.bo5StartRound}
                                             onChange={(e) => setNewTournament({ ...newTournament, bo5StartRound: e.target.value })}
                                             className="w-full bg-[#2a2a2a] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
-                                            placeholder="e.g. 3 for Grand Final"
-                                        />
+                                        >
+                                            <option value="">None</option>
+                                            <option value="1">Grand Final</option>
+                                            <option value="2">Semi-Finals</option>
+                                            <option value="3">Quarter-Finals</option>
+                                            <option value="4">Round of 16</option>
+                                        </select>
                                     </div>
 
                                     <div className="col-span-2 flex items-center gap-3 bg-[#2a2a2a] p-4 rounded-lg border border-gray-700 mt-2">
