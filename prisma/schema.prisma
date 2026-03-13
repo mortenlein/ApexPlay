@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql" // Dynamically replaced by scripts/setup-db.js on Netlify
   url      = env("DATABASE_URL")
 }
 

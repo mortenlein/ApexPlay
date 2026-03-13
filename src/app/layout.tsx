@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ApexGrid - Bracket Management",
+  title: "ApexPlay - Bracket Management",
   description: "Streamer-first tournament bracket management",
 };
 

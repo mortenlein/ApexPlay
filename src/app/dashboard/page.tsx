@@ -74,7 +74,7 @@ export default function Dashboard() {
                 <header className="flex justify-between items-center mb-12">
                     <div>
                         <h1 className="text-4xl font-black bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-                            APEXGRID
+                            APEXPLAY
                         </h1>
                         <p className="text-gray-400 mt-1 uppercase tracking-widest text-sm">Management Dashboard</p>
                     </div>

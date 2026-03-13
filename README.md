@@ -1,8 +1,8 @@
-# ApexGrid 🎯
+# ApexPlay 🎯
 
 **Streamer-first tournament bracket management for Apex Legends (and any team-based esport).**
 
-ApexGrid lets you create and manage single-elimination brackets, track live match scores, and display a real-time OBS overlay — all from a clean, dark-mode dashboard.
+ApexPlay lets you create and manage single-elimination brackets, track live match scores, and display a real-time OBS overlay — all from a clean, dark-mode dashboard.
 
 ---
 
@@ -41,7 +41,7 @@ docker compose up --build
 
 The app will be available at [http://localhost:3000](http://localhost:3000).
 
-The SQLite database is persisted to a named Docker volume (`apexgrid_data`) so your data survives container restarts.
+The SQLite database is persisted to a named Docker volume (`apexplay_data`) so your data survives container restarts.
 
 To stop:
 ```bash
