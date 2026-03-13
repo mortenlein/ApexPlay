@@ -1,36 +1,180 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ApexGrid 🎯
+
+**Streamer-first tournament bracket management for Apex Legends (and any team-based esport).**
+
+ApexGrid lets you create and manage single-elimination brackets, track live match scores, and display a real-time OBS overlay — all from a clean, dark-mode dashboard.
+
+---
+
+## Features
+
+- 📋 **Dashboard** — Create and manage multiple tournaments
+- 🏆 **Bracket Generator** — Automatic single-elimination seeding with standard meet-in-the-middle seeding
+- 🎮 **BO1 / BO3 / BO5** — Per-round best-of format support (e.g. BO3 from Semi-Finals, BO5 for Grand Final)
+- 🎯 **3rd Place Decider** — Optional third place match
+- 🖥️ **OBS Overlay** — Live browser source overlay with transparent/chroma key background, auto-refreshing every 10s
+- 🏷️ **Stage Badges** — Every round labelled (Grand Final, Semi-Finals, Quarter-Finals, Round of 16, etc.)
+- 📝 **Score Tracking** — Per-map scores tracked alongside series scores
+- 🐳 **Docker Support** — Single command to run via Docker Compose
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Local Development
+
+**Prerequisites:** Node.js 20+
 
 ```bash
+npm install
+npx prisma db push
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) — it auto-redirects to the dashboard.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Docker
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+docker compose up --build
+```
 
-## Learn More
+The app will be available at [http://localhost:3000](http://localhost:3000).
 
-To learn more about Next.js, take a look at the following resources:
+The SQLite database is persisted to a named Docker volume (`apexgrid_data`) so your data survives container restarts.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+To stop:
+```bash
+docker compose down
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+To wipe data completely:
+```bash
+docker compose down -v
+```
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Environment Variables
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Variable | Default (dev) | Description |
+|---|---|---|
+| `DATABASE_URL` | `file:./prisma/dev.db` | Path to SQLite database file |
+| `PORT` | `3000` | Port the server listens on |
+
+For local dev, these are set in `.env`. Docker Compose sets `DATABASE_URL` automatically to point to the persistent volume.
+
+---
+
+## Usage
+
+### Creating a Tournament
+
+1. Go to the **Dashboard** at `/dashboard`
+2. Click **Create Tournament**
+3. Configure:
+   - **Tournament Name**
+   - **Bracket Format** — Single or Double Elimination
+   - **Team Size** — 2v2 (Duos) or 5v5 (Standard)
+   - **BO3 Starts At Round** — Stage from which matches become Best-of-3
+   - **BO5 Starts At Round** — Stage from which matches become Best-of-5
+   - **3rd Place Decider** — Enable a third place match
+
+### BO3 / BO5 Stage Dropdown Options
+
+| Option | Description |
+|---|---|
+| None | BO1 for all rounds (default) |
+| Grand Final | Only the final match is BO3/BO5 |
+| Semi-Finals | Semi-finals and the final are BO3/BO5 |
+| Quarter-Finals | From quarters onward |
+| Round of 16 | From Ro16 onward |
+
+> BO5 will override BO3 for the same or later rounds. For example: BO3 from Semi-Finals + BO5 from Grand Final = Semis are BO3, Grand Final is BO5.
+
+### Managing a Tournament
+
+From the tournament card, click **Manage** to:
+
+- Add/edit teams and players
+- Generate the bracket
+- Record match scores (per-map and series scores)
+- Advance winners and manage bracket state
+
+---
+
+## OBS Stream Overlay
+
+The overlay is a browser source designed for OBS Studio (or any browser-source-capable capturing tool).
+
+### Overlay URL
+
+```
+http://localhost:3000/bracket/[tournament-id]/overlay
+```
+
+Find the tournament ID in the URL when managing a tournament.
+
+### Query String Flags
+
+| Flag | Values | Default | Description |
+|---|---|---|---|
+| `chroma` | `transparent`, any CSS colour | `transparent` | Background colour of the overlay |
+| `compact` | `true` | *(off)* | Scales the overlay to 75% for smaller displays |
+
+### Background Examples
+
+| URL | Effect |
+|---|---|
+| `/overlay` | Fully transparent (for OBS chroma key or direct compositing) |
+| `/overlay?chroma=green` | Solid green background |
+| `/overlay?chroma=%2300b140` | Custom hex green (`#00b140`) |
+| `/overlay?chroma=%23ff00ff` | Magenta/pink chroma key |
+| `/overlay?compact=true` | 75% scale, transparent background |
+| `/overlay?chroma=green&compact=true` | 75% scale, green background |
+
+### OBS Setup
+
+1. Add a **Browser Source** in OBS
+2. Set the URL to your overlay (with the tournament ID)
+3. Set width/height to match your canvas (e.g. 1920×1080)
+4. Check **"Refresh browser when scene becomes active"** for reliable updates
+5. In the **Custom CSS** field, add:
+   ```css
+   body { background-color: rgba(0,0,0,0) !important; }
+   ```
+   as an extra safety net for transparency
+
+The overlay polls for score updates every **10 seconds** automatically.
+
+---
+
+## Project Structure
+
+```
+src/
+  app/
+    dashboard/          # Dashboard and tournament management UI
+    bracket/[id]/
+      overlay/          # OBS stream overlay
+    api/
+      tournaments/      # Tournament CRUD and bracket generation APIs
+  lib/
+    bracket-utils.ts    # Bracket generation and seeding logic
+    prisma.ts           # Prisma client singleton
+prisma/
+  schema.prisma         # Database schema
+```
+
+---
+
+## Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 14 (App Router) |
+| UI | React + Tailwind CSS |
+| Bracket Visualisation | React Flow |
+| Database | SQLite via Prisma |
+| Runtime | Node.js 20 |
+| Container | Docker + Docker Compose |

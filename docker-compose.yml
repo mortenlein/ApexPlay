@@ -1,0 +1,17 @@
+services:
+  apexgrid:
+    build: .
+    container_name: apexgrid
+    ports:
+      - "3000:3000"
+    volumes:
+      # Persist the SQLite database across container restarts
+      - apexgrid_data:/app/data
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/prod.db
+    restart: unless-stopped
+
+volumes:
+  apexgrid_data:
+    driver: local
