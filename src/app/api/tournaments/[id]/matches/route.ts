@@ -6,9 +6,39 @@ export async function GET(request: Request, { params }: { params: { id: string }
         const tournamentId = params.id;
         const matches = await prisma.match.findMany({
             where: { tournamentId },
-            include: {
-                homeTeam: { include: { players: true } },
-                awayTeam: { include: { players: true } },
+            select: {
+                id: true,
+                round: true,
+                matchOrder: true,
+                status: true,
+                bestOf: true,
+                scoreLimit: true,
+                homeScore: true,
+                awayScore: true,
+                winnerId: true,
+                homeTeamId: true,
+                awayTeamId: true,
+                mapScores: true,
+                homeTeam: {
+                    select: {
+                        id: true,
+                        name: true,
+                        logoUrl: true,
+                        players: {
+                            select: { id: true, name: true, seating: true }
+                        }
+                    }
+                },
+                awayTeam: {
+                    select: {
+                        id: true,
+                        name: true,
+                        logoUrl: true,
+                        players: {
+                            select: { id: true, name: true, seating: true }
+                        }
+                    }
+                }
             },
             orderBy: [
                 { round: 'asc' },

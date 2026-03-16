@@ -31,13 +31,15 @@ export function generateSingleElimination(
     const matches: BracketMatch[] = [];
 
     // Helper for Best-Of logic
-    const getFormat = (round: number) => {
-        // boXStartRound: 1 = Grand Final, 2 = Semi, 3 = Quarter, 4 = Ro16
-        const bo5Start = options.bo5StartRound ? rounds - options.bo5StartRound + 1 : null;
-        const bo3Start = options.bo3StartRound ? rounds - options.bo3StartRound + 1 : null;
+    const getFormat = (currentRound: number) => {
+        // boXStartRound in DB is absolute round number: 1, 2, 3...
+        // Rounds in logic: 1 is the first round, rounds is the final.
+        
+        const bo5Start = options.bo5StartRound;
+        const bo3Start = options.bo3StartRound;
 
-        if (bo5Start !== null && round >= bo5Start) return { bestOf: 5, limit: 3 };
-        if (bo3Start !== null && round >= bo3Start) return { bestOf: 3, limit: 2 };
+        if (bo5Start && bo5Start > 0 && currentRound >= bo5Start) return { bestOf: 5, limit: 3 };
+        if (bo3Start && bo3Start > 0 && currentRound >= bo3Start) return { bestOf: 3, limit: 2 };
         return { bestOf: 1, limit: 1 };
     };
 

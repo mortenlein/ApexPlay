@@ -10,6 +10,8 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/prod.db
+      - ENABLE_DATHOST=false
+      - ENABLE_MATCHZY=false
     restart: unless-stopped
 
 volumes:

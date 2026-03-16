@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ReactFlow, { Background, Edge, Node, Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
+import { useMatchStream } from '@/hooks/useMatchStream';
 
 // A custom high-contrast node for the overlay
 const StreamMatchNode = ({ data }: any) => {
@@ -99,8 +100,13 @@ const StreamMatchNode = ({ data }: any) => {
             {(data.bestOf > 1 || isCenter || isThirdPlace) && (
                 <div className="mt-4 pt-3 border-t border-gray-800 flex justify-between items-center text-[10px] text-gray-600 font-bold uppercase tracking-widest">
                     <span>{data.bestOf > 1 ? `BEST OF ${data.bestOf}` : 'BEST OF 1'}</span>
-                    <span className={data.status === 'COMPLETED' ? 'text-green-500' : 'text-blue-500'}>
-                        {data.status === 'COMPLETED' ? 'FINAL' : 'IN PROGRESS'}
+                    <span className={data.status === 'COMPLETED' ? 'text-green-500' : data.status === 'LIVE' ? 'text-red-500' : 'text-blue-500'}>
+                        {data.status === 'COMPLETED' ? 'FINAL' : data.status === 'LIVE' ? (
+                            <span className="flex items-center gap-2">
+                                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]"></span>
+                                LIVE
+                            </span>
+                        ) : 'IN PROGRESS'}
                     </span>
                 </div>
             )}
@@ -116,153 +122,166 @@ export default function StreamOverlay({ params }: { params: { id: string } }) {
     const [nodes, setNodes] = useState<Node[]>([]);
     const [edges, setEdges] = useState<Edge[]>([]);
     const [loading, setLoading] = useState(true);
+    const [matchesData, setMatchesData] = useState<any[]>([]);
 
+    // Stabilize nodeTypes to prevent React Flow re-initialization cycles
     const nodeTypes = useMemo(() => ({ streamMatch: StreamMatchNode }), []);
 
+    const buildNodesAndEdges = useCallback((matches: any[]) => {
+        if (!Array.isArray(matches) || matches.length === 0) {
+            setLoading(false);
+            return;
+        }
+
+        const X_OFFSET = 600;
+        const Y_OFFSET = 400;
+        const winnerMatches = matches.filter(m => m.bracketType === 'WINNERS');
+        const totalRounds = winnerMatches.length > 0 ? Math.max(...winnerMatches.map(m => m.round)) : 1;
+
+        const getStageName = (round: number, bracketType: string): string => {
+            if (bracketType === 'THIRD_PLACE') return 'Third Place Decider';
+            const matchesInThisRound = matches.filter(m => m.round === round && m.bracketType === 'WINNERS').length;
+            const stepsFromFinal = totalRounds - round;
+
+            if (stepsFromFinal === 0 && matchesInThisRound === 1) return 'Grand Final';
+            if (stepsFromFinal === 1 && matchesInThisRound <= 2) return 'Semi-Finals';
+            if (stepsFromFinal === 2 && matchesInThisRound <= 4) return 'Quarter-Finals';
+            return `Round ${round}`;
+        };
+
+        const newNodes: Node[] = matches.map((match: any) => {
+            const r = match.round;
+            const m = match.matchOrder;
+            const isWinnerBracket = match.bracketType === 'WINNERS';
+            const isThirdPlace = match.bracketType === 'THIRD_PLACE';
+            const matchesInThisRound = matches.filter((mm: any) => mm.round === r && mm.bracketType === match.bracketType).length;
+            
+            // Only center the Grand Final (single match in the last round)
+            const isCenter = isWinnerBracket && r === totalRounds && matchesInThisRound === 1;
+
+            let x = 0;
+            let y = 0;
+            let isRightSide = false;
+
+            if (isThirdPlace) {
+                x = 0;
+                y = Y_OFFSET * 1.5;
+            } else if (isCenter) {
+                x = 0;
+                y = 0;
+            } else {
+                const halfMatches = matchesInThisRound / 2;
+                isRightSide = m >= halfMatches;
+                const xSteps = totalRounds - r;
+                x = isRightSide ? xSteps * X_OFFSET : -xSteps * X_OFFSET;
+                const localM = isRightSide ? m - halfMatches : m;
+                y = (localM - (halfMatches - 1) / 2) * Y_OFFSET * Math.pow(1.5, r - 1);
+            }
+
+            return {
+                id: match.id,
+                type: 'streamMatch',
+                position: { x, y },
+                data: {
+                    homeTeam: match.homeTeam,
+                    homeScore: match.homeScore,
+                    awayTeam: match.awayTeam,
+                    awayScore: match.awayScore,
+                    mapScores: typeof match.mapScores === 'string' ? JSON.parse(match.mapScores) : (match.mapScores || []),
+                    bestOf: match.bestOf,
+                    status: match.status,
+                    isRightSide,
+                    isCenter,
+                    isThirdPlace,
+                    stageName: getStageName(match.round, match.bracketType)
+                }
+            };
+        });
+
+        const newEdges: Edge[] = [];
+        matches.forEach((m: any) => {
+            if (m.nextMatchId) {
+                const targetMatch = matches.find((t: any) => t.id === m.nextMatchId);
+                if (targetMatch) {
+                    const isSourceRight = (m.matchOrder >= Math.pow(2, totalRounds - m.round) / 2);
+                    const isTargetCenter = targetMatch.round === totalRounds;
+                    let targetHandle = undefined;
+                    if (isTargetCenter) {
+                        targetHandle = isSourceRight ? 'right' : 'left';
+                    }
+                    newEdges.push({
+                        id: `we-${m.id}-${m.nextMatchId}`,
+                        source: m.id,
+                        sourceHandle: 'main',
+                        target: m.nextMatchId,
+                        targetHandle,
+                        type: 'smoothstep',
+                        style: { strokeWidth: 4, stroke: '#3b82f6' },
+                        animated: m.status === 'IN_PROGRESS' || m.status === 'PENDING' || m.status === 'LIVE'
+                    });
+                }
+            }
+            if (m.loserNextMatchId) {
+                const isSourceRight = (m.matchOrder >= Math.pow(2, totalRounds - m.round) / 2);
+                newEdges.push({
+                    id: `le-${m.id}-${m.loserNextMatchId}`,
+                    source: m.id,
+                    sourceHandle: 'loser',
+                    target: m.loserNextMatchId,
+                    targetHandle: isSourceRight ? 'top-right' : 'top-left',
+                    type: 'smoothstep',
+                    style: { strokeWidth: 3, stroke: '#ef4444', strokeDasharray: '5,5' },
+                    animated: true
+                });
+            }
+        });
+
+        setNodes(newNodes);
+        setEdges(newEdges);
+    }, []);
+
+    // Initial fetch
     useEffect(() => {
         const fetchMatches = async () => {
             try {
                 const res = await fetch(`/api/tournaments/${params.id}/matches`);
                 const matches = await res.json();
-
-                if (!Array.isArray(matches) || matches.length === 0) return;
-
-                // Mathematical Meet-in-the-Middle Layout Constants
-                const X_OFFSET = 450;
-                const Y_OFFSET = 250;
-
-                // Find total rounds by looking at the main bracket max round
-                const totalRounds = Math.max(...matches.filter(m => m.bracketType === 'WINNERS').map(m => m.round));
-
-                // Helper: map a round number to a stage name
-                const getStageName = (round: number, bracketType: string): string => {
-                    if (bracketType === 'THIRD_PLACE') return 'Third Place Decider';
-                    const stepsFromFinal = totalRounds - round;
-                    switch (stepsFromFinal) {
-                        case 0: return 'Grand Final';
-                        case 1: return 'Semi-Finals';
-                        case 2: return 'Quarter-Finals';
-                        case 3: return 'Round of 16';
-                        case 4: return 'Round of 32';
-                        case 5: return 'Round of 64';
-                        default: return `Round ${round}`;
-                    }
-                };
-
-                const newNodes: Node[] = matches.map((match: any) => {
-                    const r = match.round;
-                    const m = match.matchOrder;
-                    const isWinnerBracket = match.bracketType === 'WINNERS';
-                    const isThirdPlace = match.bracketType === 'THIRD_PLACE';
-
-                    // Determine position
-                    let x = 0;
-                    let y = 0;
-                    let isRightSide = false;
-                    const isCenter = isWinnerBracket && r === totalRounds;
-
-                    if (isThirdPlace) {
-                        x = 0;
-                        y = Y_OFFSET * 1.5; // Below the final
-                    } else if (isCenter) {
-                        x = 0;
-                        y = 0;
-                    } else {
-                        // Winner Bracket Nodes mapping
-                        const matchesInRound = Math.pow(2, totalRounds - r);
-                        const halfMatches = matchesInRound / 2;
-
-                        isRightSide = m >= halfMatches;
-
-                        // X positioning
-                        const xSteps = totalRounds - r;
-                        x = isRightSide ? xSteps * X_OFFSET : -xSteps * X_OFFSET;
-
-                        // Y positioning (center at 0)
-                        const localM = isRightSide ? m - halfMatches : m;
-                        // For a branch of size `halfMatches`, index `localM` vertically centered:
-                        y = (localM - (halfMatches - 1) / 2) * Y_OFFSET * Math.pow(1.5, r - 1);
-                    }
-
-                    return {
-                        id: match.id,
-                        type: 'streamMatch',
-                        position: { x, y },
-                        data: {
-                            homeTeam: match.homeTeam,
-                            homeScore: match.homeScore,
-                            awayTeam: match.awayTeam,
-                            awayScore: match.awayScore,
-                            mapScores: typeof match.mapScores === 'string' ? JSON.parse(match.mapScores) : (match.mapScores || []),
-                            bestOf: match.bestOf,
-                            status: match.status,
-                            isRightSide,
-                            isCenter,
-                            isThirdPlace,
-                            stageName: getStageName(match.round, match.bracketType)
-                        }
-                    };
-                });
-
-                const newEdges: Edge[] = [];
-
-                matches.forEach((m: any) => {
-                    // Winner advancement edge
-                    if (m.nextMatchId) {
-                        const targetMatch = matches.find((t: any) => t.id === m.nextMatchId);
-                        if (targetMatch) {
-                            const isSourceRight = (m.matchOrder >= Math.pow(2, totalRounds - m.round) / 2);
-                            const isTargetCenter = targetMatch.round === totalRounds;
-
-                            let targetHandle = undefined;
-                            if (isTargetCenter) {
-                                targetHandle = isSourceRight ? 'right' : 'left';
-                            }
-
-                            newEdges.push({
-                                id: `we-${m.id}-${m.nextMatchId}`,
-                                source: m.id,
-                                sourceHandle: 'main',
-                                target: m.nextMatchId,
-                                targetHandle,
-                                type: 'smoothstep', // Gives that bracket orthogonal feel with smooth corners
-                                style: { strokeWidth: 4, stroke: '#3b82f6' },
-                                animated: m.status === 'IN_PROGRESS' || m.status === 'PENDING'
-                            });
-                        }
-                    }
-
-                    // Loser advancement edge (for 3rd place usually from semis)
-                    if (m.loserNextMatchId) {
-                        const isSourceRight = (m.matchOrder >= Math.pow(2, totalRounds - m.round) / 2);
-                        newEdges.push({
-                            id: `le-${m.id}-${m.loserNextMatchId}`,
-                            source: m.id,
-                            sourceHandle: 'loser',
-                            target: m.loserNextMatchId,
-                            targetHandle: isSourceRight ? 'top-right' : 'top-left',
-                            type: 'smoothstep',
-                            style: { strokeWidth: 3, stroke: '#ef4444', strokeDasharray: '5,5' },
-                            animated: true
-                        });
-                    }
-                });
-
-                setNodes(newNodes);
-                setEdges(newEdges);
+                if (Array.isArray(matches)) {
+                    setMatchesData(matches);
+                    buildNodesAndEdges(matches);
+                }
             } catch (error) {
                 console.error('Overlay fetch error:', error);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchMatches();
-        const interval = setInterval(fetchMatches, 10000); // Polling every 10s
-        return () => clearInterval(interval);
-    }, [params.id]);
+    }, [params.id, buildNodesAndEdges]);
 
-    if (loading) return null;
+    // Real-time SSE updates
+    useMatchStream(params.id, (data) => {
+        setMatchesData((prev) => {
+            const updated = prev.map((m) => m.id === data.matchId ? data.match : m);
+            buildNodesAndEdges(updated);
+            return updated;
+        });
+    });
+
+    if (loading) return (
+        <div className="w-screen h-screen bg-[#0a0a0a] flex items-center justify-center">
+            <div className="flex flex-col items-center gap-6">
+                <div className="w-20 h-20 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+                <span className="text-gray-500 font-black uppercase tracking-[0.3em] text-xs animate-pulse">Initializing Overlay...</span>
+            </div>
+        </div>
+    );
+
+    if (matchesData.length === 0) return (
+        <div className="w-screen h-screen bg-[#0a0a0a] flex items-center justify-center">
+            <div className="text-gray-700 font-bold uppercase tracking-widest text-sm">No match data available for this tournament</div>
+        </div>
+    );
 
     const bgColor = chromaKey === 'transparent' ? 'transparent' : chromaKey;
 
@@ -287,6 +306,13 @@ export default function StreamOverlay({ params }: { params: { id: string } }) {
                     background: ${bgColor} !important;
                     margin: 0;
                     padding: 0;
+                }
+                @keyframes pulse {
+                    0%, 100% { opacity: 1; transform: scale(1); }
+                    50% { opacity: 0.6; transform: scale(1.1); }
+                }
+                .animate-pulse {
+                    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
                 }
                 .react-flow__renderer,
                 .react-flow__container,

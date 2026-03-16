@@ -10,6 +10,8 @@ datasource db {
 model Tournament {
   id              String   @id @default(uuid())
   name            String
+  game            String   @default("CS2") // CS2, FORTNITE, VALORANT, etc
+  category        String   @default("BRACKET") // BRACKET, BATTLE_ROYALE
   type            String   // DEPRECATED: use format, keeping for backward compat
   format          String   @default("SINGLE_ELIMINATION") // SINGLE_ELIMINATION, DOUBLE_ELIMINATION
   teamSize        Int      @default(5) // 2 for 2v2, 5 for 5v5
@@ -18,6 +20,7 @@ model Tournament {
   hasThirdPlace   Boolean  @default(false)
   matches         Match[]
   teams           Team[]
+  scoreboard      ScoreboardEntry[]
   createdAt       DateTime @default(now())
 }
 
@@ -32,13 +35,16 @@ model Team {
   
   matchHome    Match[]     @relation("HomeTeam")
   matchAway    Match[]     @relation("AwayTeam")
+  scoreboard   ScoreboardEntry[]
 }
 
 model Player {
-  id        String @id @default(uuid())
+  id        String  @id @default(uuid())
   name      String
   seating   String? // e.g., "A1"
-  team      Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  steamId   String? // SteamID64
+  isOnline  Boolean @default(false)
+  team      Team    @relation(fields: [teamId], references: [id], onDelete: Cascade)
   teamId    String
 }
 
@@ -67,5 +73,26 @@ model Match {
   nextMatchId  String?     // ID of the next match the winner advances to
   loserNextMatchId String? // ID of the next match the loser advances to (for Double Elim)
   
-  status       String      @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  serverIp       String?   // Game server IP for "Join Server" button
+  serverPort     String?   // Game server port
+  serverPassword String?   // Server password
+
+  status       String      @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, LIVE
+}
+
+model ScoreboardEntry {
+  id           String      @id @default(uuid())
+  tournament   Tournament  @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  tournamentId String
+  
+  team         Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId       String
+  
+  kills        Int         @default(0)
+  placement    Int         @default(0)
+  points       Int         @default(0)
+  
+  updatedAt    DateTime    @updatedAt
+
+  @@unique([tournamentId, teamId])
 }
