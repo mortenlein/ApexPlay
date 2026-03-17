@@ -9,11 +9,19 @@ import { Trophy } from 'lucide-react';
 const PublicMatchNode = ({ data }: any) => {
     const isCenter = data.isCenter;
     const isThirdPlace = data.isThirdPlace;
+    const scale = data.scale || 1;
 
     return (
-        <div className={`relative px-4 py-3 min-w-[260px] bg-[#1a1d21] border-2 transition-all duration-500 rounded-2xl group ${
+        <div 
+            onClick={() => data.onMatchClick?.(data.id)}
+            style={{ 
+                transform: `scale(${scale})`,
+                transformOrigin: 'center',
+                zIndex: isCenter ? 100 : 1
+            }}
+            className={`relative px-4 py-3 min-w-[260px] bg-[#1a1d21] border-2 transition-all duration-500 rounded-2xl group cursor-pointer ${
             isCenter && !isThirdPlace 
-            ? 'border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.15)] ring-4 ring-blue-500/10' 
+            ? 'border-[#d4af37] shadow-[0_0_40px_rgba(212,175,55,0.2)] ring-8 ring-[#d4af37]/5' 
             : 'border-white/5 hover:border-white/10 hover:bg-[#1f2227]'
         }`}>
             {/* Handles - Hidden but necessary for connections */}
@@ -22,7 +30,7 @@ const PublicMatchNode = ({ data }: any) => {
             
             {data.stageName && (
                 <div className={`absolute -top-3 left-6 px-3 py-1 rounded-full text-[7px] font-black uppercase tracking-[0.2em] whitespace-nowrap z-10 ${
-                    isCenter ? 'bg-blue-600 text-white' : 'bg-[#2a2e35] text-gray-500'
+                    isCenter ? 'bg-[#d4af37] text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' : 'bg-[#2a2e35] text-gray-500'
                 }`}>
                     {data.stageName}
                 </div>
@@ -43,7 +51,7 @@ const PublicMatchNode = ({ data }: any) => {
                             {data.homeTeam?.name || 'Pending...'}
                         </span>
                     </div>
-                    <span className={`text-lg font-extrabold font-mono transition-all ${data.homeScore > data.awayScore ? 'text-blue-500' : 'text-gray-700'}`}>
+                    <span className={`text-lg font-extrabold font-mono transition-all ${data.homeScore > data.awayScore ? (isCenter ? 'text-[#d4af37]' : 'text-blue-500') : 'text-gray-700'}`}>
                         {data.homeScore}
                     </span>
                 </div>
@@ -62,7 +70,7 @@ const PublicMatchNode = ({ data }: any) => {
                             {data.awayTeam?.name || 'Pending...'}
                         </span>
                     </div>
-                    <span className={`text-lg font-extrabold font-mono transition-all ${data.awayScore > data.homeScore ? 'text-blue-500' : 'text-gray-700'}`}>
+                    <span className={`text-lg font-extrabold font-mono transition-all ${data.awayScore > data.homeScore ? (isCenter ? 'text-[#d4af37]' : 'text-blue-500') : 'text-gray-700'}`}>
                         {data.awayScore}
                     </span>
                 </div>
@@ -80,14 +88,15 @@ const PublicMatchNode = ({ data }: any) => {
     );
 };
 
-export default function PublicBracket({ tournamentId, matches }: { tournamentId: string, matches: any[] }) {
+export default function PublicBracket({ tournamentId, matches, onMatchClick }: { tournamentId: string, matches: any[], onMatchClick?: (id: string) => void }) {
+    // Memoize nodeTypes to avoid React Flow warnings
     const nodeTypes = useMemo(() => ({ publicMatch: PublicMatchNode }), []);
 
     const { nodes, edges } = useMemo(() => {
         if (!Array.isArray(matches) || matches.length === 0) return { nodes: [], edges: [] };
 
-        const X_OFFSET = 380;
-        const Y_OFFSET = 160;
+        const X_OFFSET = 450; // More compact
+        const Y_OFFSET = 250; // More vertical space for scaled nodes
         const winnersMatches = matches.filter(m => m.bracketType === 'WINNERS');
         const totalRounds = winnersMatches.length > 0 ? Math.max(...winnersMatches.map(m => m.round)) : 0;
 
@@ -98,8 +107,9 @@ export default function PublicBracket({ tournamentId, matches }: { tournamentId:
                 case 0: return 'GRAND FINALS';
                 case 1: return 'SEMI FINALS';
                 case 2: return 'QUARTER FINALS';
-                case 3: return 'R16 ELIMINATION';
-                default: return `POOLS ROUND ${round}`;
+                default: 
+                    const teamsRemaining = Math.pow(2, stepsFromFinal + 1);
+                    return `ROUND OF ${teamsRemaining}`;
             }
         };
 
@@ -112,6 +122,14 @@ export default function PublicBracket({ tournamentId, matches }: { tournamentId:
             let y = 0;
             let isRightSide = false;
             const isCenter = isWinnerBracket && r === totalRounds;
+            
+            const stepsFromFinal = totalRounds - r;
+            let scale = 1.0;
+            if (isWinnerBracket) {
+                if (stepsFromFinal === 0) scale = 2.0;
+                else if (stepsFromFinal === 1) scale = 1.5;
+                else if (stepsFromFinal === 2) scale = 1.2;
+            }
 
             if (isThirdPlace) {
                 x = 0;
@@ -125,8 +143,10 @@ export default function PublicBracket({ tournamentId, matches }: { tournamentId:
                 isRightSide = m >= halfMatches;
                 const xSteps = totalRounds - r;
                 x = isRightSide ? xSteps * X_OFFSET : -xSteps * X_OFFSET;
+                
                 const localM = isRightSide ? m - halfMatches : m;
-                y = (localM - (halfMatches - 1) / 2) * Y_OFFSET * Math.pow(1.6, r - 1);
+                // Use factor of 2 for perfect binary tree alignment
+                y = (localM - (halfMatches - 1) / 2) * Y_OFFSET * Math.pow(2, r - 1);
             }
 
             return {
@@ -134,6 +154,7 @@ export default function PublicBracket({ tournamentId, matches }: { tournamentId:
                 type: 'publicMatch',
                 position: { x, y },
                 data: {
+                    id: match.id,
                     homeTeam: match.homeTeam,
                     homeScore: match.homeScore,
                     awayTeam: match.awayTeam,
@@ -142,7 +163,9 @@ export default function PublicBracket({ tournamentId, matches }: { tournamentId:
                     isRightSide,
                     isCenter,
                     isThirdPlace,
-                    stageName: getStageName(match.round, match.bracketType)
+                    stageName: getStageName(match.round, match.bracketType),
+                    scale,
+                    onMatchClick
                 }
             };
         });
@@ -167,7 +190,7 @@ export default function PublicBracket({ tournamentId, matches }: { tournamentId:
         });
 
         return { nodes: newNodes, edges: newEdges };
-    }, [matches]);
+    }, [matches, onMatchClick]);
 
     return (
         <div className="w-full h-full bg-[#0d0f12]">

@@ -2,2049 +2,2049 @@
   {
     "team": "Team 1",
     "player": "Player 1-1",
-    "kills": 27,
-    "deaths": 15,
-    "adr": 139.2,
-    "kd": 1.83
+    "kills": 5,
+    "deaths": 9,
+    "adr": 147.4,
+    "kd": 2.36
   },
   {
     "team": "Team 1",
     "player": "Player 1-2",
-    "kills": 15,
-    "deaths": 2,
-    "adr": 78.2,
-    "kd": 2.05
+    "kills": 25,
+    "deaths": 11,
+    "adr": 39.6,
+    "kd": 2.36
   },
   {
     "team": "Team 2",
     "player": "Player 2-1",
-    "kills": 29,
-    "deaths": 3,
-    "adr": 87.9,
-    "kd": 0.09
+    "kills": 12,
+    "deaths": 16,
+    "adr": 95,
+    "kd": 0.8
   },
   {
     "team": "Team 2",
     "player": "Player 2-2",
     "kills": 0,
-    "deaths": 4,
-    "adr": 108.6,
-    "kd": 1.41
+    "deaths": 5,
+    "adr": 36.1,
+    "kd": 1.61
   },
   {
     "team": "Team 3",
     "player": "Player 3-1",
-    "kills": 16,
-    "deaths": 8,
-    "adr": 134.4,
-    "kd": 2.27
+    "kills": 18,
+    "deaths": 7,
+    "adr": 40.2,
+    "kd": 0.06
   },
   {
     "team": "Team 3",
     "player": "Player 3-2",
-    "kills": 6,
-    "deaths": 5,
-    "adr": 102.9,
-    "kd": 0.56
+    "kills": 0,
+    "deaths": 11,
+    "adr": 8.2,
+    "kd": 2.06
   },
   {
     "team": "Team 4",
     "player": "Player 4-1",
-    "kills": 4,
-    "deaths": 3,
-    "adr": 13.6,
-    "kd": 1.15
+    "kills": 29,
+    "deaths": 13,
+    "adr": 118.4,
+    "kd": 0
   },
   {
     "team": "Team 4",
     "player": "Player 4-2",
-    "kills": 0,
-    "deaths": 11,
-    "adr": 147.1,
-    "kd": 1.89
+    "kills": 7,
+    "deaths": 18,
+    "adr": 113.3,
+    "kd": 1
   },
   {
     "team": "Team 5",
     "player": "Player 5-1",
     "kills": 21,
-    "deaths": 19,
-    "adr": 21.1,
-    "kd": 1.34
+    "deaths": 7,
+    "adr": 102,
+    "kd": 2.2
   },
   {
     "team": "Team 5",
     "player": "Player 5-2",
-    "kills": 29,
-    "deaths": 15,
-    "adr": 139.2,
-    "kd": 1.97
+    "kills": 4,
+    "deaths": 11,
+    "adr": 58.3,
+    "kd": 2.81
   },
   {
     "team": "Team 6",
     "player": "Player 6-1",
-    "kills": 23,
-    "deaths": 15,
-    "adr": 7.1,
-    "kd": 2.79
+    "kills": 4,
+    "deaths": 8,
+    "adr": 30.9,
+    "kd": 2.67
   },
   {
     "team": "Team 6",
     "player": "Player 6-2",
-    "kills": 3,
-    "deaths": 12,
-    "adr": 99.4,
-    "kd": 1.38
+    "kills": 16,
+    "deaths": 19,
+    "adr": 145.3,
+    "kd": 0.9
   },
   {
     "team": "Team 7",
     "player": "Player 7-1",
-    "kills": 9,
-    "deaths": 3,
-    "adr": 124.5,
-    "kd": 1.12
+    "kills": 14,
+    "deaths": 12,
+    "adr": 92.7,
+    "kd": 0.83
   },
   {
     "team": "Team 7",
     "player": "Player 7-2",
-    "kills": 26,
-    "deaths": 6,
-    "adr": 134.8,
-    "kd": 0.04
+    "kills": 25,
+    "deaths": 4,
+    "adr": 35.4,
+    "kd": 0.32
   },
   {
     "team": "Team 8",
     "player": "Player 8-1",
-    "kills": 8,
-    "deaths": 3,
-    "adr": 33.5,
-    "kd": 0.81
+    "kills": 29,
+    "deaths": 4,
+    "adr": 124.1,
+    "kd": 1.58
   },
   {
     "team": "Team 8",
     "player": "Player 8-2",
-    "kills": 19,
-    "deaths": 1,
-    "adr": 14.5,
-    "kd": 2.53
+    "kills": 10,
+    "deaths": 19,
+    "adr": 63,
+    "kd": 2.29
   },
   {
     "team": "Team 9",
     "player": "Player 9-1",
-    "kills": 24,
-    "deaths": 0,
-    "adr": 5.1,
-    "kd": 0.53
+    "kills": 8,
+    "deaths": 3,
+    "adr": 68,
+    "kd": 0.41
   },
   {
     "team": "Team 9",
     "player": "Player 9-2",
-    "kills": 19,
-    "deaths": 14,
-    "adr": 9.4,
-    "kd": 2.16
+    "kills": 8,
+    "deaths": 2,
+    "adr": 64.2,
+    "kd": 0.83
   },
   {
     "team": "Team 10",
     "player": "Player 10-1",
-    "kills": 18,
-    "deaths": 11,
-    "adr": 75.7,
-    "kd": 0.27
+    "kills": 23,
+    "deaths": 8,
+    "adr": 22,
+    "kd": 0.15
   },
   {
     "team": "Team 10",
     "player": "Player 10-2",
-    "kills": 14,
-    "deaths": 13,
-    "adr": 15.2,
-    "kd": 1.75
+    "kills": 19,
+    "deaths": 4,
+    "adr": 89.9,
+    "kd": 2.62
   },
   {
     "team": "Team 11",
     "player": "Player 11-1",
-    "kills": 11,
-    "deaths": 14,
-    "adr": 8,
-    "kd": 2.15
+    "kills": 14,
+    "deaths": 13,
+    "adr": 29.1,
+    "kd": 2.22
   },
   {
     "team": "Team 11",
     "player": "Player 11-2",
-    "kills": 25,
-    "deaths": 13,
-    "adr": 91.7,
-    "kd": 2.47
+    "kills": 8,
+    "deaths": 3,
+    "adr": 0.6,
+    "kd": 2.74
   },
   {
     "team": "Team 12",
     "player": "Player 12-1",
-    "kills": 26,
-    "deaths": 18,
-    "adr": 86.1,
-    "kd": 0.44
+    "kills": 18,
+    "deaths": 8,
+    "adr": 50.1,
+    "kd": 0.17
   },
   {
     "team": "Team 12",
     "player": "Player 12-2",
-    "kills": 0,
-    "deaths": 7,
-    "adr": 67.2,
-    "kd": 1.66
+    "kills": 29,
+    "deaths": 2,
+    "adr": 39.3,
+    "kd": 1.12
   },
   {
     "team": "Team 13",
     "player": "Player 13-1",
-    "kills": 24,
-    "deaths": 4,
-    "adr": 53.1,
-    "kd": 0.01
+    "kills": 27,
+    "deaths": 18,
+    "adr": 82.7,
+    "kd": 0.45
   },
   {
     "team": "Team 13",
     "player": "Player 13-2",
-    "kills": 26,
-    "deaths": 9,
-    "adr": 106.2,
-    "kd": 0.35
+    "kills": 28,
+    "deaths": 7,
+    "adr": 43,
+    "kd": 2.48
   },
   {
     "team": "Team 14",
     "player": "Player 14-1",
-    "kills": 19,
-    "deaths": 14,
-    "adr": 20.3,
-    "kd": 0.82
+    "kills": 28,
+    "deaths": 16,
+    "adr": 38.8,
+    "kd": 2.24
   },
   {
     "team": "Team 14",
     "player": "Player 14-2",
-    "kills": 13,
-    "deaths": 5,
-    "adr": 42,
-    "kd": 2.42
+    "kills": 7,
+    "deaths": 15,
+    "adr": 142.4,
+    "kd": 2.65
   },
   {
     "team": "Team 15",
     "player": "Player 15-1",
-    "kills": 24,
-    "deaths": 4,
-    "adr": 10.6,
-    "kd": 2.07
+    "kills": 15,
+    "deaths": 6,
+    "adr": 127.2,
+    "kd": 0.47
   },
   {
     "team": "Team 15",
     "player": "Player 15-2",
-    "kills": 7,
-    "deaths": 5,
-    "adr": 73.5,
-    "kd": 1.68
+    "kills": 19,
+    "deaths": 17,
+    "adr": 87.2,
+    "kd": 1.09
   },
   {
     "team": "Team 16",
     "player": "Player 16-1",
-    "kills": 19,
-    "deaths": 10,
-    "adr": 16.8,
-    "kd": 0.54
+    "kills": 27,
+    "deaths": 3,
+    "adr": 34,
+    "kd": 2.23
   },
   {
     "team": "Team 16",
     "player": "Player 16-2",
-    "kills": 4,
-    "deaths": 10,
-    "adr": 145.8,
-    "kd": 1.66
+    "kills": 27,
+    "deaths": 6,
+    "adr": 56.6,
+    "kd": 0.29
   },
   {
     "team": "Team 17",
     "player": "Player 17-1",
-    "kills": 22,
-    "deaths": 15,
-    "adr": 9,
-    "kd": 1.64
+    "kills": 11,
+    "deaths": 19,
+    "adr": 83.5,
+    "kd": 2.63
   },
   {
     "team": "Team 17",
     "player": "Player 17-2",
-    "kills": 11,
-    "deaths": 2,
-    "adr": 84.1,
-    "kd": 1
+    "kills": 1,
+    "deaths": 0,
+    "adr": 117.7,
+    "kd": 2.26
   },
   {
     "team": "Team 18",
     "player": "Player 18-1",
-    "kills": 5,
-    "deaths": 7,
-    "adr": 147.4,
-    "kd": 0.52
+    "kills": 9,
+    "deaths": 17,
+    "adr": 85.9,
+    "kd": 2.5
   },
   {
     "team": "Team 18",
     "player": "Player 18-2",
-    "kills": 6,
-    "deaths": 1,
-    "adr": 94.3,
-    "kd": 2.46
+    "kills": 17,
+    "deaths": 2,
+    "adr": 139.1,
+    "kd": 0.62
   },
   {
     "team": "Team 19",
     "player": "Player 19-1",
-    "kills": 10,
-    "deaths": 15,
-    "adr": 146.3,
-    "kd": 1.87
+    "kills": 11,
+    "deaths": 10,
+    "adr": 139,
+    "kd": 2.2
   },
   {
     "team": "Team 19",
     "player": "Player 19-2",
-    "kills": 17,
-    "deaths": 5,
-    "adr": 94.7,
-    "kd": 2.87
+    "kills": 23,
+    "deaths": 6,
+    "adr": 1.4,
+    "kd": 1.38
   },
   {
     "team": "Team 20",
     "player": "Player 20-1",
-    "kills": 8,
-    "deaths": 10,
-    "adr": 107.6,
-    "kd": 1.87
+    "kills": 25,
+    "deaths": 12,
+    "adr": 110.9,
+    "kd": 2.98
   },
   {
     "team": "Team 20",
     "player": "Player 20-2",
-    "kills": 17,
-    "deaths": 4,
-    "adr": 87.3,
-    "kd": 1.5
+    "kills": 27,
+    "deaths": 19,
+    "adr": 67,
+    "kd": 1.2
   },
   {
     "team": "Team 21",
     "player": "Player 21-1",
-    "kills": 2,
-    "deaths": 19,
-    "adr": 100.8,
-    "kd": 1.57
+    "kills": 14,
+    "deaths": 11,
+    "adr": 134.3,
+    "kd": 0.3
   },
   {
     "team": "Team 21",
     "player": "Player 21-2",
-    "kills": 13,
-    "deaths": 19,
-    "adr": 75,
-    "kd": 1.17
+    "kills": 8,
+    "deaths": 2,
+    "adr": 49.3,
+    "kd": 1.59
   },
   {
     "team": "Team 22",
     "player": "Player 22-1",
-    "kills": 25,
-    "deaths": 5,
-    "adr": 148.9,
-    "kd": 1.32
+    "kills": 11,
+    "deaths": 12,
+    "adr": 5.6,
+    "kd": 2.21
   },
   {
     "team": "Team 22",
     "player": "Player 22-2",
-    "kills": 27,
-    "deaths": 9,
-    "adr": 18.1,
-    "kd": 2.59
+    "kills": 2,
+    "deaths": 3,
+    "adr": 149.5,
+    "kd": 0.45
   },
   {
     "team": "Team 23",
     "player": "Player 23-1",
-    "kills": 22,
-    "deaths": 18,
-    "adr": 18.9,
-    "kd": 2.01
+    "kills": 29,
+    "deaths": 14,
+    "adr": 94.1,
+    "kd": 0.71
   },
   {
     "team": "Team 23",
     "player": "Player 23-2",
-    "kills": 19,
+    "kills": 27,
     "deaths": 14,
-    "adr": 31.2,
-    "kd": 0.1
+    "adr": 34.1,
+    "kd": 0.72
   },
   {
     "team": "Team 24",
     "player": "Player 24-1",
-    "kills": 15,
-    "deaths": 16,
-    "adr": 33.7,
-    "kd": 2.25
+    "kills": 24,
+    "deaths": 1,
+    "adr": 96.8,
+    "kd": 2.29
   },
   {
     "team": "Team 24",
     "player": "Player 24-2",
-    "kills": 14,
-    "deaths": 5,
-    "adr": 52,
-    "kd": 2.42
+    "kills": 19,
+    "deaths": 16,
+    "adr": 94.3,
+    "kd": 1.63
   },
   {
     "team": "Team 25",
     "player": "Player 25-1",
-    "kills": 10,
+    "kills": 14,
     "deaths": 16,
-    "adr": 74.8,
-    "kd": 2.08
+    "adr": 46.2,
+    "kd": 2.5
   },
   {
     "team": "Team 25",
     "player": "Player 25-2",
-    "kills": 3,
-    "deaths": 1,
-    "adr": 83.5,
-    "kd": 0.75
+    "kills": 2,
+    "deaths": 9,
+    "adr": 11.5,
+    "kd": 0.53
   },
   {
     "team": "Team 26",
     "player": "Player 26-1",
-    "kills": 19,
-    "deaths": 17,
-    "adr": 116.6,
-    "kd": 1.4
+    "kills": 0,
+    "deaths": 16,
+    "adr": 2.4,
+    "kd": 0.28
   },
   {
     "team": "Team 26",
     "player": "Player 26-2",
-    "kills": 26,
-    "deaths": 6,
-    "adr": 108.8,
-    "kd": 1.36
+    "kills": 0,
+    "deaths": 1,
+    "adr": 5.1,
+    "kd": 1.24
   },
   {
     "team": "Team 27",
     "player": "Player 27-1",
-    "kills": 17,
-    "deaths": 14,
-    "adr": 63.7,
-    "kd": 0.98
+    "kills": 22,
+    "deaths": 18,
+    "adr": 79.5,
+    "kd": 0.74
   },
   {
     "team": "Team 27",
     "player": "Player 27-2",
-    "kills": 29,
+    "kills": 11,
     "deaths": 15,
-    "adr": 86.6,
-    "kd": 0.49
+    "adr": 81,
+    "kd": 1.67
   },
   {
     "team": "Team 28",
     "player": "Player 28-1",
-    "kills": 13,
-    "deaths": 12,
-    "adr": 25.3,
-    "kd": 1.86
+    "kills": 25,
+    "deaths": 8,
+    "adr": 144.9,
+    "kd": 0.67
   },
   {
     "team": "Team 28",
     "player": "Player 28-2",
-    "kills": 24,
-    "deaths": 3,
-    "adr": 118,
-    "kd": 1.62
+    "kills": 9,
+    "deaths": 2,
+    "adr": 119.1,
+    "kd": 2.8
   },
   {
     "team": "Team 29",
     "player": "Player 29-1",
-    "kills": 1,
-    "deaths": 2,
-    "adr": 93.8,
-    "kd": 1.69
+    "kills": 21,
+    "deaths": 10,
+    "adr": 68.7,
+    "kd": 1.41
   },
   {
     "team": "Team 29",
     "player": "Player 29-2",
-    "kills": 14,
-    "deaths": 3,
-    "adr": 28,
-    "kd": 0.9
+    "kills": 22,
+    "deaths": 1,
+    "adr": 3.5,
+    "kd": 0.05
   },
   {
     "team": "Team 30",
     "player": "Player 30-1",
-    "kills": 4,
-    "deaths": 17,
-    "adr": 114.8,
-    "kd": 0.61
+    "kills": 0,
+    "deaths": 15,
+    "adr": 61.7,
+    "kd": 2.32
   },
   {
     "team": "Team 30",
     "player": "Player 30-2",
-    "kills": 9,
-    "deaths": 13,
-    "adr": 34.3,
-    "kd": 0.66
+    "kills": 4,
+    "deaths": 19,
+    "adr": 120.4,
+    "kd": 2.36
   },
   {
     "team": "Team 31",
     "player": "Player 31-1",
-    "kills": 24,
-    "deaths": 19,
-    "adr": 113.3,
-    "kd": 1
+    "kills": 18,
+    "deaths": 18,
+    "adr": 12.4,
+    "kd": 0.3
   },
   {
     "team": "Team 31",
     "player": "Player 31-2",
-    "kills": 26,
-    "deaths": 4,
-    "adr": 120.1,
-    "kd": 0.53
+    "kills": 8,
+    "deaths": 12,
+    "adr": 5.2,
+    "kd": 1.11
   },
   {
     "team": "Team 32",
     "player": "Player 32-1",
-    "kills": 27,
-    "deaths": 18,
-    "adr": 3.1,
-    "kd": 1.14
+    "kills": 23,
+    "deaths": 13,
+    "adr": 96.9,
+    "kd": 1.93
   },
   {
     "team": "Team 32",
     "player": "Player 32-2",
-    "kills": 18,
-    "deaths": 11,
-    "adr": 10.2,
-    "kd": 2.65
+    "kills": 0,
+    "deaths": 14,
+    "adr": 146.6,
+    "kd": 0.86
   },
   {
     "team": "Team 33",
     "player": "Player 33-1",
-    "kills": 28,
-    "deaths": 9,
-    "adr": 93,
-    "kd": 1.35
+    "kills": 25,
+    "deaths": 15,
+    "adr": 123.5,
+    "kd": 1.21
   },
   {
     "team": "Team 33",
     "player": "Player 33-2",
-    "kills": 28,
-    "deaths": 11,
-    "adr": 35.2,
-    "kd": 2.58
+    "kills": 25,
+    "deaths": 15,
+    "adr": 82.6,
+    "kd": 1.54
   },
   {
     "team": "Team 34",
     "player": "Player 34-1",
-    "kills": 3,
-    "deaths": 0,
-    "adr": 34.2,
-    "kd": 2.55
+    "kills": 14,
+    "deaths": 8,
+    "adr": 60.9,
+    "kd": 0.02
   },
   {
     "team": "Team 34",
     "player": "Player 34-2",
-    "kills": 8,
-    "deaths": 3,
-    "adr": 144,
-    "kd": 2.83
+    "kills": 25,
+    "deaths": 17,
+    "adr": 102.9,
+    "kd": 0.62
   },
   {
     "team": "Team 35",
     "player": "Player 35-1",
-    "kills": 3,
-    "deaths": 13,
-    "adr": 32.3,
-    "kd": 2.64
+    "kills": 6,
+    "deaths": 19,
+    "adr": 57.6,
+    "kd": 0.22
   },
   {
     "team": "Team 35",
     "player": "Player 35-2",
-    "kills": 20,
-    "deaths": 1,
-    "adr": 104.4,
-    "kd": 2.41
+    "kills": 23,
+    "deaths": 8,
+    "adr": 134.7,
+    "kd": 1.78
   },
   {
     "team": "Team 36",
     "player": "Player 36-1",
-    "kills": 22,
-    "deaths": 6,
-    "adr": 87.2,
-    "kd": 1.53
+    "kills": 2,
+    "deaths": 13,
+    "adr": 93.2,
+    "kd": 0.53
   },
   {
     "team": "Team 36",
     "player": "Player 36-2",
-    "kills": 24,
-    "deaths": 6,
-    "adr": 100.6,
-    "kd": 1.15
+    "kills": 8,
+    "deaths": 16,
+    "adr": 121,
+    "kd": 0.6
   },
   {
     "team": "Team 37",
     "player": "Player 37-1",
-    "kills": 23,
-    "deaths": 9,
-    "adr": 79.6,
-    "kd": 2.73
+    "kills": 17,
+    "deaths": 8,
+    "adr": 126.8,
+    "kd": 1.35
   },
   {
     "team": "Team 37",
     "player": "Player 37-2",
-    "kills": 18,
-    "deaths": 11,
-    "adr": 144.7,
-    "kd": 2.29
+    "kills": 0,
+    "deaths": 12,
+    "adr": 147.2,
+    "kd": 0.07
   },
   {
     "team": "Team 38",
     "player": "Player 38-1",
-    "kills": 8,
-    "deaths": 10,
-    "adr": 46.2,
-    "kd": 1.26
+    "kills": 4,
+    "deaths": 11,
+    "adr": 13.9,
+    "kd": 0.33
   },
   {
     "team": "Team 38",
     "player": "Player 38-2",
-    "kills": 5,
-    "deaths": 16,
-    "adr": 123.8,
-    "kd": 0.16
+    "kills": 6,
+    "deaths": 18,
+    "adr": 65.1,
+    "kd": 0.12
   },
   {
     "team": "Team 39",
     "player": "Player 39-1",
-    "kills": 14,
-    "deaths": 1,
-    "adr": 100.4,
-    "kd": 1.99
+    "kills": 8,
+    "deaths": 17,
+    "adr": 114.8,
+    "kd": 2.2
   },
   {
     "team": "Team 39",
     "player": "Player 39-2",
-    "kills": 28,
-    "deaths": 19,
-    "adr": 36.5,
-    "kd": 0.64
+    "kills": 8,
+    "deaths": 5,
+    "adr": 131.6,
+    "kd": 1.09
   },
   {
     "team": "Team 40",
     "player": "Player 40-1",
-    "kills": 11,
-    "deaths": 15,
-    "adr": 77.7,
-    "kd": 0.02
+    "kills": 22,
+    "deaths": 5,
+    "adr": 95.3,
+    "kd": 2.3
   },
   {
     "team": "Team 40",
     "player": "Player 40-2",
-    "kills": 6,
-    "deaths": 4,
-    "adr": 6,
-    "kd": 1.49
+    "kills": 12,
+    "deaths": 18,
+    "adr": 47,
+    "kd": 1.32
   },
   {
     "team": "Team 41",
     "player": "Player 41-1",
-    "kills": 16,
-    "deaths": 0,
-    "adr": 146.1,
-    "kd": 1.84
+    "kills": 0,
+    "deaths": 4,
+    "adr": 78.9,
+    "kd": 2.32
   },
   {
     "team": "Team 41",
     "player": "Player 41-2",
-    "kills": 8,
-    "deaths": 11,
-    "adr": 27.9,
-    "kd": 1.29
+    "kills": 22,
+    "deaths": 14,
+    "adr": 1.4,
+    "kd": 0.95
   },
   {
     "team": "Team 42",
     "player": "Player 42-1",
-    "kills": 7,
-    "deaths": 0,
-    "adr": 67.9,
-    "kd": 2.64
+    "kills": 1,
+    "deaths": 12,
+    "adr": 9.7,
+    "kd": 0.81
   },
   {
     "team": "Team 42",
     "player": "Player 42-2",
-    "kills": 6,
-    "deaths": 15,
-    "adr": 35.8,
-    "kd": 0.85
+    "kills": 28,
+    "deaths": 16,
+    "adr": 140.3,
+    "kd": 2.43
   },
   {
     "team": "Team 43",
     "player": "Player 43-1",
     "kills": 7,
-    "deaths": 19,
-    "adr": 82.6,
-    "kd": 2.87
+    "deaths": 17,
+    "adr": 19.8,
+    "kd": 1.64
   },
   {
     "team": "Team 43",
     "player": "Player 43-2",
-    "kills": 6,
-    "deaths": 14,
-    "adr": 147.3,
-    "kd": 1.33
+    "kills": 19,
+    "deaths": 3,
+    "adr": 131.5,
+    "kd": 1.84
   },
   {
     "team": "Team 44",
     "player": "Player 44-1",
-    "kills": 24,
-    "deaths": 15,
-    "adr": 64.2,
-    "kd": 2.71
+    "kills": 11,
+    "deaths": 16,
+    "adr": 78.4,
+    "kd": 2.9
   },
   {
     "team": "Team 44",
     "player": "Player 44-2",
-    "kills": 7,
-    "deaths": 17,
-    "adr": 110.9,
-    "kd": 1.44
+    "kills": 27,
+    "deaths": 10,
+    "adr": 111.2,
+    "kd": 2.15
   },
   {
     "team": "Team 45",
     "player": "Player 45-1",
-    "kills": 20,
-    "deaths": 2,
-    "adr": 97.1,
-    "kd": 1.45
+    "kills": 12,
+    "deaths": 1,
+    "adr": 99.7,
+    "kd": 1.06
   },
   {
     "team": "Team 45",
     "player": "Player 45-2",
-    "kills": 25,
-    "deaths": 6,
-    "adr": 73,
-    "kd": 2.29
+    "kills": 19,
+    "deaths": 3,
+    "adr": 1.2,
+    "kd": 1.21
   },
   {
     "team": "Team 46",
     "player": "Player 46-1",
-    "kills": 0,
-    "deaths": 19,
-    "adr": 121.5,
-    "kd": 2.06
+    "kills": 26,
+    "deaths": 8,
+    "adr": 42.7,
+    "kd": 0.65
   },
   {
     "team": "Team 46",
     "player": "Player 46-2",
-    "kills": 25,
-    "deaths": 11,
-    "adr": 41.9,
-    "kd": 2.55
+    "kills": 27,
+    "deaths": 8,
+    "adr": 29.3,
+    "kd": 1.34
   },
   {
     "team": "Team 47",
     "player": "Player 47-1",
-    "kills": 21,
-    "deaths": 16,
-    "adr": 43.3,
-    "kd": 0.04
+    "kills": 6,
+    "deaths": 11,
+    "adr": 89.5,
+    "kd": 0.29
   },
   {
     "team": "Team 47",
     "player": "Player 47-2",
-    "kills": 7,
-    "deaths": 8,
-    "adr": 141.9,
-    "kd": 0.38
+    "kills": 17,
+    "deaths": 4,
+    "adr": 110.1,
+    "kd": 1.23
   },
   {
     "team": "Team 48",
     "player": "Player 48-1",
-    "kills": 0,
-    "deaths": 18,
-    "adr": 104.3,
-    "kd": 2.95
+    "kills": 1,
+    "deaths": 10,
+    "adr": 130.3,
+    "kd": 2.07
   },
   {
     "team": "Team 48",
     "player": "Player 48-2",
-    "kills": 22,
-    "deaths": 15,
-    "adr": 124.9,
-    "kd": 1.26
+    "kills": 5,
+    "deaths": 19,
+    "adr": 106.8,
+    "kd": 0.24
   },
   {
     "team": "Team 49",
     "player": "Player 49-1",
-    "kills": 22,
-    "deaths": 1,
-    "adr": 111.9,
-    "kd": 0.97
+    "kills": 14,
+    "deaths": 16,
+    "adr": 86,
+    "kd": 2.64
   },
   {
     "team": "Team 49",
     "player": "Player 49-2",
-    "kills": 15,
-    "deaths": 18,
-    "adr": 76.4,
-    "kd": 0.34
+    "kills": 11,
+    "deaths": 0,
+    "adr": 72.1,
+    "kd": 2.64
   },
   {
     "team": "Team 50",
     "player": "Player 50-1",
-    "kills": 23,
-    "deaths": 15,
-    "adr": 138.3,
-    "kd": 1.86
+    "kills": 25,
+    "deaths": 2,
+    "adr": 14.8,
+    "kd": 2.81
   },
   {
     "team": "Team 50",
     "player": "Player 50-2",
-    "kills": 1,
-    "deaths": 1,
-    "adr": 9.2,
-    "kd": 2.6
+    "kills": 26,
+    "deaths": 7,
+    "adr": 134.4,
+    "kd": 2.03
   },
   {
     "team": "Team 51",
     "player": "Player 51-1",
-    "kills": 21,
-    "deaths": 15,
-    "adr": 109.9,
-    "kd": 2.58
+    "kills": 19,
+    "deaths": 8,
+    "adr": 6.7,
+    "kd": 2.88
   },
   {
     "team": "Team 51",
     "player": "Player 51-2",
-    "kills": 23,
-    "deaths": 18,
-    "adr": 139.6,
-    "kd": 2.73
+    "kills": 15,
+    "deaths": 19,
+    "adr": 53.5,
+    "kd": 0.57
   },
   {
     "team": "Team 52",
     "player": "Player 52-1",
-    "kills": 2,
-    "deaths": 4,
-    "adr": 145.9,
-    "kd": 1.23
+    "kills": 1,
+    "deaths": 19,
+    "adr": 81.9,
+    "kd": 2.52
   },
   {
     "team": "Team 52",
     "player": "Player 52-2",
-    "kills": 19,
+    "kills": 29,
     "deaths": 9,
-    "adr": 79.3,
-    "kd": 1.37
+    "adr": 46.6,
+    "kd": 2.5
   },
   {
     "team": "Team 53",
     "player": "Player 53-1",
-    "kills": 15,
-    "deaths": 4,
-    "adr": 137.1,
-    "kd": 2.19
+    "kills": 7,
+    "deaths": 14,
+    "adr": 73.2,
+    "kd": 1.34
   },
   {
     "team": "Team 53",
     "player": "Player 53-2",
-    "kills": 8,
-    "deaths": 9,
-    "adr": 133.8,
-    "kd": 1.71
+    "kills": 3,
+    "deaths": 12,
+    "adr": 19.5,
+    "kd": 2.29
   },
   {
     "team": "Team 54",
     "player": "Player 54-1",
-    "kills": 15,
-    "deaths": 12,
-    "adr": 102.3,
-    "kd": 1.58
+    "kills": 12,
+    "deaths": 13,
+    "adr": 17.9,
+    "kd": 0.97
   },
   {
     "team": "Team 54",
     "player": "Player 54-2",
-    "kills": 3,
+    "kills": 25,
     "deaths": 8,
-    "adr": 3.7,
-    "kd": 0.22
+    "adr": 14.6,
+    "kd": 0.01
   },
   {
     "team": "Team 55",
     "player": "Player 55-1",
-    "kills": 3,
-    "deaths": 11,
-    "adr": 70.6,
-    "kd": 2.08
+    "kills": 21,
+    "deaths": 0,
+    "adr": 126.2,
+    "kd": 1.22
   },
   {
     "team": "Team 55",
     "player": "Player 55-2",
-    "kills": 1,
-    "deaths": 19,
-    "adr": 2.2,
-    "kd": 2.56
+    "kills": 5,
+    "deaths": 4,
+    "adr": 78.2,
+    "kd": 0.01
   },
   {
     "team": "Team 56",
     "player": "Player 56-1",
-    "kills": 19,
-    "deaths": 7,
-    "adr": 47.1,
-    "kd": 2.27
+    "kills": 28,
+    "deaths": 1,
+    "adr": 63,
+    "kd": 1.42
   },
   {
     "team": "Team 56",
     "player": "Player 56-2",
-    "kills": 2,
-    "deaths": 16,
-    "adr": 28.7,
-    "kd": 0.14
+    "kills": 28,
+    "deaths": 13,
+    "adr": 123.1,
+    "kd": 1.74
   },
   {
     "team": "Team 57",
     "player": "Player 57-1",
-    "kills": 0,
-    "deaths": 0,
-    "adr": 86.1,
-    "kd": 0.43
+    "kills": 7,
+    "deaths": 7,
+    "adr": 34.9,
+    "kd": 1.16
   },
   {
     "team": "Team 57",
     "player": "Player 57-2",
-    "kills": 20,
-    "deaths": 11,
-    "adr": 39.6,
-    "kd": 2.38
+    "kills": 8,
+    "deaths": 16,
+    "adr": 131.1,
+    "kd": 1.59
   },
   {
     "team": "Team 58",
     "player": "Player 58-1",
-    "kills": 23,
-    "deaths": 16,
-    "adr": 96,
-    "kd": 1.54
+    "kills": 22,
+    "deaths": 6,
+    "adr": 68.6,
+    "kd": 0.13
   },
   {
     "team": "Team 58",
     "player": "Player 58-2",
-    "kills": 14,
-    "deaths": 5,
-    "adr": 55.9,
-    "kd": 2.5
+    "kills": 20,
+    "deaths": 8,
+    "adr": 61.1,
+    "kd": 2.06
   },
   {
     "team": "Team 59",
     "player": "Player 59-1",
-    "kills": 6,
-    "deaths": 18,
-    "adr": 116.9,
-    "kd": 2.79
+    "kills": 11,
+    "deaths": 10,
+    "adr": 10,
+    "kd": 2.81
   },
   {
     "team": "Team 59",
     "player": "Player 59-2",
-    "kills": 6,
-    "deaths": 18,
-    "adr": 83.2,
-    "kd": 1.57
+    "kills": 16,
+    "deaths": 4,
+    "adr": 18.4,
+    "kd": 0.54
   },
   {
     "team": "Team 60",
     "player": "Player 60-1",
     "kills": 1,
     "deaths": 18,
-    "adr": 30.7,
-    "kd": 1.01
+    "adr": 30.9,
+    "kd": 1.6
   },
   {
     "team": "Team 60",
     "player": "Player 60-2",
-    "kills": 23,
-    "deaths": 4,
-    "adr": 70.3,
-    "kd": 1.21
+    "kills": 14,
+    "deaths": 16,
+    "adr": 118,
+    "kd": 1.18
   },
   {
     "team": "Team 61",
     "player": "Player 61-1",
-    "kills": 26,
-    "deaths": 7,
-    "adr": 62.7,
-    "kd": 2.94
+    "kills": 25,
+    "deaths": 11,
+    "adr": 77.6,
+    "kd": 1.65
   },
   {
     "team": "Team 61",
     "player": "Player 61-2",
-    "kills": 0,
-    "deaths": 19,
-    "adr": 45.1,
-    "kd": 2.37
+    "kills": 26,
+    "deaths": 16,
+    "adr": 36.2,
+    "kd": 2.87
   },
   {
     "team": "Team 62",
     "player": "Player 62-1",
     "kills": 13,
-    "deaths": 4,
-    "adr": 146.1,
-    "kd": 0.39
+    "deaths": 8,
+    "adr": 143.1,
+    "kd": 0.94
   },
   {
     "team": "Team 62",
     "player": "Player 62-2",
-    "kills": 2,
-    "deaths": 5,
-    "adr": 81.5,
-    "kd": 2.08
+    "kills": 0,
+    "deaths": 17,
+    "adr": 2.3,
+    "kd": 2.34
   },
   {
     "team": "Team 63",
     "player": "Player 63-1",
-    "kills": 5,
-    "deaths": 12,
-    "adr": 91.1,
-    "kd": 0.72
+    "kills": 26,
+    "deaths": 1,
+    "adr": 92.4,
+    "kd": 2.21
   },
   {
     "team": "Team 63",
     "player": "Player 63-2",
-    "kills": 25,
-    "deaths": 18,
-    "adr": 104.9,
-    "kd": 2.74
+    "kills": 28,
+    "deaths": 15,
+    "adr": 145.5,
+    "kd": 0.28
   },
   {
     "team": "Team 64",
     "player": "Player 64-1",
-    "kills": 12,
-    "deaths": 14,
-    "adr": 103.5,
-    "kd": 0.17
+    "kills": 22,
+    "deaths": 6,
+    "adr": 25.8,
+    "kd": 2.78
   },
   {
     "team": "Team 64",
     "player": "Player 64-2",
-    "kills": 20,
+    "kills": 29,
     "deaths": 2,
-    "adr": 94.1,
-    "kd": 1.43
+    "adr": 114.8,
+    "kd": 1.03
   },
   {
     "team": "Team 65",
     "player": "Player 65-1",
-    "kills": 14,
-    "deaths": 1,
-    "adr": 149.3,
-    "kd": 0.77
+    "kills": 25,
+    "deaths": 18,
+    "adr": 36.2,
+    "kd": 0.27
   },
   {
     "team": "Team 65",
     "player": "Player 65-2",
-    "kills": 8,
-    "deaths": 5,
-    "adr": 52.6,
-    "kd": 2.39
+    "kills": 10,
+    "deaths": 13,
+    "adr": 99.6,
+    "kd": 0.57
   },
   {
     "team": "Team 66",
     "player": "Player 66-1",
-    "kills": 3,
-    "deaths": 10,
-    "adr": 121.3,
-    "kd": 0.89
+    "kills": 28,
+    "deaths": 14,
+    "adr": 104.1,
+    "kd": 1.68
   },
   {
     "team": "Team 66",
     "player": "Player 66-2",
-    "kills": 28,
-    "deaths": 0,
-    "adr": 27.2,
-    "kd": 0.51
+    "kills": 3,
+    "deaths": 6,
+    "adr": 142.3,
+    "kd": 1.87
   },
   {
     "team": "Team 67",
     "player": "Player 67-1",
-    "kills": 28,
-    "deaths": 13,
-    "adr": 99.4,
-    "kd": 0.13
+    "kills": 9,
+    "deaths": 2,
+    "adr": 96.3,
+    "kd": 2.03
   },
   {
     "team": "Team 67",
     "player": "Player 67-2",
-    "kills": 5,
-    "deaths": 6,
-    "adr": 41.5,
-    "kd": 0.38
+    "kills": 23,
+    "deaths": 14,
+    "adr": 1.2,
+    "kd": 2.78
   },
   {
     "team": "Team 68",
     "player": "Player 68-1",
-    "kills": 22,
-    "deaths": 18,
-    "adr": 143,
-    "kd": 2.74
+    "kills": 7,
+    "deaths": 12,
+    "adr": 2.5,
+    "kd": 1.42
   },
   {
     "team": "Team 68",
     "player": "Player 68-2",
-    "kills": 14,
-    "deaths": 13,
-    "adr": 128,
-    "kd": 2
+    "kills": 16,
+    "deaths": 0,
+    "adr": 54.2,
+    "kd": 2.91
   },
   {
     "team": "Team 69",
     "player": "Player 69-1",
-    "kills": 24,
-    "deaths": 19,
-    "adr": 94.2,
-    "kd": 0.02
+    "kills": 15,
+    "deaths": 10,
+    "adr": 65.4,
+    "kd": 0.62
   },
   {
     "team": "Team 69",
     "player": "Player 69-2",
-    "kills": 17,
-    "deaths": 8,
-    "adr": 48.9,
-    "kd": 0.55
+    "kills": 6,
+    "deaths": 5,
+    "adr": 116.9,
+    "kd": 2.19
   },
   {
     "team": "Team 70",
     "player": "Player 70-1",
-    "kills": 20,
-    "deaths": 10,
-    "adr": 87.5,
-    "kd": 0.66
+    "kills": 7,
+    "deaths": 0,
+    "adr": 31.4,
+    "kd": 2.02
   },
   {
     "team": "Team 70",
     "player": "Player 70-2",
-    "kills": 13,
-    "deaths": 17,
-    "adr": 42.7,
-    "kd": 1.88
+    "kills": 23,
+    "deaths": 13,
+    "adr": 50.7,
+    "kd": 2.8
   },
   {
     "team": "Team 71",
     "player": "Player 71-1",
-    "kills": 28,
-    "deaths": 11,
-    "adr": 24.2,
-    "kd": 2.75
+    "kills": 16,
+    "deaths": 10,
+    "adr": 30,
+    "kd": 0.1
   },
   {
     "team": "Team 71",
     "player": "Player 71-2",
     "kills": 3,
-    "deaths": 11,
-    "adr": 132.8,
-    "kd": 0.98
+    "deaths": 10,
+    "adr": 57.8,
+    "kd": 2.98
   },
   {
     "team": "Team 72",
     "player": "Player 72-1",
-    "kills": 7,
-    "deaths": 8,
-    "adr": 67.3,
-    "kd": 1.81
+    "kills": 24,
+    "deaths": 7,
+    "adr": 114,
+    "kd": 2.76
   },
   {
     "team": "Team 72",
     "player": "Player 72-2",
-    "kills": 16,
+    "kills": 7,
     "deaths": 17,
-    "adr": 46.1,
-    "kd": 1.6
+    "adr": 146.9,
+    "kd": 2.63
   },
   {
     "team": "Team 73",
     "player": "Player 73-1",
-    "kills": 26,
+    "kills": 12,
     "deaths": 16,
-    "adr": 16.1,
-    "kd": 2.19
+    "adr": 115.1,
+    "kd": 2.45
   },
   {
     "team": "Team 73",
     "player": "Player 73-2",
-    "kills": 4,
-    "deaths": 15,
-    "adr": 84.9,
-    "kd": 0.14
+    "kills": 14,
+    "deaths": 7,
+    "adr": 26.1,
+    "kd": 0.12
   },
   {
     "team": "Team 74",
     "player": "Player 74-1",
-    "kills": 27,
-    "deaths": 8,
-    "adr": 71,
-    "kd": 2.21
+    "kills": 19,
+    "deaths": 3,
+    "adr": 72.8,
+    "kd": 1.45
   },
   {
     "team": "Team 74",
     "player": "Player 74-2",
-    "kills": 24,
-    "deaths": 18,
-    "adr": 84.6,
-    "kd": 2.82
+    "kills": 28,
+    "deaths": 6,
+    "adr": 81.4,
+    "kd": 0.94
   },
   {
     "team": "Team 75",
     "player": "Player 75-1",
-    "kills": 21,
+    "kills": 20,
     "deaths": 11,
-    "adr": 36.4,
-    "kd": 1.89
+    "adr": 149.2,
+    "kd": 0.53
   },
   {
     "team": "Team 75",
     "player": "Player 75-2",
-    "kills": 10,
-    "deaths": 3,
-    "adr": 106.2,
-    "kd": 2.04
+    "kills": 29,
+    "deaths": 0,
+    "adr": 13.7,
+    "kd": 2.73
   },
   {
     "team": "Team 76",
     "player": "Player 76-1",
-    "kills": 15,
-    "deaths": 10,
-    "adr": 93.3,
-    "kd": 2.77
+    "kills": 23,
+    "deaths": 17,
+    "adr": 127.4,
+    "kd": 2.63
   },
   {
     "team": "Team 76",
     "player": "Player 76-2",
-    "kills": 16,
-    "deaths": 16,
-    "adr": 133.6,
-    "kd": 1.11
+    "kills": 25,
+    "deaths": 17,
+    "adr": 52.2,
+    "kd": 1.81
   },
   {
     "team": "Team 77",
     "player": "Player 77-1",
-    "kills": 28,
-    "deaths": 15,
-    "adr": 121.2,
-    "kd": 2.76
+    "kills": 9,
+    "deaths": 7,
+    "adr": 68.4,
+    "kd": 0.25
   },
   {
     "team": "Team 77",
     "player": "Player 77-2",
     "kills": 28,
-    "deaths": 5,
-    "adr": 65.1,
-    "kd": 1.07
+    "deaths": 6,
+    "adr": 40.5,
+    "kd": 0.71
   },
   {
     "team": "Team 78",
     "player": "Player 78-1",
-    "kills": 12,
-    "deaths": 12,
-    "adr": 26.7,
-    "kd": 0.65
+    "kills": 24,
+    "deaths": 11,
+    "adr": 131.9,
+    "kd": 3
   },
   {
     "team": "Team 78",
     "player": "Player 78-2",
-    "kills": 5,
-    "deaths": 1,
-    "adr": 36.8,
-    "kd": 0.65
+    "kills": 7,
+    "deaths": 5,
+    "adr": 21.1,
+    "kd": 2.69
   },
   {
     "team": "Team 79",
     "player": "Player 79-1",
-    "kills": 12,
-    "deaths": 5,
-    "adr": 49.6,
-    "kd": 2.75
+    "kills": 20,
+    "deaths": 12,
+    "adr": 95.5,
+    "kd": 0.51
   },
   {
     "team": "Team 79",
     "player": "Player 79-2",
-    "kills": 21,
-    "deaths": 14,
-    "adr": 53.5,
-    "kd": 0.93
+    "kills": 1,
+    "deaths": 12,
+    "adr": 22.1,
+    "kd": 0.99
   },
   {
     "team": "Team 80",
     "player": "Player 80-1",
-    "kills": 10,
-    "deaths": 12,
-    "adr": 145.7,
-    "kd": 2.46
+    "kills": 0,
+    "deaths": 1,
+    "adr": 89.5,
+    "kd": 0.59
   },
   {
     "team": "Team 80",
     "player": "Player 80-2",
-    "kills": 17,
-    "deaths": 13,
-    "adr": 69.3,
-    "kd": 1.25
+    "kills": 25,
+    "deaths": 19,
+    "adr": 107.6,
+    "kd": 2.59
   },
   {
     "team": "Team 81",
     "player": "Player 81-1",
-    "kills": 13,
-    "deaths": 0,
-    "adr": 85.4,
-    "kd": 0.8
+    "kills": 1,
+    "deaths": 4,
+    "adr": 56.8,
+    "kd": 0.85
   },
   {
     "team": "Team 81",
     "player": "Player 81-2",
-    "kills": 29,
-    "deaths": 10,
-    "adr": 2,
-    "kd": 1.56
+    "kills": 1,
+    "deaths": 1,
+    "adr": 145.6,
+    "kd": 2.42
   },
   {
     "team": "Team 82",
     "player": "Player 82-1",
-    "kills": 21,
-    "deaths": 2,
-    "adr": 147.9,
-    "kd": 2.67
+    "kills": 8,
+    "deaths": 6,
+    "adr": 64.8,
+    "kd": 1.25
   },
   {
     "team": "Team 82",
     "player": "Player 82-2",
-    "kills": 2,
-    "deaths": 5,
-    "adr": 19.4,
-    "kd": 1.79
+    "kills": 26,
+    "deaths": 1,
+    "adr": 106.8,
+    "kd": 0.44
   },
   {
     "team": "Team 83",
     "player": "Player 83-1",
-    "kills": 1,
-    "deaths": 3,
-    "adr": 82.5,
-    "kd": 2.64
+    "kills": 24,
+    "deaths": 11,
+    "adr": 111.5,
+    "kd": 2.42
   },
   {
     "team": "Team 83",
     "player": "Player 83-2",
-    "kills": 21,
-    "deaths": 13,
-    "adr": 38,
-    "kd": 2.64
+    "kills": 1,
+    "deaths": 7,
+    "adr": 92.9,
+    "kd": 0.96
   },
   {
     "team": "Team 84",
     "player": "Player 84-1",
-    "kills": 11,
-    "deaths": 9,
-    "adr": 84.3,
-    "kd": 1.54
+    "kills": 13,
+    "deaths": 3,
+    "adr": 23.3,
+    "kd": 2.84
   },
   {
     "team": "Team 84",
     "player": "Player 84-2",
-    "kills": 28,
-    "deaths": 1,
-    "adr": 139.5,
-    "kd": 2.2
+    "kills": 6,
+    "deaths": 11,
+    "adr": 31.4,
+    "kd": 1.41
   },
   {
     "team": "Team 85",
     "player": "Player 85-1",
-    "kills": 23,
-    "deaths": 11,
-    "adr": 67.1,
-    "kd": 2.94
+    "kills": 15,
+    "deaths": 9,
+    "adr": 29.2,
+    "kd": 2.25
   },
   {
     "team": "Team 85",
     "player": "Player 85-2",
-    "kills": 9,
-    "deaths": 19,
-    "adr": 30.6,
-    "kd": 1.33
+    "kills": 26,
+    "deaths": 0,
+    "adr": 136,
+    "kd": 1.72
   },
   {
     "team": "Team 86",
     "player": "Player 86-1",
-    "kills": 14,
-    "deaths": 13,
-    "adr": 132.5,
-    "kd": 1.79
+    "kills": 16,
+    "deaths": 7,
+    "adr": 13.3,
+    "kd": 0.24
   },
   {
     "team": "Team 86",
     "player": "Player 86-2",
-    "kills": 4,
-    "deaths": 2,
-    "adr": 93.3,
-    "kd": 0.04
+    "kills": 2,
+    "deaths": 3,
+    "adr": 73.3,
+    "kd": 1.41
   },
   {
     "team": "Team 87",
     "player": "Player 87-1",
-    "kills": 24,
-    "deaths": 10,
-    "adr": 30,
-    "kd": 1.35
+    "kills": 20,
+    "deaths": 12,
+    "adr": 42.1,
+    "kd": 1.58
   },
   {
     "team": "Team 87",
     "player": "Player 87-2",
-    "kills": 19,
-    "deaths": 15,
-    "adr": 124.2,
-    "kd": 0.23
+    "kills": 22,
+    "deaths": 14,
+    "adr": 5.2,
+    "kd": 2.4
   },
   {
     "team": "Team 88",
     "player": "Player 88-1",
-    "kills": 13,
-    "deaths": 2,
-    "adr": 57.4,
-    "kd": 0.31
+    "kills": 26,
+    "deaths": 8,
+    "adr": 119.5,
+    "kd": 1.75
   },
   {
     "team": "Team 88",
     "player": "Player 88-2",
-    "kills": 25,
-    "deaths": 15,
-    "adr": 137.2,
-    "kd": 1.55
+    "kills": 6,
+    "deaths": 16,
+    "adr": 14,
+    "kd": 1.36
   },
   {
     "team": "Team 89",
     "player": "Player 89-1",
-    "kills": 27,
-    "deaths": 1,
-    "adr": 103.3,
-    "kd": 0.79
+    "kills": 6,
+    "deaths": 3,
+    "adr": 77.3,
+    "kd": 1.58
   },
   {
     "team": "Team 89",
     "player": "Player 89-2",
-    "kills": 27,
-    "deaths": 10,
-    "adr": 72.7,
-    "kd": 0.75
+    "kills": 15,
+    "deaths": 1,
+    "adr": 71.1,
+    "kd": 2.03
   },
   {
     "team": "Team 90",
     "player": "Player 90-1",
-    "kills": 1,
-    "deaths": 6,
-    "adr": 86.5,
-    "kd": 2.75
+    "kills": 19,
+    "deaths": 13,
+    "adr": 100.6,
+    "kd": 2.02
   },
   {
     "team": "Team 90",
     "player": "Player 90-2",
-    "kills": 0,
-    "deaths": 7,
-    "adr": 137.3,
-    "kd": 2.65
+    "kills": 28,
+    "deaths": 5,
+    "adr": 135.7,
+    "kd": 1.63
   },
   {
     "team": "Team 91",
     "player": "Player 91-1",
-    "kills": 28,
-    "deaths": 1,
-    "adr": 23.4,
-    "kd": 1.14
+    "kills": 25,
+    "deaths": 0,
+    "adr": 81.2,
+    "kd": 0.72
   },
   {
     "team": "Team 91",
     "player": "Player 91-2",
-    "kills": 25,
-    "deaths": 0,
-    "adr": 60.4,
-    "kd": 2.45
+    "kills": 29,
+    "deaths": 8,
+    "adr": 86.2,
+    "kd": 0.32
   },
   {
     "team": "Team 92",
     "player": "Player 92-1",
     "kills": 20,
-    "deaths": 9,
-    "adr": 103,
-    "kd": 0.28
+    "deaths": 10,
+    "adr": 105.1,
+    "kd": 1.4
   },
   {
     "team": "Team 92",
     "player": "Player 92-2",
-    "kills": 20,
-    "deaths": 11,
-    "adr": 52.3,
-    "kd": 1.66
+    "kills": 8,
+    "deaths": 13,
+    "adr": 142.5,
+    "kd": 2.57
   },
   {
     "team": "Team 93",
     "player": "Player 93-1",
-    "kills": 9,
-    "deaths": 13,
-    "adr": 89.8,
-    "kd": 1.79
+    "kills": 19,
+    "deaths": 11,
+    "adr": 9.6,
+    "kd": 0.25
   },
   {
     "team": "Team 93",
     "player": "Player 93-2",
-    "kills": 22,
-    "deaths": 0,
-    "adr": 92,
-    "kd": 0.41
+    "kills": 25,
+    "deaths": 10,
+    "adr": 122.2,
+    "kd": 1.37
   },
   {
     "team": "Team 94",
     "player": "Player 94-1",
-    "kills": 19,
-    "deaths": 16,
-    "adr": 135.5,
-    "kd": 2.83
+    "kills": 2,
+    "deaths": 13,
+    "adr": 24,
+    "kd": 2.66
   },
   {
     "team": "Team 94",
     "player": "Player 94-2",
-    "kills": 13,
-    "deaths": 17,
-    "adr": 145.4,
-    "kd": 1.4
+    "kills": 0,
+    "deaths": 4,
+    "adr": 88.7,
+    "kd": 0.45
   },
   {
     "team": "Team 95",
     "player": "Player 95-1",
-    "kills": 23,
-    "deaths": 15,
-    "adr": 116.2,
-    "kd": 1.27
+    "kills": 5,
+    "deaths": 17,
+    "adr": 134.4,
+    "kd": 1.19
   },
   {
     "team": "Team 95",
     "player": "Player 95-2",
-    "kills": 20,
-    "deaths": 0,
-    "adr": 127.9,
-    "kd": 0.98
+    "kills": 26,
+    "deaths": 5,
+    "adr": 14.4,
+    "kd": 0.88
   },
   {
     "team": "Team 96",
     "player": "Player 96-1",
-    "kills": 6,
-    "deaths": 1,
-    "adr": 20.4,
-    "kd": 2.59
+    "kills": 20,
+    "deaths": 5,
+    "adr": 139.5,
+    "kd": 1.73
   },
   {
     "team": "Team 96",
     "player": "Player 96-2",
-    "kills": 19,
-    "deaths": 4,
-    "adr": 36.6,
-    "kd": 2.17
+    "kills": 26,
+    "deaths": 0,
+    "adr": 34.1,
+    "kd": 1.33
   },
   {
     "team": "Team 97",
     "player": "Player 97-1",
-    "kills": 12,
-    "deaths": 1,
-    "adr": 142.9,
-    "kd": 0.35
+    "kills": 13,
+    "deaths": 15,
+    "adr": 60.4,
+    "kd": 0.79
   },
   {
     "team": "Team 97",
     "player": "Player 97-2",
-    "kills": 13,
-    "deaths": 1,
-    "adr": 92.6,
-    "kd": 0.9
+    "kills": 12,
+    "deaths": 11,
+    "adr": 81.8,
+    "kd": 0.23
   },
   {
     "team": "Team 98",
     "player": "Player 98-1",
-    "kills": 14,
-    "deaths": 10,
-    "adr": 124.7,
-    "kd": 0.05
+    "kills": 29,
+    "deaths": 6,
+    "adr": 121.6,
+    "kd": 1.91
   },
   {
     "team": "Team 98",
     "player": "Player 98-2",
-    "kills": 24,
-    "deaths": 5,
-    "adr": 61.4,
-    "kd": 2.31
+    "kills": 6,
+    "deaths": 0,
+    "adr": 54.6,
+    "kd": 0.02
   },
   {
     "team": "Team 99",
     "player": "Player 99-1",
-    "kills": 3,
-    "deaths": 14,
-    "adr": 21,
-    "kd": 1.03
+    "kills": 17,
+    "deaths": 19,
+    "adr": 64.6,
+    "kd": 0.5
   },
   {
     "team": "Team 99",
     "player": "Player 99-2",
-    "kills": 24,
-    "deaths": 18,
-    "adr": 56.9,
-    "kd": 0.44
+    "kills": 2,
+    "deaths": 3,
+    "adr": 73.6,
+    "kd": 1.46
   },
   {
     "team": "Team 100",
     "player": "Player 100-1",
-    "kills": 16,
-    "deaths": 19,
-    "adr": 115.7,
-    "kd": 2.79
+    "kills": 8,
+    "deaths": 15,
+    "adr": 10.2,
+    "kd": 0.13
   },
   {
     "team": "Team 100",
     "player": "Player 100-2",
-    "kills": 11,
-    "deaths": 14,
-    "adr": 82.4,
-    "kd": 2.18
+    "kills": 5,
+    "deaths": 18,
+    "adr": 61.7,
+    "kd": 0.5
   },
   {
     "team": "Team 101",
     "player": "Player 101-1",
-    "kills": 11,
-    "deaths": 19,
-    "adr": 129,
-    "kd": 0.04
+    "kills": 10,
+    "deaths": 18,
+    "adr": 88.5,
+    "kd": 0.55
   },
   {
     "team": "Team 101",
     "player": "Player 101-2",
-    "kills": 19,
-    "deaths": 18,
-    "adr": 140.9,
-    "kd": 1.25
+    "kills": 20,
+    "deaths": 14,
+    "adr": 27.7,
+    "kd": 0.44
   },
   {
     "team": "Team 102",
     "player": "Player 102-1",
-    "kills": 24,
-    "deaths": 4,
-    "adr": 81.1,
-    "kd": 0.18
+    "kills": 27,
+    "deaths": 11,
+    "adr": 57.1,
+    "kd": 0.63
   },
   {
     "team": "Team 102",
     "player": "Player 102-2",
-    "kills": 14,
-    "deaths": 13,
-    "adr": 97.8,
-    "kd": 2.66
+    "kills": 5,
+    "deaths": 12,
+    "adr": 63.8,
+    "kd": 1.89
   },
   {
     "team": "Team 103",
     "player": "Player 103-1",
-    "kills": 29,
-    "deaths": 8,
-    "adr": 26.1,
-    "kd": 0.75
+    "kills": 20,
+    "deaths": 15,
+    "adr": 132.2,
+    "kd": 2.15
   },
   {
     "team": "Team 103",
     "player": "Player 103-2",
-    "kills": 0,
-    "deaths": 15,
-    "adr": 54.5,
-    "kd": 2.14
+    "kills": 12,
+    "deaths": 1,
+    "adr": 70.6,
+    "kd": 2.1
   },
   {
     "team": "Team 104",
     "player": "Player 104-1",
-    "kills": 13,
-    "deaths": 15,
-    "adr": 41.5,
-    "kd": 3
+    "kills": 8,
+    "deaths": 2,
+    "adr": 90.7,
+    "kd": 2.38
   },
   {
     "team": "Team 104",
     "player": "Player 104-2",
-    "kills": 12,
-    "deaths": 13,
-    "adr": 42.1,
-    "kd": 2.02
+    "kills": 28,
+    "deaths": 7,
+    "adr": 104.9,
+    "kd": 2.55
   },
   {
     "team": "Team 105",
     "player": "Player 105-1",
-    "kills": 10,
-    "deaths": 18,
-    "adr": 86.6,
-    "kd": 1.49
+    "kills": 0,
+    "deaths": 19,
+    "adr": 32.9,
+    "kd": 0.02
   },
   {
     "team": "Team 105",
     "player": "Player 105-2",
-    "kills": 20,
-    "deaths": 3,
-    "adr": 17.7,
-    "kd": 2.25
+    "kills": 19,
+    "deaths": 17,
+    "adr": 137.9,
+    "kd": 1.55
   },
   {
     "team": "Team 106",
     "player": "Player 106-1",
-    "kills": 20,
-    "deaths": 8,
-    "adr": 116.4,
-    "kd": 0.27
+    "kills": 8,
+    "deaths": 3,
+    "adr": 26.4,
+    "kd": 0.24
   },
   {
     "team": "Team 106",
     "player": "Player 106-2",
-    "kills": 1,
-    "deaths": 0,
-    "adr": 23.1,
-    "kd": 0.15
+    "kills": 22,
+    "deaths": 2,
+    "adr": 7,
+    "kd": 1.84
   },
   {
     "team": "Team 107",
     "player": "Player 107-1",
-    "kills": 29,
-    "deaths": 3,
-    "adr": 71,
-    "kd": 1.45
+    "kills": 5,
+    "deaths": 10,
+    "adr": 82.3,
+    "kd": 1.27
   },
   {
     "team": "Team 107",
     "player": "Player 107-2",
-    "kills": 11,
-    "deaths": 19,
-    "adr": 115,
-    "kd": 0.95
+    "kills": 4,
+    "deaths": 11,
+    "adr": 38.6,
+    "kd": 0.26
   },
   {
     "team": "Team 108",
     "player": "Player 108-1",
-    "kills": 9,
-    "deaths": 9,
-    "adr": 143.5,
-    "kd": 2.02
+    "kills": 29,
+    "deaths": 19,
+    "adr": 123.6,
+    "kd": 2.67
   },
   {
     "team": "Team 108",
     "player": "Player 108-2",
-    "kills": 8,
-    "deaths": 18,
-    "adr": 148.1,
-    "kd": 0.4
+    "kills": 18,
+    "deaths": 6,
+    "adr": 143.5,
+    "kd": 1.13
   },
   {
     "team": "Team 109",
     "player": "Player 109-1",
-    "kills": 8,
-    "deaths": 14,
-    "adr": 124.4,
-    "kd": 1.82
+    "kills": 3,
+    "deaths": 15,
+    "adr": 29.7,
+    "kd": 0.98
   },
   {
     "team": "Team 109",
     "player": "Player 109-2",
-    "kills": 12,
-    "deaths": 1,
-    "adr": 16.3,
-    "kd": 2.33
+    "kills": 14,
+    "deaths": 18,
+    "adr": 6,
+    "kd": 2.94
   },
   {
     "team": "Team 110",
     "player": "Player 110-1",
-    "kills": 23,
-    "deaths": 17,
-    "adr": 111.4,
-    "kd": 0.87
+    "kills": 13,
+    "deaths": 16,
+    "adr": 28.6,
+    "kd": 2.77
   },
   {
     "team": "Team 110",
     "player": "Player 110-2",
-    "kills": 6,
-    "deaths": 13,
-    "adr": 48.9,
-    "kd": 0.13
+    "kills": 10,
+    "deaths": 5,
+    "adr": 138.3,
+    "kd": 2.04
   },
   {
     "team": "Team 111",
     "player": "Player 111-1",
     "kills": 28,
-    "deaths": 11,
-    "adr": 18.8,
-    "kd": 1.21
+    "deaths": 6,
+    "adr": 79.6,
+    "kd": 1.73
   },
   {
     "team": "Team 111",
     "player": "Player 111-2",
-    "kills": 25,
-    "deaths": 10,
-    "adr": 35.6,
-    "kd": 1.74
+    "kills": 6,
+    "deaths": 11,
+    "adr": 119.2,
+    "kd": 1.18
   },
   {
     "team": "Team 112",
     "player": "Player 112-1",
-    "kills": 21,
-    "deaths": 8,
-    "adr": 74.1,
-    "kd": 1.12
+    "kills": 2,
+    "deaths": 0,
+    "adr": 6.4,
+    "kd": 1.71
   },
   {
     "team": "Team 112",
     "player": "Player 112-2",
-    "kills": 8,
-    "deaths": 16,
-    "adr": 120.3,
-    "kd": 2.94
+    "kills": 6,
+    "deaths": 15,
+    "adr": 88.2,
+    "kd": 2.32
   },
   {
     "team": "Team 113",
     "player": "Player 113-1",
-    "kills": 1,
-    "deaths": 6,
-    "adr": 53.6,
-    "kd": 2.1
+    "kills": 5,
+    "deaths": 16,
+    "adr": 126.7,
+    "kd": 2.27
   },
   {
     "team": "Team 113",
     "player": "Player 113-2",
-    "kills": 24,
-    "deaths": 9,
-    "adr": 31.4,
-    "kd": 0.11
+    "kills": 8,
+    "deaths": 1,
+    "adr": 72.6,
+    "kd": 2.78
   },
   {
     "team": "Team 114",
     "player": "Player 114-1",
-    "kills": 15,
-    "deaths": 12,
-    "adr": 43.4,
-    "kd": 0.48
+    "kills": 18,
+    "deaths": 6,
+    "adr": 120.4,
+    "kd": 1.94
   },
   {
     "team": "Team 114",
     "player": "Player 114-2",
-    "kills": 18,
-    "deaths": 15,
-    "adr": 125,
-    "kd": 0.25
+    "kills": 3,
+    "deaths": 8,
+    "adr": 59.1,
+    "kd": 0.04
   },
   {
     "team": "Team 115",
     "player": "Player 115-1",
-    "kills": 4,
-    "deaths": 12,
-    "adr": 104.5,
-    "kd": 1.94
+    "kills": 25,
+    "deaths": 2,
+    "adr": 70,
+    "kd": 2.19
   },
   {
     "team": "Team 115",
     "player": "Player 115-2",
-    "kills": 15,
-    "deaths": 14,
-    "adr": 43.6,
-    "kd": 0.84
+    "kills": 27,
+    "deaths": 16,
+    "adr": 55,
+    "kd": 1.2
   },
   {
     "team": "Team 116",
     "player": "Player 116-1",
     "kills": 20,
-    "deaths": 16,
-    "adr": 27.3,
-    "kd": 1.03
+    "deaths": 1,
+    "adr": 48.1,
+    "kd": 2.03
   },
   {
     "team": "Team 116",
     "player": "Player 116-2",
-    "kills": 15,
-    "deaths": 15,
-    "adr": 52.9,
-    "kd": 0.7
+    "kills": 25,
+    "deaths": 11,
+    "adr": 1.9,
+    "kd": 1.12
   },
   {
     "team": "Team 117",
     "player": "Player 117-1",
-    "kills": 8,
-    "deaths": 12,
-    "adr": 27.7,
-    "kd": 1.38
+    "kills": 7,
+    "deaths": 7,
+    "adr": 144.8,
+    "kd": 1.05
   },
   {
     "team": "Team 117",
     "player": "Player 117-2",
-    "kills": 5,
-    "deaths": 13,
-    "adr": 147.1,
-    "kd": 1.03
+    "kills": 23,
+    "deaths": 5,
+    "adr": 13.5,
+    "kd": 0.05
   },
   {
     "team": "Team 118",
     "player": "Player 118-1",
-    "kills": 3,
-    "deaths": 10,
-    "adr": 35.3,
-    "kd": 2.89
+    "kills": 6,
+    "deaths": 8,
+    "adr": 103.1,
+    "kd": 0.19
   },
   {
     "team": "Team 118",
     "player": "Player 118-2",
-    "kills": 5,
-    "deaths": 7,
-    "adr": 142.8,
-    "kd": 2.72
+    "kills": 27,
+    "deaths": 13,
+    "adr": 84.8,
+    "kd": 2.74
   },
   {
     "team": "Team 119",
     "player": "Player 119-1",
-    "kills": 8,
+    "kills": 24,
     "deaths": 3,
-    "adr": 82.2,
-    "kd": 0.62
+    "adr": 29,
+    "kd": 2.33
   },
   {
     "team": "Team 119",
     "player": "Player 119-2",
-    "kills": 10,
-    "deaths": 3,
-    "adr": 28.1,
-    "kd": 0
+    "kills": 25,
+    "deaths": 17,
+    "adr": 83.5,
+    "kd": 1.51
   },
   {
     "team": "Team 120",
     "player": "Player 120-1",
-    "kills": 15,
-    "deaths": 17,
-    "adr": 117.2,
-    "kd": 0.35
+    "kills": 0,
+    "deaths": 13,
+    "adr": 15.2,
+    "kd": 2.8
   },
   {
     "team": "Team 120",
     "player": "Player 120-2",
-    "kills": 8,
-    "deaths": 19,
-    "adr": 113.9,
-    "kd": 1.86
+    "kills": 9,
+    "deaths": 9,
+    "adr": 21,
+    "kd": 1.25
   },
   {
     "team": "Team 121",
     "player": "Player 121-1",
-    "kills": 20,
-    "deaths": 18,
-    "adr": 71.2,
-    "kd": 1.73
+    "kills": 3,
+    "deaths": 7,
+    "adr": 22.9,
+    "kd": 1.4
   },
   {
     "team": "Team 121",
     "player": "Player 121-2",
-    "kills": 3,
-    "deaths": 17,
-    "adr": 35.3,
-    "kd": 2.81
+    "kills": 6,
+    "deaths": 11,
+    "adr": 87.3,
+    "kd": 2.61
   },
   {
     "team": "Team 122",
     "player": "Player 122-1",
-    "kills": 26,
-    "deaths": 9,
-    "adr": 144.5,
-    "kd": 0.81
+    "kills": 23,
+    "deaths": 13,
+    "adr": 14.3,
+    "kd": 2.7
   },
   {
     "team": "Team 122",
     "player": "Player 122-2",
-    "kills": 12,
-    "deaths": 15,
-    "adr": 117.1,
-    "kd": 2.17
+    "kills": 28,
+    "deaths": 0,
+    "adr": 148.3,
+    "kd": 0.37
   },
   {
     "team": "Team 123",
     "player": "Player 123-1",
-    "kills": 18,
-    "deaths": 7,
-    "adr": 129.4,
-    "kd": 1.52
+    "kills": 22,
+    "deaths": 10,
+    "adr": 117.5,
+    "kd": 0.93
   },
   {
     "team": "Team 123",
     "player": "Player 123-2",
-    "kills": 29,
-    "deaths": 17,
-    "adr": 33.8,
-    "kd": 0.96
+    "kills": 19,
+    "deaths": 13,
+    "adr": 5.5,
+    "kd": 2.76
   },
   {
     "team": "Team 124",
     "player": "Player 124-1",
-    "kills": 10,
-    "deaths": 9,
-    "adr": 147.8,
-    "kd": 2.2
+    "kills": 12,
+    "deaths": 7,
+    "adr": 148.3,
+    "kd": 0.53
   },
   {
     "team": "Team 124",
     "player": "Player 124-2",
-    "kills": 2,
-    "deaths": 0,
-    "adr": 96.8,
-    "kd": 0.73
+    "kills": 11,
+    "deaths": 9,
+    "adr": 24.3,
+    "kd": 0.02
   },
   {
     "team": "Team 125",
     "player": "Player 125-1",
-    "kills": 2,
-    "deaths": 11,
-    "adr": 70,
-    "kd": 0.56
+    "kills": 3,
+    "deaths": 2,
+    "adr": 26.6,
+    "kd": 2.64
   },
   {
     "team": "Team 125",
     "player": "Player 125-2",
-    "kills": 10,
+    "kills": 5,
     "deaths": 19,
-    "adr": 99.5,
-    "kd": 0.41
+    "adr": 32.4,
+    "kd": 1.18
   },
   {
     "team": "Team 126",
     "player": "Player 126-1",
-    "kills": 17,
-    "deaths": 0,
-    "adr": 127.1,
-    "kd": 1.14
+    "kills": 5,
+    "deaths": 13,
+    "adr": 24.4,
+    "kd": 2.52
   },
   {
     "team": "Team 126",
     "player": "Player 126-2",
-    "kills": 15,
-    "deaths": 11,
-    "adr": 117.5,
-    "kd": 1.07
+    "kills": 24,
+    "deaths": 4,
+    "adr": 88.9,
+    "kd": 2.52
   },
   {
     "team": "Team 127",
     "player": "Player 127-1",
-    "kills": 19,
-    "deaths": 15,
-    "adr": 105.3,
-    "kd": 1.53
+    "kills": 9,
+    "deaths": 13,
+    "adr": 53.3,
+    "kd": 2.65
   },
   {
     "team": "Team 127",
     "player": "Player 127-2",
-    "kills": 26,
-    "deaths": 5,
-    "adr": 105.8,
-    "kd": 1.52
+    "kills": 13,
+    "deaths": 15,
+    "adr": 129.5,
+    "kd": 1.73
   },
   {
     "team": "Team 128",
     "player": "Player 128-1",
-    "kills": 22,
-    "deaths": 16,
-    "adr": 52.1,
-    "kd": 1.07
+    "kills": 15,
+    "deaths": 2,
+    "adr": 59.8,
+    "kd": 1.45
   },
   {
     "team": "Team 128",
     "player": "Player 128-2",
-    "kills": 28,
-    "deaths": 5,
-    "adr": 39.8,
-    "kd": 1.65
+    "kills": 6,
+    "deaths": 8,
+    "adr": 50.4,
+    "kd": 0.74
   }
 ]

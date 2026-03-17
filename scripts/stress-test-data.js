@@ -89,19 +89,50 @@ async function main() {
       const matchId = matchIdsByRound[r-1][m];
       const nextMatchId = r < rounds ? matchIdsByRound[r][Math.floor(m / 2)] : null;
       
-      const homeTeam = r === 1 ? teams[m * 2] : null;
-      const awayTeam = r === 1 ? teams[m * 2 + 1] : null;
+      // Winner propagation logic
+      let homeTeam, awayTeam;
+      if (r === 1) {
+        homeTeam = teams[m * 2];
+        awayTeam = teams[m * 2 + 1];
+      } else {
+        // Find the winners from the previous round
+        const prevRound = r - 1;
+        const matchIdx1 = m * 2;
+        const matchIdx2 = m * 2 + 1;
+        
+        // Find matches in matchesOutput that were just created
+        const match1 = matchesOutput.find(m_out => m_out.round === prevRound && m_out.matchOrder === matchIdx1);
+        const match2 = matchesOutput.find(m_out => m_out.round === prevRound && m_out.matchOrder === matchIdx2);
+        
+        homeTeam = teams.find(t => t.id === match1.winnerId);
+        awayTeam = teams.find(t => t.id === match2.winnerId);
+      }
 
-      const homeScore = Math.floor(Math.random() * 9); // MR8 (first to 9)
-      const awayScore = Math.floor(Math.random() * 9);
+      function generateMR8Score() {
+        let h = 0;
+        let a = 0;
+        while (h < 9 && a < 9) {
+          if (Math.random() > 0.5) h++;
+          else a++;
+          
+          if (h === 8 && a === 8) {
+            while (Math.abs(h - a) < 2 && h < 13 && a < 13) {
+              if (Math.random() > 0.5) h++;
+              else a++;
+            }
+            break;
+          }
+        }
+        return { h, a };
+      }
+
+      const { h: homeScore, a: awayScore } = generateMR8Score();
       
-      // Ensure one team wins if r > 1 (mocking progression)
-      // Actually Round 1 should also have scores if we want to stress test a filled bracket.
       const status = 'COMPLETED';
       let winnerId = null;
       if (homeScore > awayScore) winnerId = homeTeam?.id;
       else if (awayScore > homeScore) winnerId = awayTeam?.id;
-      else winnerId = homeTeam?.id; // default tiebreak
+      else winnerId = homeTeam?.id;
 
       matchesOutput.push({
         id: matchId,

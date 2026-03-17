@@ -15,7 +15,7 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
     const [teamData, setTeamData] = useState({
         name: '',
         logoUrl: '',
-        players: Array(5).fill({ name: '', seating: '', steamId: '' })
+        players: Array(5).fill({ name: '', nickname: '', countryCode: 'no', seating: '', steamId: '' })
     });
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -29,7 +29,7 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
                     setTournament(current);
                     setTeamData(prev => ({
                         ...prev,
-                        players: Array(current.teamSize || 5).fill({ name: '', seating: '', steamId: '' })
+                        players: Array(current.teamSize || 5).fill({ name: '', nickname: '', countryCode: 'no', seating: '', steamId: '' })
                     }));
                 } else {
                     setError('Tournament not found');
@@ -251,9 +251,9 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
                                         </div>
                                         
                                         <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
-                                            <div className="md:col-span-5 space-y-4">
+                                            <div className="md:col-span-3 space-y-4">
                                                 <label className="block text-[9px] font-black text-gray-600 uppercase tracking-[0.3em] flex items-center gap-2">
-                                                    <User size={12} className="text-blue-500/50" /> Competitive Handle
+                                                    <User size={12} className="text-blue-500/50" /> Competitive Name
                                                 </label>
                                                 <input 
                                                     type="text"
@@ -261,10 +261,22 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
                                                     value={player.name}
                                                     onChange={(e) => updatePlayer(i, 'name', e.target.value)}
                                                     className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-5 text-base font-bold text-white focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-white/5"
-                                                    placeholder="In-Game Name..."
+                                                    placeholder="Real or Global Name..."
                                                 />
                                             </div>
                                             <div className="md:col-span-3 space-y-4">
+                                                <label className="block text-[9px] font-black text-gray-600 uppercase tracking-[0.3em] flex items-center gap-2">
+                                                    <User size={12} className="text-blue-500/50" /> Handle / Nickname
+                                                </label>
+                                                <input 
+                                                    type="text"
+                                                    value={player.nickname}
+                                                    onChange={(e) => updatePlayer(i, 'nickname', e.target.value)}
+                                                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-5 text-base font-bold text-white focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-white/5"
+                                                    placeholder="e.g. 'Flash'..."
+                                                />
+                                            </div>
+                                            <div className="md:col-span-2 space-y-4">
                                                 <label className="block text-[9px] font-black text-gray-600 uppercase tracking-[0.3em] flex items-center gap-2">
                                                     <MapPin size={12} className="text-blue-500/50" /> Seat Pos
                                                 </label>
@@ -276,7 +288,19 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
                                                     placeholder="A1, B2..."
                                                 />
                                             </div>
-                                            <div className="md:col-span-4 space-y-4">
+                                            <div className="md:col-span-1 space-y-4">
+                                                <label className="block text-[9px] font-black text-gray-600 uppercase tracking-[0.3em] flex items-center gap-2">
+                                                    Flag
+                                                </label>
+                                                <input 
+                                                    type="text"
+                                                    value={player.countryCode}
+                                                    onChange={(e) => updatePlayer(i, 'countryCode', e.target.value)}
+                                                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-5 text-base font-bold text-white focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-white/5"
+                                                    placeholder="no, se..."
+                                                />
+                                            </div>
+                                            <div className="md:col-span-3 space-y-4">
                                                 <label className="block text-[9px] font-black text-gray-600 uppercase tracking-[0.3em] flex items-center gap-2">
                                                     <AtSign size={12} className="text-blue-500/50" /> Steam Profile URL
                                                 </label>

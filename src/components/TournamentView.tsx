@@ -19,6 +19,60 @@ export default function TournamentView({ id }: TournamentViewProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [teamSearch, setTeamSearch] = useState("");
+   const [selectedTeam, setSelectedTeam] = useState<any>(null);
+   const [selectedMatch, setSelectedMatch] = useState<any>(null);
+   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
+
+    const getFlagUrl = (countryCode: string | null) => {
+        if (!countryCode) return null;
+        const code = countryCode.toLowerCase();
+        const mapping: { [key: string]: number } = {
+            'no': 129,
+            'se': 151,
+            'dk': 84,
+            'fi': 90,
+            'is': 103,
+            'de': 163,
+            'gb': 150,
+            'us': 166,
+            'ca': 109,
+            'au': 15
+        };
+        const id = mapping[code];
+        if (!id) return null;
+        return `https://dynamic.fragbite.se/flags/4x3/${id}.svg`;
+    };
+
+    const formatPlayerName = (player: any) => {
+        if (!player) return null;
+        
+        const flagUrl = getFlagUrl(player.countryCode);
+        const nameParts = player.name.trim().split(/\s+/);
+        let displayName = player.name;
+
+        if (player.nickname && player.nickname.trim() !== "") {
+            if (nameParts.length >= 2) {
+                const firstName = nameParts[0];
+                const lastName = nameParts.slice(1).join(" ");
+                displayName = `${firstName} "${player.nickname}" ${lastName}`;
+            } else {
+                displayName = `${player.name} "${player.nickname}"`;
+            }
+        }
+
+        return (
+            <span className="flex items-center gap-2">
+                {flagUrl && (
+                    <img 
+                      src={flagUrl} 
+                      alt="" 
+                      className="w-4 h-3 object-cover rounded-[1px] opacity-80 group-hover:opacity-100 transition-opacity" 
+                    />
+                )}
+                <span>{displayName}</span>
+            </span>
+        );
+    };
 
   const { data: tournament } = useQuery({
     queryKey: ['tournament', id],
@@ -209,23 +263,33 @@ export default function TournamentView({ id }: TournamentViewProps) {
                 <div className="flex flex-wrap items-center gap-6 md:gap-10 text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] md:tracking-[0.3em]">
                   <div className="flex items-center gap-3">
                     <Users size={14} className="text-blue-500" />
-                    <span>{teams.length} Teams Registered</span>
+                    <span>{teams.length} Participants</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Calendar size={14} className="text-blue-500" />
-                    <span>Ongoing Event</span>
+                    <Gamepad2 size={14} className="text-blue-500" />
+                    <span>{matches.length} Total Matches</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Trophy size={14} className="text-blue-500" />
+                    <span>{tournament.teamSize}v{tournament.teamSize} Mode</span>
+                  </div>
+                   <div className="flex items-center gap-3">
+                    <Layout size={14} className="text-blue-500" />
+                    <span>{tournament.format} Format</span>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="flex flex-col gap-4 w-full md:w-auto">
-              <Link
-                href={`/tournaments/${id}/register`}
-                className="bg-blue-600 hover:bg-blue-500 text-white px-6 md:px-10 py-4 md:py-5 rounded-xl md:rounded-2xl font-black text-[10px] md:text-[12px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-4 shadow-xl shadow-blue-600/30 group"
-              >
-                Assemble Team <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
+              {tournament.status === 'UPCOMING' && (
+                <Link
+                  href={`/tournaments/${id}/register`}
+                  className="bg-blue-600 hover:bg-blue-500 text-white px-6 md:px-10 py-4 md:py-5 rounded-xl md:rounded-2xl font-black text-[10px] md:text-[12px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-4 shadow-xl shadow-blue-600/30 group"
+                >
+                  Assemble Team <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+              )}
             </div>
           </div>
         </header>
@@ -233,10 +297,10 @@ export default function TournamentView({ id }: TournamentViewProps) {
         {/* VIEW AREA */}
         <div className="flex-1 overflow-y-auto px-6 md:px-10 py-8 md:py-10 custom-scrollbar">
           {activeTab === "overview" && (
-            <div className="space-y-12 max-w-6xl">
+            <div className="space-y-12">
               {/* Featured Live Matches */}
               {liveMatches.length > 0 && (
-                <section className="space-y-6">
+                <section className="space-y-6 max-w-6xl">
                   <div className="flex items-center gap-4">
                     <h2 className="text-[10px] font-black uppercase tracking-[0.5em] text-red-500">Featured Live</h2>
                     <div className="h-px flex-1 bg-gradient-to-r from-red-500/20 to-transparent"></div>
@@ -249,81 +313,45 @@ export default function TournamentView({ id }: TournamentViewProps) {
                 </section>
               )}
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                 {/* About Card */}
-                  <section className="bg-[#16191d] border border-white/5 rounded-[3rem] p-12 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 blur-[80px] rounded-full -mr-32 -mt-32 transition-transform duration-[3000ms] group-hover:scale-150"></div>
-                    <h2 className="text-3xl font-extrabold uppercase tracking-tighter mb-8 leading-none">The Ultimate<br/><span className="text-blue-500">Battle Awaits.</span></h2>
-                    <p className="text-gray-400 leading-relaxed text-lg max-w-lg">
-                      Welcome to the {tournament.name}. Brace yourself for intensive {tournament.teamSize}v{tournament.teamSize} encounters. 
-                      Monitor real-time progression, study your rivals, and prepare for the grand finals.
-                    </p>
-                    
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mt-16 pt-16 border-t border-white/5">
-                      {[
-                        { label: "Participants", value: teams.length, unit: "Teams" },
-                        { label: "Total Matches", value: matches.length, unit: "Games" },
-                        { label: "Active Mode", value: `${tournament.teamSize}v${tournament.teamSize}`, unit: "Players" },
-                        { label: "Format", value: tournament.format === 'SINGLE_ELIMINATION' ? 'SE' : 'DE', unit: "Competition" }
-                      ].map((stat, i) => (
-                        <div key={i}>
-                          <span className="block text-[8px] md:text-[10px] font-black uppercase tracking-[0.1em] md:tracking-[0.2em] text-gray-600 mb-2">{stat.label}</span>
-                          <div className="flex items-baseline gap-2">
-                             <span className="text-xl md:text-2xl font-extrabold text-white">{stat.value}</span>
-                             <span className="text-[8px] md:text-[10px] font-bold text-blue-500/50 uppercase">{stat.unit}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-
-                  {/* Quick Roster Stats / Info */}
-                  <div className="space-y-6">
-                     <div className="bg-[#16191d] border border-white/5 rounded-[2.5rem] p-10 h-1/2">
-                        <h3 className="text-xs font-black uppercase tracking-[0.3em] text-gray-500 mb-8">Registered Teams</h3>
-                        <div className="flex flex-wrap gap-4">
-                           {teams.slice(0, 10).map((t: any, idx: number) => (
-                              <div key={idx} className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/5 hover:border-blue-500/30 transition-all cursor-pointer group overflow-hidden">
-                                 {t.logoUrl ? (
-                                     <div className="relative w-full h-full"> 
-                                        <Image 
-                                            src={t.logoUrl} 
-                                            alt="" 
-                                            fill 
-                                            className="object-contain" 
-                                            sizes="48px"
-                                        />
-                                     </div>
-                                 ) : (
-                                     <Trophy size={20} className="text-gray-700 group-hover:text-blue-500 transition-all" />
-                                 )}
-                              </div>
-                           ))}
-                           {teams.length > 10 && (
-                              <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/5 text-[10px] font-black text-gray-700">
-                                 +{teams.length - 10}
-                              </div>
-                           )}
+              <div className="space-y-6">
+                  <div className="bg-[#16191d] border border-white/5 rounded-[2.5rem] p-10 overflow-hidden flex flex-col min-h-[500px]">
+                    <div className="flex items-center justify-between mb-10">
+                        <div>
+                          <h3 className="text-xs font-black uppercase tracking-[0.3em] text-gray-500 mb-2">Registered Teams ({teams.length})</h3>
+                          <p className="text-[10px] font-bold text-blue-500/50 uppercase tracking-widest">Global Competitor Roster</p>
                         </div>
                         <button 
                           onClick={() => setActiveTab('teams')}
-                          className="mt-10 text-[10px] font-black uppercase tracking-widest text-blue-500 hover:text-white transition-all flex items-center gap-2 group"
+                          className="text-[10px] font-black uppercase tracking-widest text-blue-500 hover:text-white transition-all flex items-center gap-2 group border border-blue-500/20 px-6 py-3 rounded-xl bg-blue-500/5 hover:bg-blue-600 hover:border-blue-600 shadow-lg shadow-blue-500/10"
                         >
-                           View All Teams <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                           View Detailed Directory <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                         </button>
-                     </div>
+                    </div>
 
-                     <div className="bg-blue-600 rounded-[2.5rem] p-10 shadow-lg shadow-blue-600/10 relative overflow-hidden group h-[calc(50%-1.5rem)] flex flex-col justify-center">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-[40px] rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-all duration-700"></div>
-                        <h3 className="text-xl font-extrabold uppercase tracking-tighter text-white mb-2">Join the Action</h3>
-                        <p className="text-blue-100 text-[11px] font-bold leading-relaxed mb-8 max-w-[200px]">Registration is still open! Form your squad and compete for the {tournament.name} title.</p>
-                        <Link 
-                          href={`/tournaments/${id}/register`}
-                          className="bg-white text-blue-600 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] inline-flex items-center gap-2 hover:shadow-xl transition-all w-fit active:scale-95"
-                        >
-                           Sign Up Now <ArrowRight size={14} />
-                        </Link>
-                     </div>
+                    <div className="flex flex-wrap gap-5 max-h-[800px] overflow-y-auto custom-scrollbar pb-8 pr-4">
+                        {teams.map((t: any, idx: number) => (
+                          <div 
+                            key={idx} 
+                            onClick={() => setSelectedTeam(t)}
+                            className="w-24 h-24 bg-white/5 rounded-[2rem] flex items-center justify-center border border-white/5 hover:border-blue-500/40 hover:bg-white/10 transition-all cursor-pointer group overflow-hidden shrink-0 shadow-2xl relative"
+                          >
+                              <div className="absolute inset-0 bg-gradient-to-br from-blue-600/0 to-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                              {t.logoUrl ? (
+                                  <div className="relative w-full h-full p-3"> 
+                                    <Image 
+                                        src={t.logoUrl} 
+                                        alt="" 
+                                        fill 
+                                        className="object-contain transition-transform duration-500 group-hover:scale-110" 
+                                        sizes="96px"
+                                    />
+                                  </div>
+                              ) : (
+                                  <Trophy size={40} className="text-gray-700 group-hover:text-blue-500 transition-all duration-500" />
+                              )}
+                          </div>
+                        ))}
+                    </div>
                   </div>
               </div>
             </div>
@@ -332,7 +360,11 @@ export default function TournamentView({ id }: TournamentViewProps) {
           {activeTab === "bracket" && tournament.category !== 'BATTLE_ROYALE' && (
             <div className="h-full w-full bg-[#16191d]/30 border border-white/5 rounded-[2.5rem] overflow-hidden relative group">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.03),transparent)] pointer-events-none"></div>
-              <PublicBracket tournamentId={id} matches={matches} />
+              <PublicBracket 
+                tournamentId={id} 
+                matches={matches} 
+                onMatchClick={(matchId) => setSelectedMatch(matches.find((m: any) => m.id === matchId))}
+              />
             </div>
           )}
 
@@ -413,22 +445,25 @@ export default function TournamentView({ id }: TournamentViewProps) {
 
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                  {teams.filter((t: any) => t.name.toLowerCase().includes(teamSearch.toLowerCase())).map((team: any) => (
-                    <div key={team.id} className="bg-[#16191d] border border-white/5 rounded-[2.5rem] p-10 hover:border-blue-500/30 transition-all group relative overflow-hidden flex flex-col h-[400px]">
+                    <div key={team.id} className="bg-[#16191d] border border-white/5 rounded-[2.5rem] p-8 hover:border-blue-500/30 transition-all group relative overflow-hidden flex flex-col">
                       <div className="absolute top-0 right-0 w-40 h-40 bg-blue-600/5 blur-[50px] rounded-full -mr-20 -mt-20 group-hover:bg-blue-600/10 transition-all duration-700"></div>
                       
-                      <div className="flex items-start justify-between mb-10 shrink-0">
-                         <div className="w-20 h-20 bg-black/40 rounded-3xl flex items-center justify-center border border-white/10 group-hover:scale-105 group-hover:border-blue-500/50 transition-all duration-500 shadow-xl overflow-hidden relative">
-                            {team.logoUrl ? (
-                                 <Image 
-                                    src={team.logoUrl} 
-                                    alt="" 
-                                    fill 
-                                    className="object-contain" 
-                                    sizes="80px"
-                                />
-                             ) : (
-                                <Users size={32} className="text-gray-500 group-hover:text-blue-500 transition-colors" />
-                            )}
+                      <div className="flex items-center justify-between mb-8 shrink-0">
+                         <div className="flex items-center gap-6">
+                            <div className="w-20 h-20 bg-black/40 rounded-3xl flex items-center justify-center border border-white/10 group-hover:scale-105 group-hover:border-blue-500/50 transition-all duration-500 shadow-xl overflow-hidden relative flex-shrink-0">
+                               {team.logoUrl ? (
+                                    <Image 
+                                       src={team.logoUrl} 
+                                       alt="" 
+                                       fill 
+                                       className="object-contain" 
+                                       sizes="80px"
+                                   />
+                                ) : (
+                                   <Users size={32} className="text-gray-500 group-hover:text-blue-500 transition-colors" />
+                               )}
+                            </div>
+                            <h3 className="text-3xl font-black uppercase tracking-tighter group-hover:text-white transition-colors leading-tight truncate max-w-[150px] lg:max-w-[200px]">{team.name}</h3>
                          </div>
                          <div className="flex flex-col items-end gap-2">
                             <span className="text-[9px] font-black text-blue-500 bg-blue-500/10 px-3 py-1 rounded-full uppercase tracking-widest border border-blue-500/20">
@@ -437,27 +472,28 @@ export default function TournamentView({ id }: TournamentViewProps) {
                             <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest">{team.players?.length || 0} MEMBERS</span>
                          </div>
                       </div>
-
-                      <h3 className="text-3xl font-extrabold uppercase tracking-tighter mb-8 group-hover:text-white transition-colors truncate pr-4">{team.name}</h3>
                       
-                      <div className="space-y-3 overflow-y-auto custom-scrollbar flex-1 pr-4 -mr-4">
-                         {team.players?.map((p: any, idx: number) => (
-                            <div key={idx} className="flex items-center justify-between group/player py-2 border-b border-white/[0.03] last:border-0">
-                               <div className="flex items-center gap-4 truncate">
-                                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.3)] opacity-20 group-hover/player:opacity-100 transition-all duration-300"></div>
-                                  <span className="text-[12px] font-bold text-gray-400 group-hover/player:text-white transition-all truncate">{p.name}</span>
-                               </div>
-                               {p.seating && <span className="text-[10px] font-mono text-gray-800 font-bold group-hover/player:text-blue-500/50 transition-all shrink-0 ml-4">{p.seating}</span>}
-                            </div>
-                         ))}
+                      <div className="grid grid-cols-2 gap-4 mb-6 shrink-0">
+                          {team.players?.map((p: any, idx: number) => (
+                             <div 
+                              key={idx} 
+                              onClick={() => setSelectedPlayer({ ...p, teamName: team.name })}
+                              className="bg-black/20 p-4 rounded-2xl border border-white/5 group/player hover:border-blue-500/30 transition-all cursor-pointer"
+                             >
+                                <div className="flex flex-col gap-1">
+                                   <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest leading-none mb-1">Player {idx + 1}</span>
+                                   <span className="text-sm font-bold text-gray-300 group-hover/player:text-white transition-all truncate">{formatPlayerName(p)}</span>
+                                </div>
+                             </div>
+                          ))}
                       </div>
 
-                      <div className="mt-8 pt-8 border-t border-white/5 shrink-0">
-                         <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-gray-700">
-                            <span>Status</span>
-                            <span className="text-blue-500/50">Active Competitor</span>
-                         </div>
-                      </div>
+                      <button 
+                        onClick={() => setSelectedTeam(team)}
+                        className="w-full bg-white/5 hover:bg-blue-600 text-[10px] font-black uppercase tracking-widest py-4 rounded-xl transition-all border border-white/5 hover:border-blue-600 text-gray-400 hover:text-white flex items-center justify-center gap-2 group/btn"
+                      >
+                        Team Details <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                      </button>
                     </div>
                  ))}
                </div>
@@ -492,11 +528,24 @@ export default function TournamentView({ id }: TournamentViewProps) {
                                 kd: parseFloat(((p.id.length * 0.13 + p.name.length * 0.07) % 2.5 + 0.5).toFixed(2))
                               }))
                               .sort((a: any, b: any) => b.kd - a.kd)
-                              .map((player: any, idx: number) => (
-                                <tr key={player.id || idx} className="hover:bg-blue-600/[0.02] transition-colors group">
-                                    <td className="px-12 py-6 font-black text-xl italic text-gray-700 group-hover:text-blue-500 transition-all">#{idx + 1}</td>
+.map((player: any, idx: number) => (
+                                <tr 
+                                  key={player.id || idx} 
+                                  onClick={() => setSelectedPlayer(player)}
+                                  className={`hover:bg-blue-600/[0.02] transition-colors group cursor-pointer ${idx < 3 ? 'bg-blue-500/[0.02]' : ''}`}
+                                >
                                     <td className="px-12 py-6">
-                                        <span className="text-sm font-bold uppercase tracking-tight">{player.name}</span>
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black italic text-sm ${
+                                        idx === 0 ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.4)]' :
+                                        idx === 1 ? 'bg-gray-300 text-black shadow-[0_0_15px_rgba(209,213,219,0.4)]' :
+                                        idx === 2 ? 'bg-orange-600 text-white shadow-[0_0_15px_rgba(194,65,12,0.4)]' :
+                                        'text-gray-700 group-hover:text-blue-500'
+                                      }`}>
+                                        #{idx + 1}
+                                      </div>
+                                    </td>
+                                    <td className="px-12 py-6">
+                                        <span className="text-sm font-bold uppercase tracking-tight group-hover:text-blue-500 transition-all">{formatPlayerName(player)}</span>
                                     </td>
                                     <td className="px-12 py-6">
                                         <span className="text-xs font-black text-gray-600 uppercase tracking-widest">{player.teamName}</span>
@@ -525,9 +574,12 @@ export default function TournamentView({ id }: TournamentViewProps) {
                        </div>
                        
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {matches.filter((m: any) => m.round === round).map((match: any) => (
+                          {matches.filter((m: any) => m.round === round).sort((a: any, b: any) => a.matchOrder - b.matchOrder).map((match: any, idx: number) => (
                              <div key={match.id} className="bg-[#16191d] border border-white/5 rounded-[2rem] p-8 flex items-center justify-between group hover:border-blue-500/20 hover:bg-[#1c2025] transition-all duration-300 relative overflow-hidden">
                                 <div className="absolute inset-0 bg-blue-600/[0.01] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <div className="absolute top-0 left-0 bg-blue-600/10 text-blue-500 text-[8px] font-black px-3 py-1 rounded-br-xl border-r border-b border-white/5 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                   GAME #{idx + 1}
+                                </div>
                                 
                                 <div className="flex items-center gap-6 flex-1 relative z-10">
                                    <div className="flex-1 text-right overflow-hidden flex flex-col items-end">
@@ -598,13 +650,27 @@ export default function TournamentView({ id }: TournamentViewProps) {
       <aside className="hidden lg:flex w-80 bg-[#16191d] border-l border-white/5 flex-col p-8 shrink-0 relative overflow-hidden">
          <div className="absolute top-0 right-0 w-32 h-64 bg-blue-600/5 blur-[60px] rounded-full pointer-events-none"></div>
          
-         <div className="mb-10 flex items-center justify-between">
-            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-500">Tournament Progress</h3>
-            <span className="text-[11px] font-black text-blue-500">75%</span>
-         </div>
-         <div className="w-full h-1.5 bg-white/5 rounded-full mb-12 overflow-hidden border border-white/5">
-            <div className="h-full bg-blue-600 w-3/4 shadow-[0_0_15px_rgba(37,99,235,0.5)]"></div>
-         </div>
+         {/* TOURNAMENT PROGRESS */}
+         {(() => {
+           const total = matches.length;
+           const completed = matches.filter((m: any) => m.status === 'COMPLETED').length;
+           const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+           
+           return (
+             <>
+               <div className="mb-10 flex items-center justify-between">
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-500">Tournament Progress</h3>
+                  <span className="text-[11px] font-black text-blue-500">{progress}%</span>
+               </div>
+               <div className="w-full h-1.5 bg-white/5 rounded-full mb-12 overflow-hidden border border-white/5">
+                  <div 
+                    className="h-full bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.5)] transition-all duration-1000" 
+                    style={{ width: `${progress}%` }}
+                  ></div>
+               </div>
+             </>
+           );
+         })()}
 
          <div className="flex flex-col flex-1 gap-12 overflow-y-auto no-scrollbar">
             {/* LIVE SECTION */}
@@ -653,15 +719,28 @@ export default function TournamentView({ id }: TournamentViewProps) {
             <section>
                <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-500 mb-6">Upcoming</h4>
                <div className="space-y-4">
-                  {matches.filter((m: any) => m.status === 'PENDING').slice(0, 3).map((match: any) => (
-                    <div key={match.id} className="bg-white/5 border border-white/5 rounded-2xl p-5 group hover:bg-white/[0.08] transition-all">
-                       <div className="flex justify-between items-center mb-1">
+                  {matches
+                    .filter((m: any) => m.status === 'PENDING' || m.status === 'READY')
+                    .sort((a: any, b: any) => {
+                      if (a.round !== b.round) return a.round - b.round;
+                      return a.matchOrder - b.matchOrder;
+                    })
+                    .slice(0, 5)
+                    .map((match: any) => (
+                    <div key={match.id} className="bg-white/5 border border-white/5 rounded-2xl p-5 group hover:bg-white/[0.08] transition-all relative overflow-hidden">
+                       <div className="absolute top-0 left-0 bg-blue-600/10 text-blue-500 text-[7px] font-black px-2 py-0.5 rounded-br-lg">R{match.round}</div>
+                       <div className="flex justify-between items-center mt-2">
                           <span className="text-[10px] font-black uppercase tracking-tighter truncate w-24 group-hover:text-blue-400 transition-all">{match.homeTeam?.name || "TBD"}</span>
                           <span className="text-[9px] font-bold text-gray-700">VS</span>
                           <span className="text-[10px] font-black uppercase tracking-tighter truncate w-24 text-right group-hover:text-blue-400 transition-all">{match.awayTeam?.name || "TBD"}</span>
                        </div>
                     </div>
                   ))}
+                  {matches.filter((m: any) => m.status === 'PENDING' || m.status === 'READY').length === 0 && (
+                    <div className="text-center py-8 border border-dashed border-white/5 rounded-2xl opacity-50">
+                       <p className="text-[8px] font-bold text-gray-700 uppercase tracking-widest">Bracket Fully Completed</p>
+                    </div>
+                  )}
                </div>
             </section>
          </div>
@@ -670,6 +749,345 @@ export default function TournamentView({ id }: TournamentViewProps) {
             <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.5em]">ApexPlay Tech</p>
          </div>
       </aside>
+
+      {/* TEAM DETAILS MODAL */}
+      {selectedTeam && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 sm:p-10">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setSelectedTeam(null)}></div>
+          <div className="bg-[#16191d] w-full max-w-4xl max-h-[90vh] rounded-[3rem] border border-white/10 shadow-2xl relative z-10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+            <header className="p-10 border-b border-white/5 flex items-start justify-between">
+              <div className="flex items-center gap-8">
+                <div className="w-24 h-24 bg-black/40 rounded-3xl flex items-center justify-center border border-white/10 shadow-xl overflow-hidden relative">
+                  {selectedTeam.logoUrl ? (
+                    <Image src={selectedTeam.logoUrl} alt="" fill className="object-contain" sizes="96px" />
+                  ) : (
+                    <Users size={40} className="text-gray-500" />
+                  )}
+                </div>
+                <div>
+                  <h2 className="text-5xl font-black uppercase tracking-tighter leading-none mb-4">{selectedTeam.name}</h2>
+                  <div className="flex items-center gap-6 text-[10px] font-black text-blue-500 uppercase tracking-widest">
+                    <span>{selectedTeam.players?.length || 0} Registered Members</span>
+                    <span>&bull;</span>
+                    <span>Seed #{selectedTeam.seed || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedTeam(null)}
+                className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-all text-gray-500 hover:text-white border border-white/5"
+              >
+                <X size={24} />
+              </button>
+            </header>
+
+            <div className="flex-1 overflow-y-auto p-10 custom-scrollbar grid grid-cols-1 md:grid-cols-2 gap-10">
+              <section className="space-y-6">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-gray-500 border-b border-white/5 pb-4">Roster & Stats</h3>
+                {selectedTeam.players?.map((p: any, idx: number) => (
+                  <div key={idx} className="bg-black/20 p-6 rounded-[2rem] border border-white/5 flex items-center justify-between group/p">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-blue-600/10 rounded-xl flex items-center justify-center text-blue-500 font-bold text-xs border border-blue-500/20">
+                        P{idx + 1}
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2 mb-1">
+                          {getFlagUrl(p.countryCode) && (
+                            <img 
+                              src={getFlagUrl(p.countryCode)!} 
+                              alt="" 
+                              className="w-4 h-3 object-cover rounded-[1px] opacity-80 group-hover/p:opacity-100 transition-opacity" 
+                            />
+                          )}
+                          <span className="text-lg font-bold uppercase tracking-tight group-hover/p:text-blue-500 transition-all">
+                            {p.nickname || p.name.split(' ')[0]}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest leading-none">
+                          {p.name}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                       {/* Deterministic mock stats consistent with MVP tab */}
+                       <div className="text-[8px] font-black text-gray-700 uppercase tracking-widest mb-1">Impact Rating</div>
+                       <span className="text-xl font-black text-white">{( (p.id.length * 0.13 + p.name.length * 0.07) % 2.5 + 0.5).toFixed(2)}</span>
+                    </div>
+                  </div>
+                ))}
+              </section>
+
+              <section className="space-y-6">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-gray-500 border-b border-white/5 pb-4">Tournament History</h3>
+                <div className="space-y-4">
+                  {matches.filter((m: any) => m.homeTeamId === selectedTeam.id || m.awayTeamId === selectedTeam.id)
+                    .sort((a: any, b: any) => b.round - a.round)
+                    .map((m: any) => {
+                      const isHome = m.homeTeamId === selectedTeam.id;
+                      const opponent = isHome ? m.awayTeam?.name : m.homeTeam?.name;
+                      const won = (isHome && m.homeScore > m.awayScore) || (!isHome && m.awayScore > m.homeScore);
+                      
+                      return (
+                        <div 
+                          key={m.id} 
+                          onClick={() => setSelectedMatch(m)}
+                          className="bg-white/5 p-5 rounded-2xl border border-white/5 flex items-center justify-between hover:border-blue-500/30 cursor-pointer group/hist transition-all"
+                        >
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Round {m.round}</span>
+                            <span className="text-[12px] font-bold text-gray-400 group-hover/hist:text-white transition-all">vs <span className="text-white uppercase">{opponent || 'TBD'}</span></span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="flex flex-col items-end">
+                               <span className="text-xl font-black font-mono tracking-tighter">
+                                 {m.homeScore} : {m.awayScore}
+                               </span>
+                               <span className={`text-[8px] font-black uppercase tracking-widest ${won ? 'text-blue-500' : 'text-red-500'}`}>
+                                 {won ? 'Victory' : 'Defeat'}
+                               </span>
+                            </div>
+                            <ArrowRight size={14} className="text-gray-700 group-hover/hist:translate-x-1 group-hover/hist:text-blue-500 transition-all" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  {matches.filter((m: any) => m.homeTeamId === selectedTeam.id || m.awayTeamId === selectedTeam.id).length === 0 && (
+                    <div className="text-center py-10 border border-dashed border-white/5 rounded-2xl">
+                       <p className="text-[10px] font-bold text-gray-700 uppercase tracking-widest">No Matches Found</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+            </div>
+            
+            <footer className="p-10 bg-black/20 border-t border-white/5 flex justify-end">
+               <button 
+                onClick={() => setSelectedTeam(null)}
+                className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-blue-600/20 active:scale-95"
+               >
+                 Close Overview
+               </button>
+            </footer>
+          </div>
+        </div>
+      )}
+
+      {/* PLAYER DETAILS MODAL */}
+      {selectedPlayer && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 sm:p-10">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setSelectedPlayer(null)}></div>
+          <div className="bg-[#16191d] w-full max-w-2xl rounded-[3.5rem] border border-white/10 shadow-2xl relative z-10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+            <header className="p-12 border-b border-white/5 relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[80px] rounded-full -mr-32 -mt-32"></div>
+               <div className="flex items-center justify-between relative z-10">
+                  <div className="flex items-center gap-8">
+                     <div className="w-20 h-20 bg-blue-600/20 rounded-[2rem] flex items-center justify-center border border-blue-500/30 text-blue-500 shadow-2xl shadow-blue-500/10">
+                        <Users size={32} />
+                     </div>
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                           {selectedPlayer && getFlagUrl(selectedPlayer.countryCode) && (
+                             <img 
+                               src={getFlagUrl(selectedPlayer.countryCode)!} 
+                               alt="" 
+                               className="w-8 h-6 rounded-md object-cover shadow-sm"
+                             />
+                           )}
+                           <h2 className="text-4xl font-black uppercase tracking-tighter">
+                             {selectedPlayer.nickname || selectedPlayer.name.split(' ')[0]}
+                           </h2>
+                        </div>
+                        <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mb-4">
+                           {selectedPlayer.name}
+                        </p>
+                        <div className="flex items-center gap-4 text-[10px] font-black text-blue-500 uppercase tracking-widest">
+                           <Trophy size={14} />
+                           <span>{selectedPlayer.teamName}</span>
+                           <span>&bull;</span>
+                           <span>Rank #{[...teams.flatMap((t: any) => t.players?.map((p: any) => ({ ...p, teamName: t.name })) || [])]
+                               .map((p: any) => ({
+                                 ...p,
+                                 kd: parseFloat(((p.id.length * 0.13 + p.name.length * 0.07) % 2.5 + 0.5).toFixed(2))
+                               }))
+                               .sort((a: any, b: any) => b.kd - a.kd)
+                               .findIndex(p => p.id === selectedPlayer.id) + 1}</span>
+                        </div>
+                      </div>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedPlayer(null)}
+                    className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-all text-gray-500 hover:text-white border border-white/5"
+                  >
+                    <X size={24} />
+                  </button>
+               </div>
+            </header>
+
+            <div className="p-12 space-y-12">
+               <div className="grid grid-cols-3 gap-8">
+                  <div className="bg-black/20 p-8 rounded-[2rem] border border-white/5 text-center">
+                     <span className="block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-4">K/D Ratio</span>
+                     <span className="text-4xl font-black text-blue-500">{selectedPlayer.kd || ( (selectedPlayer.id.length * 0.13 + selectedPlayer.name.length * 0.07) % 2.5 + 0.5).toFixed(2)}</span>
+                  </div>
+                  <div className="bg-black/20 p-8 rounded-[2rem] border border-white/5 text-center">
+                     <span className="block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-4">Total Kills</span>
+                     <span className="text-4xl font-black text-white">{selectedPlayer.kills || Math.floor((selectedPlayer.id.length * 7 + selectedPlayer.name.length * 3) % 40)}</span>
+                  </div>
+                  <div className="bg-black/20 p-8 rounded-[2rem] border border-white/5 text-center">
+                     <span className="block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-4">Impact</span>
+                     <span className="text-4xl font-black text-blue-500">{(selectedPlayer.kd * 100 || 120).toFixed(0)}</span>
+                  </div>
+               </div>
+
+               <section className="space-y-6">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-gray-500">Recent Performance</h3>
+                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                     <div className="h-full bg-blue-600 w-4/5 shadow-[0_0_15px_rgba(37,99,235,0.5)]"></div>
+                  </div>
+                  <p className="text-gray-500 text-[11px] font-bold leading-relaxed">
+                     {formatPlayerName(selectedPlayer)} has been showing exceptional form in the recent rounds, maintaining high impact and supporting the squad effectively. Currently one of the top contenders for the Tournament MVP title.
+                  </p>
+               </section>
+            </div>
+
+            <footer className="p-12 bg-black/20 border-t border-white/5 flex justify-end">
+               <button 
+                onClick={() => setSelectedPlayer(null)}
+                className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-5 rounded-2xl text-[12px] font-black uppercase tracking-widest transition-all shadow-xl shadow-blue-600/30 active:scale-95"
+               >
+                 Close Profile
+               </button>
+            </footer>
+          </div>
+        </div>
+      )}
+
+      {/* MATCH DETAILS MODAL */}
+      {selectedMatch && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 sm:p-10">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setSelectedMatch(null)}></div>
+          <div className="bg-[#16191d] w-full max-w-4xl max-h-[90vh] rounded-[3rem] border border-white/10 shadow-2xl relative z-10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+            <header className="p-10 border-b border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <div className="w-12 h-12 bg-blue-600/10 rounded-2xl flex items-center justify-center text-blue-500 border border-blue-500/20">
+                  <Gamepad2 size={24} />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-black uppercase tracking-tighter">Match Details</h2>
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">Round {selectedMatch.round} &bull; {selectedMatch.status}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedMatch(null)}
+                className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-all text-gray-500 hover:text-white border border-white/5"
+              >
+                <X size={24} />
+              </button>
+            </header>
+
+            <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-10 mb-16">
+                 {/* Home Team */}
+                 <div className="flex flex-col items-center gap-6 text-center">
+                    <div className="w-24 h-24 bg-black/40 rounded-3xl flex items-center justify-center border border-white/10 shadow-xl overflow-hidden relative">
+                      {selectedMatch.homeTeam?.logoUrl ? (
+                        <Image src={selectedMatch.homeTeam.logoUrl} alt="" fill className="object-contain" sizes="96px" />
+                      ) : (
+                        <Trophy size={40} className="text-gray-500" />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black uppercase tracking-tight mb-2">{selectedMatch.homeTeam?.name || 'TBD'}</h3>
+                      <span className="text-[10px] font-black text-blue-500/50 uppercase tracking-widest">Home Contender</span>
+                    </div>
+                 </div>
+
+                 {/* Score / VS */}
+                 <div className="flex flex-col items-center gap-6">
+                    <div className="flex items-center gap-8">
+                       <span className={`text-7xl font-black font-mono tracking-tighter ${selectedMatch.homeScore > selectedMatch.awayScore ? 'text-blue-500' : 'text-white/40'}`}>
+                         {selectedMatch.homeScore}
+                       </span>
+                       <span className="text-4xl font-black text-gray-800">:</span>
+                       <span className={`text-7xl font-black font-mono tracking-tighter ${selectedMatch.awayScore > selectedMatch.homeScore ? 'text-blue-500' : 'text-white/40'}`}>
+                         {selectedMatch.awayScore}
+                       </span>
+                    </div>
+                    <div className={`px-6 py-2 rounded-full border ${
+                      selectedMatch.status === 'LIVE' ? 'bg-red-500/10 border-red-500/20 text-red-500 animate-pulse' : 'bg-white/5 border-white/10 text-gray-500'
+                    }`}>
+                      <span className="text-[10px] font-black uppercase tracking-[0.3em]">{selectedMatch.status}</span>
+                    </div>
+                 </div>
+
+                 {/* Away Team */}
+                 <div className="flex flex-col items-center gap-6 text-center">
+                    <div className="w-24 h-24 bg-black/40 rounded-3xl flex items-center justify-center border border-white/10 shadow-xl overflow-hidden relative">
+                      {selectedMatch.awayTeam?.logoUrl ? (
+                        <Image src={selectedMatch.awayTeam.logoUrl} alt="" fill className="object-contain" sizes="96px" />
+                      ) : (
+                        <Trophy size={40} className="text-gray-500" />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black uppercase tracking-tight mb-2">{selectedMatch.awayTeam?.name || 'TBD'}</h3>
+                      <span className="text-[10px] font-black text-blue-500/50 uppercase tracking-widest">Away Contender</span>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10 border-t border-white/5 pt-16">
+                 <section className="space-y-6">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.5em] text-gray-500 mb-8">Home Stats (Simulated)</h4>
+                    {selectedMatch.homeTeam?.players?.map((p: any, idx: number) => (
+                      <div key={idx} className="bg-black/20 p-6 rounded-2xl border border-white/5 flex items-center justify-between">
+                        <span className="text-sm font-bold uppercase text-gray-400">{formatPlayerName(p)}</span>
+                        <div className="flex items-center gap-8">
+                           <div className="text-right">
+                              <div className="text-[8px] font-black text-gray-700 uppercase mb-1">K/D</div>
+                              <span className="text-lg font-black text-white">{( (p.id.length * 0.13 + p.name.length * 0.07) % 2.5 + 0.5).toFixed(2)}</span>
+                           </div>
+                           <div className="text-right">
+                              <div className="text-[8px] font-black text-gray-700 uppercase mb-1">Impact</div>
+                              <span className="text-lg font-black text-blue-500">{Math.floor((p.id.length * 7 + p.name.length * 3) % 40)}</span>
+                           </div>
+                        </div>
+                      </div>
+                    ))}
+                 </section>
+
+                 <section className="space-y-6">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.5em] text-gray-500 mb-8">Away Stats (Simulated)</h4>
+                    {selectedMatch.awayTeam?.players?.map((p: any, idx: number) => (
+                      <div key={idx} className="bg-black/20 p-6 rounded-2xl border border-white/5 flex items-center justify-between">
+                        <span className="text-sm font-bold uppercase text-gray-400">{formatPlayerName(p)}</span>
+                        <div className="flex items-center gap-8">
+                           <div className="text-right">
+                              <div className="text-[8px] font-black text-gray-700 uppercase mb-1">K/D</div>
+                              <span className="text-lg font-black text-white">{( (p.id.length * 0.13 + p.name.length * 0.07) % 2.5 + 0.5).toFixed(2)}</span>
+                           </div>
+                           <div className="text-right">
+                              <div className="text-[8px] font-black text-gray-700 uppercase mb-1">Impact</div>
+                              <span className="text-lg font-black text-blue-500">{Math.floor((p.id.length * 7 + p.name.length * 3) % 40)}</span>
+                           </div>
+                        </div>
+                      </div>
+                    ))}
+                 </section>
+              </div>
+            </div>
+
+            <footer className="p-10 bg-black/20 border-t border-white/5 flex justify-end">
+               <button 
+                onClick={() => setSelectedMatch(null)}
+                className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-blue-600/20 active:scale-95"
+               >
+                 Close Details
+               </button>
+            </footer>
+          </div>
+        </div>
+      )}
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {

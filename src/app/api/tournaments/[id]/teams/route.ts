@@ -14,6 +14,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
                 select: {
                     id: true,
                     name: true,
+                    nickname: true,
+                    countryCode: true,
                     seating: true,
                     steamId: true
                 }
@@ -38,6 +40,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
         const resolvedPlayers = await Promise.all(
             Array.isArray(players) ? players.map(async (p: any) => ({
                 name: p.name,
+                nickname: p.nickname || null,
+                countryCode: p.countryCode || null,
                 seating: p.seating || null,
                 steamId: p.steamId ? await resolveSteamId(p.steamId) : null
             })) : []

@@ -41,6 +41,8 @@ model Team {
 model Player {
   id        String  @id @default(uuid())
   name      String
+  nickname  String?
+  countryCode String?
   seating   String? // e.g., "A1"
   steamId   String? // SteamID64
   isOnline  Boolean @default(false)

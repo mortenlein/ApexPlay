@@ -44,7 +44,16 @@
 
 ---
 
-## 5. Final Verdict
+## 6. Phase 5: User-Driven Refinements
+Following initial feedback, the following improvements were implemented and verified:
+- **MR8 Scoring:** Scores now correctly reflect the "first to 9" rule with overtime support (e.g., 11:13 wins).
+- **Roster Visibility:** Team cards redesigned to show both players without scrolling.
+- **Team Detail Accessibility:** Implemented a Modal to view player stats and full match history.
+- **Schedule UX:** Added "GAME #" labels and chronological sorting.
+
+---
+
+## 7. Final Verdict
 The ApexPlay architecture is robust enough to handle 128-team bracket tournaments. The core UI performance is excellent, and the data layer scales efficiently.
 
 **MISSION COMPLETE. TERMINATING PROCESS.**
