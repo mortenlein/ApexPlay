@@ -142,18 +142,18 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
                 <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-purple-600/[0.03] blur-[150px] rounded-full"></div>
             </div>
 
-            <div className="relative z-10 max-w-5xl mx-auto px-10 py-20 md:py-32">
-                <header className="text-center mb-24 space-y-8">
-                    <div className="inline-flex items-center gap-3 bg-white/5 border border-white/5 px-6 py-2 rounded-full shadow-2xl">
-                        <Trophy size={14} className="text-blue-500" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Battle Entry Interface</span>
+            <div className="relative z-10 max-w-6xl mx-auto px-10 py-24 md:py-40">
+                <header className="text-center mb-32 space-y-10">
+                    <div className="inline-flex items-center gap-4 bg-white/5 border border-white/5 px-8 py-3 rounded-full shadow-2xl backdrop-blur-md">
+                        <Trophy size={16} className="text-blue-500" />
+                        <span className="text-[11px] font-black uppercase tracking-[0.4em] text-gray-300">Competitive Entry Interface</span>
                     </div>
-                    <div className="space-y-4">
-                        <h1 className="text-6xl md:text-8xl font-extrabold uppercase tracking-tighter text-white leading-none not-italic">
+                    <div className="space-y-6">
+                        <h1 className="text-6xl md:text-9xl font-extrabold uppercase tracking-tight text-white leading-none not-italic">
                             {tournament?.name || 'INITIALIZING...'}
                         </h1>
-                        <p className="text-gray-500 font-bold uppercase tracking-[0.4em] text-[10px] not-italic">
-                            {tournament?.teamSize}v{tournament?.teamSize} Competitive Protocol • Single Elimination
+                        <p className="text-gray-400 font-bold uppercase tracking-[0.5em] text-[11px] not-italic">
+                            {tournament?.teamSize}v{tournament?.teamSize} Tactical Protocol • {tournament?.format} Framework
                         </p>
                     </div>
                 </header>
@@ -175,18 +175,18 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 relative z-10">
                                 <div className="lg:col-span-12 space-y-12">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                                        <div className="space-y-4">
-                                            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Team Designation</label>
+                                        <div className="space-y-6">
+                                            <label className="block text-xs font-black text-gray-500 uppercase tracking-[0.3em] ml-1">Team Designation</label>
                                             <div className="relative">
                                                 <input 
                                                     type="text"
                                                     required
                                                     value={teamData.name}
                                                     onChange={(e) => setTeamData({ ...teamData, name: e.target.value })}
-                                                    className="w-full bg-black/40 border border-white/5 rounded-[1.5rem] px-8 py-6 text-xl font-bold text-white focus:outline-none focus:border-blue-500/50 transition-all placeholder:text-white/5"
+                                                    className="w-full bg-black/40 border border-white/5 rounded-[2rem] px-10 py-8 text-2xl font-bold text-white focus:outline-none focus:border-blue-500/50 transition-all placeholder:text-white/10 shadow-inner"
                                                     placeholder="Enter Team Name..."
                                                 />
-                                                <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-20"><Gamepad2 size={24} /></div>
+                                                <div className="absolute right-8 top-1/2 -translate-y-1/2 text-blue-500/30"><Gamepad2 size={28} /></div>
                                             </div>
                                         </div>
                                         <div className="space-y-4">
@@ -328,18 +328,18 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
                         <button 
                             type="submit"
                             disabled={submitting}
-                            className="w-full bg-blue-600 hover:bg-blue-500 py-10 rounded-[2.5rem] font-black uppercase text-[11px] tracking-[0.3em] transition-all disabled:opacity-50 shadow-[0_30px_60px_-15px_rgba(37,99,235,0.4)] flex items-center justify-center gap-6 active:scale-[0.98] group overflow-hidden relative"
+                            className="w-full bg-blue-600 hover:bg-blue-500 py-12 rounded-[3.5rem] font-black uppercase text-sm tracking-[0.4em] transition-all disabled:opacity-50 shadow-[0_40px_80px_-20px_rgba(37,99,235,0.4)] flex items-center justify-center gap-8 active:scale-[0.98] group overflow-hidden relative"
                         >
-                            <div className="absolute inset-0 bg-white/5 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
+                            <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-700"></div>
                             {submitting ? (
-                                <div className="flex items-center gap-4">
-                                    <Loader2 className="animate-spin" size={20} />
+                                <div className="flex items-center gap-6">
+                                    <Loader2 className="animate-spin text-white" size={28} />
                                     <span>Syncing Roster...</span>
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-4 relative z-10">
+                                <div className="flex items-center gap-6 relative z-10">
                                     <span>Execute Enrollment Protocol</span>
-                                    <ArrowRight size={20} className="group-hover:translate-x-3 transition-transform duration-500" />
+                                    <ArrowRight size={24} className="group-hover:translate-x-4 transition-transform duration-500" />
                                 </div>
                             )}
                         </button>

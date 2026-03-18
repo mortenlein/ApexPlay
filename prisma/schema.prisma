@@ -1,9 +1,10 @@
 generator client {
   provider = "prisma-client-js"
+  engineType = "library"
 }
 
 datasource db {
-  provider = "sqlite" // Dynamically replaced by scripts/setup-db.js on Netlify
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 

@@ -302,28 +302,29 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
     return (
         <div className="flex h-screen bg-[#0d0f12] text-white overflow-hidden font-sans">
             {/* MOBILE NAVIGATION DRAWER */}
+            {/* MOBILE NAVIGATION DRAWER */}
             {isMenuOpen && (
                 <div className="fixed inset-0 z-[200] md:hidden">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)}></div>
-                    <div className="absolute top-0 left-0 bottom-0 w-72 bg-[#16191d] p-8 flex flex-col gap-8 shadow-2xl border-r border-white/5">
+                    <div className="absolute top-0 left-0 bottom-0 w-80 bg-[#16191d] p-8 flex flex-col gap-8 shadow-2xl border-r border-white/5">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-                                    <Trophy size={20} className="text-white" />
+                                <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center">
+                                    <Trophy size={24} className="text-white" />
                                 </div>
-                                <span className="font-black uppercase tracking-tighter text-xl">ApexPlay</span>
+                                <span className="font-black uppercase tracking-tighter text-2xl group-hover:text-blue-500 transition-colors">ApexPlay</span>
                             </div>
-                            <button onClick={() => setIsMenuOpen(false)} className="p-2 hover:bg-white/5 rounded-xl transition-all">
-                                <X size={20} className="text-gray-400" />
+                            <button onClick={() => setIsMenuOpen(false)} className="p-3 hover:bg-white/5 rounded-2xl transition-all">
+                                <X size={24} className="text-gray-400" />
                             </button>
                         </div>
                         
-                        <nav className="flex flex-col gap-4">
+                        <nav className="flex flex-col gap-3">
                             <Link 
                                 href="/dashboard" 
-                                className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 font-bold uppercase tracking-widest text-[10px] text-gray-400 hover:text-white transition-all"
+                                className="flex items-center gap-4 p-5 rounded-2xl bg-white/5 border border-white/5 font-bold uppercase tracking-widest text-[11px] text-gray-400 hover:text-white transition-all mb-4"
                             >
-                                <ArrowLeft size={16} /> Back to Dashboard
+                                <ArrowLeft size={18} /> Back to Dashboard
                             </Link>
                             
                             {[
@@ -340,8 +341,8 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
                                     }}
                                     className={`flex items-center gap-4 p-5 rounded-2xl transition-all border ${activeTab === tab.id ? 'bg-blue-600/10 text-blue-500 border-blue-500/20' : 'text-gray-500 border-transparent hover:bg-white/5'}`}
                                 >
-                                    <tab.icon size={20} />
-                                    <span className="font-black uppercase tracking-widest text-[10px]">{tab.label}</span>
+                                    <tab.icon size={22} />
+                                    <span className="font-black uppercase tracking-widest text-[11px]">{tab.label}</span>
                                 </button>
                             ))}
                         </nav>
@@ -351,26 +352,29 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
                                 href={`/tournaments/${tournamentId}`} 
                                 target="_blank"
                                 onClick={() => setIsMenuOpen(false)}
-                                className="flex items-center gap-4 p-5 rounded-2xl text-gray-500 hover:text-white hover:bg-white/5 transition-all border border-transparent"
+                                className="flex items-center gap-4 p-6 rounded-2xl text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent font-bold uppercase tracking-widest text-[11px]"
                             >
-                                <ExternalLink size={20} />
-                                <span className="font-black uppercase tracking-widest text-[10px]">Public View</span>
+                                <ExternalLink size={22} />
+                                <span>Public View</span>
                             </Link>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* LEFT SIDEBAR (SLIM - DESKTOP ONLY) */}
-            <aside className="hidden md:flex w-20 bg-[#16191d] border-r border-white/5 flex flex-col items-center py-8 gap-10 shrink-0">
-                <Link href="/dashboard" className="w-12 h-12 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl flex items-center justify-center transition-all group relative">
-                    <ArrowLeft size={20} className="text-gray-400 group-hover:text-white" />
-                    <span className="absolute left-20 bg-black text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 shadow-2xl">
-                        Dashboard
-                    </span>
-                </Link>
+            {/* LEFT SIDEBAR (EXPANDABLE - DESKTOP ONLY) */}
+            <aside className="hidden md:flex w-64 bg-[#16191d] border-r border-white/5 flex flex-col py-8 gap-8 shrink-0 overflow-y-auto custom-scrollbar">
+                <div className="px-6 mb-4">
+                    <Link href="/dashboard" className="flex items-center gap-4 group transition-all">
+                        <div className="w-12 h-12 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl flex items-center justify-center transition-all">
+                            <ArrowLeft size={20} className="text-gray-400 group-hover:text-white" />
+                        </div>
+                        <span className="font-bold text-gray-400 group-hover:text-white uppercase tracking-widest text-[11px]">Dashboard</span>
+                    </Link>
+                </div>
                 
-                <nav className="flex flex-col gap-6">
+                <nav className="flex flex-col gap-2 px-3">
+                    <div className="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-4">Management</div>
                     {[
                         { id: "overview", icon: Trophy, label: "Overview" },
                         { id: "participants", icon: Users, label: "Participants" },
@@ -380,22 +384,22 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all group relative ${activeTab === tab.id ? 'bg-blue-600/10 text-blue-500 border border-blue-500/20' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
+                            className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group relative font-bold uppercase tracking-widest text-[11px] ${activeTab === tab.id ? 'bg-blue-600/10 text-blue-500 border border-blue-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'}`}
                         >
-                            <tab.icon size={22} strokeWidth={2} />
-                            <span className="absolute left-20 bg-black text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 shadow-2xl">
-                                {tab.label}
-                            </span>
+                            <tab.icon size={20} strokeWidth={2.5} className={activeTab === tab.id ? 'text-blue-500' : 'group-hover:text-blue-500 transition-colors'} />
+                            <span>{tab.label}</span>
                         </button>
                     ))}
                 </nav>
 
-                <div className="mt-auto flex flex-col gap-6">
-                    <Link href={`/tournaments/${tournamentId}`} target="_blank" className="w-12 h-12 rounded-2xl flex items-center justify-center text-gray-500 hover:text-blue-500 transition-all group relative border border-white/5 bg-white/5">
-                        <ExternalLink size={20} />
-                        <span className="absolute left-20 bg-black text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 shadow-2xl">
-                            Public View
-                        </span>
+                <div className="mt-auto flex flex-col gap-2 px-3 pt-8 border-t border-white/5">
+                    <Link 
+                        href={`/tournaments/${tournamentId}`} 
+                        target="_blank" 
+                        className="flex items-center gap-4 px-4 py-3.5 rounded-2xl text-gray-400 hover:text-blue-500 hover:bg-blue-500/5 transition-all font-bold uppercase tracking-widest text-[11px] group border border-transparent"
+                    >
+                        <ExternalLink size={20} className="group-hover:translate-x-0.5 transition-transform" />
+                        <span>Public View</span>
                     </Link>
                 </div>
             </aside>
@@ -403,72 +407,73 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
             {/* MAIN CONTENT AREA */}
             <div className="flex-1 flex flex-col overflow-hidden relative">
                 {/* HEADER BAR */}
-                <header className="relative w-full overflow-hidden shrink-0 border-b border-white/5">
+                <header className="relative w-full overflow-hidden shrink-0 border-b border-white/10 h-40 md:h-56">
                   {/* Game Banner Background */}
                   <div className="absolute inset-0 z-0">
                     <Image 
                       src={gameMeta?.bannerUrl || ''} 
                       fill
-                      className="object-cover grayscale-[0.3] brightness-[0.4]" 
+                      className="object-cover grayscale-[0.2] brightness-[0.3]" 
                       alt=""
                       priority
                       sizes="100vw"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#0d0f12] via-[#0d0f12]/60 to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#0d0f12] via-[#0d0f12]/40 to-transparent"></div>
+                    <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#0d0f12] to-transparent"></div>
                   </div>
 
-                  <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-8 md:py-12 relative z-10 flex items-center justify-between gap-6">
-                    <div className="flex items-center gap-6 md:gap-10">
+                  <div className="max-w-[1600px] mx-auto h-full px-6 md:px-12 relative z-10 flex items-center justify-between gap-8">
+                    <div className="flex items-center gap-8 md:gap-12">
                       <button 
                         onClick={() => setIsMenuOpen(true)}
-                        className="md:hidden p-2 hover:bg-white/5 rounded-xl transition-all text-gray-400 shrink-0"
+                        className="md:hidden p-3 hover:bg-white/5 rounded-2xl transition-all text-gray-400 shrink-0"
                       >
-                        <Menu size={24} />
+                        <Menu size={28} />
                       </button>
                       
                       {/* Game Logo Badge - Hidden on small mobile */}
-                      <div className="hidden sm:flex w-16 h-16 md:w-20 md:h-20 bg-white/5 backdrop-blur-2xl rounded-2xl border border-white/10 items-center justify-center p-3 relative shrink-0">
+                      <div className="hidden sm:flex w-24 h-24 md:w-32 md:h-32 bg-white/5 backdrop-blur-3xl rounded-3xl border border-white/10 items-center justify-center p-5 relative shrink-0 shadow-2xl">
                         <Image 
                             src={gameMeta?.logoUrl || ''} 
-                            width={56} 
-                            height={56} 
-                            className="object-contain" 
+                            width={80} 
+                            height={80} 
+                            className="object-contain drop-shadow-[0_0_20px_rgba(37,99,235,0.4)]" 
                             alt={tournament.game} 
-                            sizes="56px"
+                            sizes="80px"
                         />
                       </div>
 
-                      <div className="space-y-2 md:space-y-3 truncate">
-                        <div className="flex items-center gap-3 overflow-hidden">
-                          <span className="bg-blue-500/10 text-blue-400 text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] px-3 py-1 rounded-full border border-blue-500/20 whitespace-nowrap">
+                      <div className="space-y-3 md:space-y-4 truncate">
+                        <div className="flex items-center gap-4 overflow-hidden">
+                          <span className="bg-blue-600/20 text-blue-400 text-[10px] md:text-[11px] font-black uppercase tracking-[0.3em] px-4 py-1.5 rounded-full border border-blue-500/20 whitespace-nowrap backdrop-blur-md">
                             {tournament.game} / {tournament.category}
                           </span>
-                          <span className="hidden sm:inline bg-white/5 text-gray-500 text-[9px] font-black uppercase tracking-[0.3em] px-3 py-1 rounded-full border border-white/10 whitespace-nowrap">
-                            Management
+                          <span className="hidden sm:inline bg-white/5 text-gray-400 text-[11px] font-black uppercase tracking-[0.3em] px-4 py-1.5 rounded-full border border-white/10 whitespace-nowrap backdrop-blur-md">
+                            Management Command
                           </span>
                         </div>
-                        <h1 className="text-xl sm:text-2xl md:text-4xl font-black uppercase tracking-tighter leading-none drop-shadow-2xl truncate">
+                        <h1 className="text-2xl sm:text-3xl md:text-5xl font-black uppercase tracking-tighter leading-none drop-shadow-2xl truncate">
                           {tournament.name}
                         </h1>
-                        <div className="flex items-center gap-4 md:gap-8 text-[8px] md:text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">
-                          <div className="flex items-center gap-2">
-                            <Users size={12} className="text-blue-500" />
-                            <span>{teams.length} Teams</span>
+                        <div className="flex items-center gap-6 md:gap-10 text-[10px] md:text-[11px] font-black text-gray-300 uppercase tracking-[0.3em]">
+                          <div className="flex items-center gap-3">
+                            <Users size={18} className="text-blue-500" />
+                            <span>{teams.length} Teams Registered</span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Sword size={12} className="text-blue-500" />
-                            <span>{matches.length} Matches</span>
+                          <div className="flex items-center gap-3">
+                            <Sword size={18} className="text-blue-500" />
+                            <span>{matches.length} Brackets Matches</span>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="hidden lg:flex items-center gap-4">
-                        <Link href={`/bracket/${tournament.id}/roster`} target="_blank" className="bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white h-12 px-6 rounded-2xl font-black text-[10px] tracking-widest transition-all border border-white/5 active:scale-95 flex items-center gap-3 uppercase">
-                            <Users size={16} /> Roster Overlay
+                    <div className="hidden lg:flex items-center gap-6">
+                        <Link href={`/bracket/${tournament.id}/roster`} target="_blank" className="bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white h-14 px-8 rounded-2xl font-black text-[11px] tracking-widest transition-all border border-white/10 active:scale-95 flex items-center gap-4 uppercase shadow-xl">
+                            <Users size={20} /> Roster Overlay
                         </Link>
-                        <Link href={`/bracket/${tournament.id}/overlay`} target="_blank" className="bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white h-12 px-8 rounded-2xl font-black text-[10px] tracking-widest transition-all border border-blue-500/20 active:scale-95 flex items-center gap-3 uppercase">
-                            <Gamepad2 size={16} /> Broadcast Overlay
+                        <Link href={`/bracket/${tournament.id}/overlay`} target="_blank" className="bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white h-14 px-10 rounded-2xl font-black text-[11px] tracking-widest transition-all border border-blue-500/30 active:scale-95 flex items-center gap-4 uppercase shadow-xl shadow-blue-600/20">
+                            <Gamepad2 size={20} /> Broadcast Overlay
                         </Link>
                     </div>
                   </div>

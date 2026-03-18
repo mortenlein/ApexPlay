@@ -132,7 +132,7 @@ export default function TournamentView({ id }: TournamentViewProps) {
                 <X size={24} />
               </button>
             </div>
-            <nav className="flex flex-col gap-4">
+            <nav className="flex flex-col gap-3">
               {[
                 { id: "overview", icon: Home, label: "Home" },
                 { 
@@ -147,11 +147,11 @@ export default function TournamentView({ id }: TournamentViewProps) {
                 <button
                   key={tab.id}
                   onClick={() => { setActiveTab(tab.id); setIsMenuOpen(false); }}
-                  className={`flex items-center gap-4 p-4 rounded-2xl transition-all font-bold uppercase tracking-widest text-[10px] ${
-                    activeTab === tab.id ? "bg-blue-600 text-white" : "hover:bg-white/5 text-gray-400"
+                  className={`flex items-center gap-5 p-5 rounded-2xl transition-all font-bold uppercase tracking-widest text-[11px] border-2 ${
+                    activeTab === tab.id ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20" : "hover:bg-white/5 text-gray-400 border-transparent"
                   }`}
                 >
-                  <tab.icon size={20} />
+                  <tab.icon size={22} strokeWidth={2.5} />
                   {tab.label}
                 </button>
               ))}
@@ -160,13 +160,19 @@ export default function TournamentView({ id }: TournamentViewProps) {
         </div>
       )}
 
-      {/* LEFT SIDEBAR (SLIM - DESKTOP ONLY) */}
-      <aside className="hidden md:flex w-20 bg-[#16191d] border-r border-white/5 flex-col items-center py-8 gap-10 shrink-0">
-        <Link href="/tournaments" className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 active:scale-95 transition-all">
-          <Trophy size={24} className="text-white" />
-        </Link>
+      {/* LEFT SIDEBAR (EXPANDABLE - DESKTOP ONLY) */}
+      <aside className="hidden md:flex w-64 bg-[#16191d] border-r border-white/5 flex-col py-8 gap-8 shrink-0 overflow-y-auto custom-scrollbar">
+        <div className="px-6 mb-4">
+            <Link href="/" className="flex items-center gap-4 group transition-all">
+                <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 active:scale-95 group-hover:bg-blue-500 transition-all">
+                    <Trophy size={26} className="text-white" />
+                </div>
+                <span className="font-extrabold text-2xl tracking-tighter uppercase group-hover:text-blue-500 transition-colors">ApexPlay</span>
+            </Link>
+        </div>
         
-        <nav className="flex flex-col gap-6 font-mono font-bold uppercase text-[10px] tracking-widest text-[#5e636e]">
+        <nav className="flex flex-col gap-2 px-3">
+          <div className="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-4">Tournament</div>
           {[
             { id: "overview", icon: Home, label: "Home" },
             { 
@@ -181,26 +187,24 @@ export default function TournamentView({ id }: TournamentViewProps) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center gap-2 transition-all group ${
-                activeTab === tab.id ? "text-blue-500" : "hover:text-white"
+              className={`flex items-center gap-4 px-4 py-4 rounded-2xl transition-all group relative font-bold uppercase tracking-widest text-[11px] border border-transparent ${
+                activeTab === tab.id ? "bg-blue-600/10 text-blue-500 border-blue-500/20" : "text-gray-400 hover:text-white hover:bg-white/5"
               }`}
             >
-              <div className={`p-3 rounded-xl transition-all ${
-                activeTab === tab.id ? "bg-blue-500/10" : "group-hover:bg-white/5"
-              }`}>
-                <tab.icon size={20} />
-              </div>
-              <span className="text-[8px]">{tab.label}</span>
+              <tab.icon size={20} className={activeTab === tab.id ? "text-blue-500" : "group-hover:text-blue-500 transition-colors"} strokeWidth={2.5} />
+              <span>{tab.label}</span>
             </button>
           ))}
         </nav>
 
-        <div className="mt-auto flex flex-col gap-6">
-          <button className="p-3 rounded-xl text-gray-600 hover:text-white hover:bg-white/5 transition-all">
+        <div className="mt-auto flex flex-col gap-2 px-3 pt-8 border-t border-white/5">
+          <button className="flex items-center gap-4 px-4 py-4 rounded-2xl text-gray-400 hover:text-white hover:bg-white/5 transition-all font-bold uppercase tracking-widest text-[11px]">
             <Bell size={20} />
+            <span>Alerts</span>
           </button>
-          <button className="p-3 rounded-xl text-gray-600 hover:text-white hover:bg-white/5 transition-all">
+          <button className="flex items-center gap-4 px-4 py-4 rounded-2xl text-gray-400 hover:text-white hover:bg-white/5 transition-all font-bold uppercase tracking-widest text-[11px]">
             <Settings size={20} />
+            <span>Settings</span>
           </button>
         </div>
       </aside>
@@ -223,7 +227,9 @@ export default function TournamentView({ id }: TournamentViewProps) {
             <div className="absolute inset-0 bg-gradient-to-r from-[#0d0f12] via-[#0d0f12]/60 to-transparent"></div>
           </div>
 
-          <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-10 md:py-16 relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8 md:gap-0">
+          <div className={`max-w-[1600px] mx-auto px-6 md:px-12 relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-10 md:gap-0 transition-all duration-500 ${
+            activeTab === 'overview' ? 'py-10 md:py-20' : 'py-6 md:py-10'
+          }`}>
             <div className="flex items-center gap-6 md:gap-10">
               {/* Hamburger Button (Mobile) */}
               <button 
@@ -234,14 +240,18 @@ export default function TournamentView({ id }: TournamentViewProps) {
               </button>
 
               {/* Game Logo Badge */}
-              <div className="w-16 h-16 md:w-24 md:h-24 bg-white/5 backdrop-blur-2xl rounded-2xl md:rounded-[2rem] border border-white/10 flex items-center justify-center p-3 md:p-4 relative shrink-0">
+              <div className={`bg-white/5 backdrop-blur-2xl rounded-2xl border border-white/10 flex items-center justify-center relative shrink-0 transition-all duration-500 ${
+                activeTab === 'overview' 
+                  ? 'w-16 h-16 md:w-24 md:h-24 md:rounded-[2rem] p-3 md:p-4' 
+                  : 'w-12 h-12 md:w-16 md:h-16 md:rounded-2xl p-2 md:p-3'
+              }`}>
                 <Image 
                   src={gameMeta?.logoUrl || ''} 
-                  width={64} 
-                  height={64} 
+                  width={activeTab === 'overview' ? 64 : 40} 
+                  height={activeTab === 'overview' ? 64 : 40} 
                   className="object-contain" 
                   alt={tournament.game} 
-                  sizes="64px"
+                  sizes={activeTab === 'overview' ? "64px" : "40px"}
                 />
               </div>
 
@@ -257,25 +267,31 @@ export default function TournamentView({ id }: TournamentViewProps) {
                     </span>
                   )}
                 </div>
-                <h1 className="text-3xl sm:text-4xl md:text-7xl font-black uppercase tracking-tighter leading-none mb-4 drop-shadow-2xl">
+                <h1 className={`font-black uppercase tracking-tighter leading-none transition-all duration-500 ${
+                  activeTab === 'overview' 
+                    ? 'text-4xl sm:text-5xl md:text-8xl mb-6 drop-shadow-[0_0_50px_rgba(0,0,0,0.8)]' 
+                    : 'text-2xl sm:text-3xl md:text-5xl mb-4 drop-shadow-[0_0_30px_rgba(0,0,0,0.8)]'
+                }`}>
                   {tournament.name}
                 </h1>
-                <div className="flex flex-wrap items-center gap-6 md:gap-10 text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] md:tracking-[0.3em]">
+                <div className={`flex flex-wrap items-center font-black text-gray-300 uppercase tracking-[0.3em] transition-all duration-500 ${
+                  activeTab === 'overview' ? 'gap-8 md:gap-12 text-[10px] md:text-[11px]' : 'gap-4 md:gap-8 text-[9px] md:text-[10px]'
+                }`}>
                   <div className="flex items-center gap-3">
-                    <Users size={14} className="text-blue-500" />
-                    <span>{teams.length} Participants</span>
+                    <Users size={activeTab === 'overview' ? 18 : 14} className="text-blue-500" />
+                    <span>{teams.length} Global Participants</span>
+                  </div>
+                  <div className={`items-center gap-3 ${activeTab === 'overview' ? 'md:hidden lg:flex' : 'hidden'}`}>
+                    <Gamepad2 size={18} className="text-blue-500" />
+                    <span>{matches.length} Total Brackets</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Gamepad2 size={14} className="text-blue-500" />
-                    <span>{matches.length} Total Matches</span>
+                    <Trophy size={activeTab === 'overview' ? 18 : 14} className="text-blue-500" />
+                    <span>{tournament.teamSize}v{tournament.teamSize} Combat Mode</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Trophy size={14} className="text-blue-500" />
-                    <span>{tournament.teamSize}v{tournament.teamSize} Mode</span>
-                  </div>
-                   <div className="flex items-center gap-3">
-                    <Layout size={14} className="text-blue-500" />
-                    <span>{tournament.format} Format</span>
+                   <div className={`items-center gap-3 ${activeTab === 'overview' ? 'hidden sm:flex' : 'hidden md:flex'}`}>
+                    <Layout size={activeTab === 'overview' ? 18 : 14} className="text-blue-500" />
+                    <span>{tournament.format} Tournament</span>
                   </div>
                 </div>
               </div>

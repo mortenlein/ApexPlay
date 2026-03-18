@@ -101,39 +101,41 @@ export default function DashboardClient() {
                 </div>
             )}
 
-            {/* LEFT SIDEBAR (SLIM - DESKTOP ONLY) */}
-            <aside className="hidden md:flex w-20 bg-[#16191d] border-r border-white/5 flex-col items-center py-8 gap-10 shrink-0">
-                <Link href="/" className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 active:scale-95 transition-all">
-                    <Trophy size={24} className="text-white" />
-                </Link>
+            {/* LEFT SIDEBAR (EXPANDABLE - DESKTOP ONLY) */}
+            <aside className="hidden md:flex w-64 bg-[#16191d] border-r border-white/5 flex-col py-8 gap-8 shrink-0 overflow-y-auto custom-scrollbar">
+                <div className="px-6 mb-4">
+                    <Link href="/" className="flex items-center gap-4 group transition-all">
+                        <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 active:scale-95 group-hover:bg-blue-500">
+                            <Trophy size={24} className="text-white" />
+                        </div>
+                        <span className="font-extrabold text-xl tracking-tighter uppercase group-hover:text-blue-500 transition-colors">ApexPlay</span>
+                    </Link>
+                </div>
                 
-                <nav className="flex flex-col gap-6">
+                <nav className="flex flex-col gap-2 px-3">
+                    <div className="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-4">Menu</div>
                     {[
-                        { id: "dashboard", icon: Layout, label: "Dashboard" },
-                        { id: "create", icon: Plus, label: "Create", onClick: () => setIsCreating(true) },
+                        { id: "dashboard", icon: Layout, label: "Dashboard", onClick: () => router.push('/dashboard') },
+                        { id: "create", icon: Plus, label: "Create Tournament", onClick: () => setIsCreating(true) },
                     ].map((tab) => (
                         <button
                             key={tab.id}
                             onClick={tab.onClick || (() => {})}
-                            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all group relative text-gray-500 hover:text-white hover:bg-white/5`}
+                            className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group relative text-gray-400 hover:text-white hover:bg-white/5 font-bold uppercase tracking-widest text-[11px]`}
                         >
-                            <tab.icon size={22} strokeWidth={2} />
-                            <span className="absolute left-20 bg-black text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 shadow-2xl">
-                                {tab.label}
-                            </span>
+                            <tab.icon size={20} strokeWidth={2.5} className="group-hover:text-blue-500 transition-colors" />
+                            <span>{tab.label}</span>
                         </button>
                     ))}
                 </nav>
 
-                <div className="mt-auto flex flex-col gap-6">
+                <div className="mt-auto flex flex-col gap-2 px-3 pt-8 border-t border-white/5">
                     <button 
                         onClick={handleLogout}
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center text-gray-500 hover:text-red-500 transition-all group relative"
+                        className="flex items-center gap-4 px-4 py-3.5 rounded-2xl text-gray-400 hover:text-red-500 hover:bg-red-500/5 transition-all font-bold uppercase tracking-widest text-[11px] group"
                     >
-                        <LogOut size={22} />
-                        <span className="absolute left-20 bg-black text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 shadow-2xl">
-                            Logout
-                        </span>
+                        <LogOut size={20} className="group-hover:translate-x-0.5 transition-transform" />
+                        <span>Logout</span>
                     </button>
                 </div>
             </aside>
@@ -141,17 +143,17 @@ export default function DashboardClient() {
             {/* MAIN CONTENT AREA */}
             <main className="flex-1 flex flex-col relative overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.05),transparent_40%)]">
                 {/* HEADER */}
-                <header className="h-24 px-6 md:px-10 flex items-center justify-between border-b border-white/5 shrink-0 gap-4">
-                    <div className="flex items-center gap-4">
+                <header className="h-28 px-6 md:px-12 flex items-center justify-between border-b border-white/5 shrink-0 gap-4 bg-black/20 backdrop-blur-md sticky top-0 z-50">
+                    <div className="flex items-center gap-6">
                         <button 
                             onClick={() => setIsMenuOpen(true)}
-                            className="p-2 hover:bg-white/5 rounded-xl transition-all md:hidden text-gray-400"
+                            className="p-3 hover:bg-white/5 rounded-2xl transition-all md:hidden text-gray-400"
                         >
-                            <Menu size={24} />
+                            <Menu size={28} />
                         </button>
                         <div className="truncate">
-                            <h1 className="text-lg md:text-2xl font-extrabold tracking-tight uppercase truncate">Management Dashboard</h1>
-                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">
+                            <h1 className="text-xl md:text-3xl font-black tracking-tight uppercase truncate">Management Dashboard</h1>
+                            <p className="text-[11px] font-black text-blue-500/60 uppercase tracking-[0.3em] mt-2">
                                 {tournaments.length} Active Tournaments
                             </p>
                         </div>
@@ -160,9 +162,9 @@ export default function DashboardClient() {
                     <div className="flex items-center gap-6">
                         <button
                             onClick={() => setIsCreating(true)}
-                            className="bg-blue-600 hover:bg-blue-500 text-white px-4 md:px-8 h-10 md:h-12 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs tracking-widest transition-all shadow-lg shadow-blue-600/20 active:scale-95 flex items-center gap-2 md:gap-3 uppercase whitespace-nowrap"
+                            className="bg-blue-600 hover:bg-blue-500 text-white px-6 md:px-10 h-12 md:h-14 rounded-2xl md:rounded-3xl font-black text-xs md:text-sm tracking-widest transition-all shadow-xl shadow-blue-600/30 active:scale-95 flex items-center gap-3 md:gap-4 uppercase whitespace-nowrap"
                         >
-                            <Plus size={16} /> <span className="hidden sm:inline">Create Tournament</span><span className="sm:hidden text-[8px]">New</span>
+                            <Plus size={20} strokeWidth={3} /> <span className="hidden sm:inline">New Tournament</span><span className="sm:hidden">New</span>
                         </button>
                     </div>
                 </header>
@@ -201,21 +203,21 @@ export default function DashboardClient() {
                             >
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 blur-[40px] rounded-full -mr-16 -mt-16 group-hover:bg-blue-600/10 transition-all duration-700"></div>
                                 
-                                <div className="flex justify-between items-start mb-8 relative z-10">
+                                <div className="flex justify-between items-start mb-10 relative z-10">
                                     <div className="flex items-center gap-3">
-                                        <span className="text-[9px] font-black text-blue-500 bg-blue-500/10 px-3 py-1 rounded-full uppercase tracking-widest border border-blue-500/20">
+                                        <span className="text-[10px] font-black text-blue-400 bg-blue-500/10 px-4 py-1.5 rounded-full uppercase tracking-widest border border-blue-500/20">
                                             {tournament.game || 'CS2'}
                                         </span>
-                                        <span className="text-[9px] font-black text-gray-500 bg-white/5 px-3 py-1 rounded-full uppercase tracking-widest border border-white/5">
+                                        <span className="text-[10px] font-black text-gray-400 bg-white/5 px-4 py-1.5 rounded-full uppercase tracking-widest border border-white/5">
                                             {getTournamentTypeLabel(tournament.format || tournament.type)}
                                         </span>
                                     </div>
-                                    <Link href={`/dashboard/tournaments/${tournament.id}`} className="p-2 bg-white/5 hover:bg-blue-500/10 rounded-xl transition-all text-gray-500 hover:text-blue-500">
-                                        <Settings size={18} />
+                                    <Link href={`/dashboard/tournaments/${tournament.id}`} className="p-3 bg-white/5 hover:bg-blue-500/10 rounded-2xl transition-all text-gray-500 hover:text-blue-500">
+                                        <Settings size={22} />
                                     </Link>
                                 </div>
 
-                                <h3 className="text-2xl font-extrabold uppercase tracking-tighter mb-8 group-hover:text-white transition-colors">{tournament.name}</h3>
+                                <h3 className="text-3xl font-black uppercase tracking-tighter mb-10 group-hover:text-blue-500 transition-colors leading-none">{tournament.name}</h3>
                                 
                                 <div className="mt-auto grid grid-cols-2 gap-4 relative z-10">
                                     <Link
