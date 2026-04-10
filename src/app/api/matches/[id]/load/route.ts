@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sendConsoleCommand, getServerInfo } from '@/lib/dathost';
+import { requireAdminApi } from '@/lib/route-auth';
+import { eventBus } from '@/lib/eventBus';
+import { announceMatch } from '@/lib/discord';
+import { buildAdminActorLabel, recordAudit } from '@/lib/audit';
+
+function quoteForConsole(value: string) {
+    return `"${String(value ?? '').replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
 
 /**
  * POST /api/matches/{id}/load
@@ -12,7 +20,11 @@ import { sendConsoleCommand, getServerInfo } from '@/lib/dathost';
  * 4. Stores server connection details on the match record
  */
 export async function POST(request: Request, { params }: { params: { id: string } }) {
+    const unauthorized = await requireAdminApi();
+    if (unauthorized) return unauthorized;
+
     try {
+        const requestUrl = new URL(request.url);
         const match = await prisma.match.findUnique({
             where: { id: params.id },
             include: {
@@ -33,6 +45,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
         // Check if integrations are enabled
         const enableDatHost = process.env.ENABLE_DATHOST === 'true';
         const enableMatchZy = process.env.ENABLE_MATCHZY === 'true';
+        const enableCs2Plugin = process.env.ENABLE_CS2_PLUGIN === 'true';
+        const pluginSetMatchCommand = process.env.CS2_PLUGIN_SET_MATCH_COMMAND || 'apexplay_set_match';
 
         // Only CS2 supports DatHost/MatchZy in this implementation
         const isCs2 = match.tournament?.game === 'CS2';
@@ -44,7 +58,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
             const updated = await prisma.match.update({
                 where: { id: params.id },
                 data: {
-                    status: 'PENDING',
+                    status: 'WAITING_FOR_PLAYERS',
                 },
                 include: {
                     homeTeam: { include: { players: true } },
@@ -52,9 +66,51 @@ export async function POST(request: Request, { params }: { params: { id: string 
                 }
             });
 
+            eventBus.emit(`match:${updated.id}`, {
+                matchId: updated.id,
+                tournamentId: updated.tournamentId,
+                match: updated,
+            });
+            eventBus.emit(`tournament:${updated.tournamentId}`, {
+                matchId: updated.id,
+                tournamentId: updated.tournamentId,
+                match: updated,
+            });
+
+            if (enableCs2Plugin && isCs2 && enableDatHost) {
+                const command = [
+                    pluginSetMatchCommand,
+                    quoteForConsole(updated.id),
+                    quoteForConsole(updated.tournamentId),
+                    quoteForConsole(updated.homeTeam?.name || 'TBD'),
+                    quoteForConsole(updated.awayTeam?.name || 'TBD'),
+                ].join(' ');
+                const pluginCmdResult = await sendConsoleCommand(command);
+                if (!pluginCmdResult.success) {
+                    console.warn(`[Load Match] Failed to bind CS2 plugin context: ${pluginCmdResult.error}`);
+                }
+            }
+
+            try {
+                await announceMatch({
+                    homeTeam: updated.homeTeam?.name || 'TBD',
+                    awayTeam: updated.awayTeam?.name || 'TBD',
+                    homePlayers: (updated.homeTeam?.players || []).map((player) => `${player.nickname || player.name} (${player.seating || '?'})`).join(', '),
+                    awayPlayers: (updated.awayTeam?.players || []).map((player) => `${player.nickname || player.name} (${player.seating || '?'})`).join(', '),
+                    round: updated.round,
+                    tournamentName: match.tournament?.name || 'Tournament',
+                    tournamentId: updated.tournamentId,
+                    matchUrl: `${process.env.NEXTAUTH_URL || `${requestUrl.protocol}//${requestUrl.host}`}/tournaments/${updated.tournamentId}`,
+                    game: match.tournament?.game || 'CS2',
+                    seatingInfo: true,
+                });
+            } catch (notificationError) {
+                console.error('[Load Match] Failed to announce match start:', notificationError);
+            }
+
             return NextResponse.json({
                 success: true,
-                message: 'Match marked as pending. Manual score updates required for this game/configuration.',
+                message: 'Match is ready and waiting for players. Manual score updates are required for this game.',
                 match: updated
             });
         }
@@ -101,13 +157,14 @@ export async function POST(request: Request, { params }: { params: { id: string 
         }
 
         // Store server connection details on the match
+        const updatedStatus = enableMatchZy ? 'WAITING_FOR_PLAYERS' : 'LIVE';
         const updated = await prisma.match.update({
             where: { id: params.id },
             data: {
                 serverIp,
                 serverPort,
                 serverPassword,
-                status: 'PENDING',
+                status: updatedStatus,
             },
             include: {
                 homeTeam: { include: { players: true } },
@@ -117,11 +174,71 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
         console.log(`[Load Match] Match ${params.id} loaded on server ${serverIp}:${serverPort}`);
 
+        eventBus.emit(`match:${updated.id}`, {
+            matchId: updated.id,
+            tournamentId: updated.tournamentId,
+            match: updated,
+        });
+        eventBus.emit(`tournament:${updated.tournamentId}`, {
+            matchId: updated.id,
+            tournamentId: updated.tournamentId,
+            match: updated,
+        });
+
+        if (enableCs2Plugin) {
+            const command = [
+                pluginSetMatchCommand,
+                quoteForConsole(updated.id),
+                quoteForConsole(updated.tournamentId),
+                quoteForConsole(updated.homeTeam?.name || 'TBD'),
+                quoteForConsole(updated.awayTeam?.name || 'TBD'),
+            ].join(' ');
+
+            const pluginCmdResult = await sendConsoleCommand(command);
+            if (!pluginCmdResult.success) {
+                console.warn(`[Load Match] Failed to bind CS2 plugin context: ${pluginCmdResult.error}`);
+            }
+        }
+
+        try {
+            await announceMatch({
+                homeTeam: updated.homeTeam?.name || 'TBD',
+                awayTeam: updated.awayTeam?.name || 'TBD',
+                homePlayers: (updated.homeTeam?.players || []).map((player) => `${player.nickname || player.name} (${player.seating || '?'})`).join(', '),
+                awayPlayers: (updated.awayTeam?.players || []).map((player) => `${player.nickname || player.name} (${player.seating || '?'})`).join(', '),
+                round: updated.round,
+                tournamentName: match.tournament?.name || 'Tournament',
+                tournamentId: updated.tournamentId,
+                matchUrl: `${process.env.NEXTAUTH_URL || `${requestUrl.protocol}//${requestUrl.host}`}/tournaments/${updated.tournamentId}`,
+                game: match.tournament?.game || 'CS2',
+                seatingInfo: true,
+            });
+        } catch (notificationError) {
+            console.error('[Load Match] Failed to announce match start:', notificationError);
+        }
+
+        await recordAudit({
+            action: 'match.loaded',
+            entityType: 'match',
+            entityId: updated.id,
+            tournamentId: updated.tournamentId,
+            summary: `Loaded match ${updated.id.slice(0, 8)} and marked it waiting for players`,
+            actor: buildAdminActorLabel(),
+            metadata: {
+                serverIp,
+                serverPort,
+                pluginBound: enableCs2Plugin,
+            },
+        });
+
         return NextResponse.json({
             success: true,
             serverIp,
             serverPort,
             connectUrl: `steam://connect/${serverIp}:${serverPort}${serverPassword ? '/' + serverPassword : ''}`,
+            message: enableMatchZy
+                ? 'Match loaded. Waiting for MatchZy live updates.'
+                : 'Match marked LIVE. MatchZy is disabled, so scores must be updated manually.',
             match: updated,
         });
     } catch (error: any) {

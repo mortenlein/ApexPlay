@@ -1,17 +1,20 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from '@/lib/admin-session';
 
-const COOKIE_NAME = 'apexplay_admin_auth';
-
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Protect all /dashboard routes
-  if (pathname.startsWith('/dashboard')) {
-    const isAuthenticated = request.cookies.has(COOKIE_NAME);
+  if (
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/dashboard/tournaments') ||
+    pathname.startsWith('/marshal')
+  ) {
+    const isAuthenticated = await verifyAdminSessionToken(
+      request.cookies.get(ADMIN_COOKIE_NAME)?.value
+    );
 
     if (!isAuthenticated) {
-      // Redirect to login page, keeping the original URL as a redirect parameter
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);
@@ -21,7 +24,6 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// See "Matching Paths" below to learn more
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: ['/admin/:path*', '/dashboard/tournaments/:path*', '/marshal/:path*'],
 };

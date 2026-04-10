@@ -2,73 +2,60 @@ import React from 'react';
 
 export default function TournamentSkeleton() {
   return (
-    <div className="flex h-screen bg-[#0d0f12] text-white overflow-hidden font-sans animate-pulse">
+    <div className="flex h-screen bg-[var(--mds-page)] overflow-hidden animate-pulse">
       {/* SIDEBAR SKELETON */}
-      <aside className="w-20 bg-[#16191d] border-r border-white/5 flex flex-col items-center py-8 gap-10 shrink-0">
-        <div className="w-12 h-12 bg-white/5 rounded-2xl"></div>
-        <div className="flex flex-col gap-8">
+      <aside className="w-72 bg-[var(--mds-input)]/40 border-r border-[var(--mds-border)] flex flex-col py-10 px-8 gap-12 shrink-0">
+        <div className="w-12 h-12 bg-[var(--mds-border)]/20 rounded-mds-comfortable"></div>
+        <div className="flex flex-col gap-6">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="w-10 h-10 bg-white/5 rounded-xl"></div>
+            <div key={i} className="w-full h-10 bg-[var(--mds-border)]/10 rounded-mds-comfortable"></div>
           ))}
         </div>
       </aside>
 
-      {/* MAIN CONTENT SKELETON */}
+      {/* MAIN COMMAND CONSOLE SKELETON */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* HEADER SKELETON */}
-        <header className="h-[300px] border-b border-white/5 bg-white/[0.02] p-16 flex items-center justify-between">
-          <div className="flex items-center gap-10">
-            <div className="w-24 h-24 bg-white/5 rounded-[2rem]"></div>
-            <div className="space-y-4">
-              <div className="w-32 h-6 bg-white/5 rounded-full"></div>
-              <div className="w-96 h-16 bg-white/5 rounded-2xl"></div>
-              <div className="flex gap-8">
-                <div className="w-32 h-4 bg-white/5 rounded-full"></div>
-                <div className="w-32 h-4 bg-white/5 rounded-full"></div>
-              </div>
+        {/* HEADER MONITOR SKELETON */}
+        <header className="h-44 border-b border-[var(--mds-border)] bg-[var(--mds-input)]/20 p-10 flex flex-col justify-center gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-24 h-6 bg-[var(--mds-border)]/20 rounded-mds-comfortable"></div>
+            <div className="w-16 h-4 bg-[var(--mds-border)]/10 rounded-mds-comfortable"></div>
+          </div>
+          <div className="flex items-end justify-between">
+            <div className="w-[500px] h-12 bg-[var(--mds-border)]/20 rounded-mds-comfortable"></div>
+            <div className="flex gap-4">
+                <div className="w-40 h-10 bg-[var(--mds-border)]/20 rounded-mds-comfortable"></div>
+                <div className="w-40 h-10 bg-[var(--mds-border)]/10 rounded-mds-comfortable"></div>
             </div>
           </div>
-          <div className="w-48 h-16 bg-white/5 rounded-2xl"></div>
         </header>
 
-        {/* CONTENT AREA SKELETON */}
+        {/* OPERATIONAL INTERFACE SKELETON */}
         <div className="flex-1 p-12 overflow-hidden">
-          <div className="max-w-6xl space-y-12">
-            <div className="flex items-center gap-4">
-              <div className="w-40 h-4 bg-white/5 rounded-full"></div>
-              <div className="h-px flex-1 bg-white/5"></div>
+          <div className="max-w-[1400px] mx-auto space-y-12">
+            <div className="grid grid-cols-3 gap-8">
+               {[1, 2, 3].map(i => (
+                  <div key={i} className="h-28 bg-[var(--mds-border)]/10 rounded-mds-card border border-[var(--mds-border)]/20"></div>
+               ))}
             </div>
             
-            <div className="grid grid-cols-2 gap-12">
-               <div className="h-[400px] bg-white/5 rounded-[3rem]"></div>
-               <div className="space-y-6">
-                  <div className="h-1/2 bg-white/5 rounded-[2.5rem]"></div>
-                  <div className="h-[calc(50%-1.5rem)] bg-white/5 rounded-[2.5rem]"></div>
+            <div className="flex items-center gap-6">
+               <div className="w-48 h-5 bg-[var(--mds-border)]/20 rounded-mds-comfortable"></div>
+               <div className="h-px flex-1 bg-[var(--mds-border)]/30"></div>
+            </div>
+
+            <div className="grid grid-cols-12 gap-10">
+               <div className="col-span-8 space-y-8">
+                  <div className="h-[450px] bg-[var(--mds-border)]/10 rounded-mds-card border border-[var(--mds-border)]/20"></div>
+               </div>
+               <div className="col-span-4 space-y-8">
+                  <div className="h-64 bg-[var(--mds-border)]/10 rounded-mds-card border border-[var(--mds-border)]/20"></div>
+                  <div className="h-48 bg-[var(--mds-border)]/10 rounded-mds-card border border-[var(--mds-border)]/20"></div>
                </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* RIGHT SIDEBAR SKELETON */}
-      <aside className="w-80 bg-[#16191d] border-l border-white/5 p-8 shrink-0 space-y-12">
-         <div className="space-y-4">
-            <div className="flex justify-between">
-              <div className="w-32 h-3 bg-white/5 rounded-full"></div>
-              <div className="w-8 h-3 bg-white/5 rounded-full"></div>
-            </div>
-            <div className="w-full h-2 bg-white/5 rounded-full"></div>
-         </div>
-         
-         <div className="space-y-8">
-            <div className="w-32 h-4 bg-white/5 rounded-full"></div>
-            <div className="space-y-4">
-               {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-32 bg-white/5 rounded-2xl"></div>
-               ))}
-            </div>
-         </div>
-      </aside>
     </div>
   );
 }

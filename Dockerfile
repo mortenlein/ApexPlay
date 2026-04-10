@@ -46,8 +46,8 @@ RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
 
 USER nextjs
 
-EXPOSE 3000
-ENV PORT=3000
+EXPOSE 4001
+ENV PORT=4001
 ENV HOSTNAME=0.0.0.0
 
 # Run Prisma db push to ensure schema is up to date, then start the server

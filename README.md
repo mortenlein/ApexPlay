@@ -27,11 +27,11 @@ ApexPlay lets you create and manage single-elimination brackets, track live matc
 
 ```bash
 npm install
-npx prisma db push
+npm run db:prepare
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — it auto-redirects to the dashboard.
+Open [http://localhost:4001](http://localhost:4001) — it auto-redirects to the dashboard.
 
 ### Docker
 
@@ -39,7 +39,7 @@ Open [http://localhost:3000](http://localhost:3000) — it auto-redirects to the
 docker compose up --build
 ```
 
-The app will be available at [http://localhost:3000](http://localhost:3000).
+The app will be available at [http://localhost:4001](http://localhost:4001).
 
 The SQLite database is persisted to a named Docker volume (`apexplay_data`) so your data survives container restarts.
 
@@ -59,10 +59,38 @@ docker compose down -v
 
 | Variable | Default (dev) | Description |
 |---|---|---|
-| `DATABASE_URL` | `file:./prisma/dev.db` | Path to SQLite database file |
-| `PORT` | `3000` | Port the server listens on |
+| `DATABASE_URL` | `file:./dev.db` | Path to the SQLite database file |
+| `PORT` | `4001` | Port the server listens on |
+| `CS2_WEBHOOK_KEY` | *(required for CS2 plugin webhook auth)* | Bearer key expected by `/api/webhooks/cs2` |
+| `ENABLE_CS2_PLUGIN` | `false` | When true, `Load Match` binds match context in plugin via console command |
+| `CS2_PLUGIN_SET_MATCH_COMMAND` | `apexplay_set_match` | Server command used to bind `matchId`/`tournamentId` in plugin |
 
 For local dev, these are set in `.env`. Docker Compose sets `DATABASE_URL` automatically to point to the persistent volume.
+
+---
+
+## CS2 Plugin Telemetry (Full Path)
+
+This repo includes a CounterStrikeSharp plugin scaffold and webhook receiver:
+
+- Plugin scaffold: `plugins/ApexPlayTelemetry`
+- Webhook endpoint: `POST /api/webhooks/cs2`
+
+Plugin build target: `.NET 8` (`CounterStrikeSharp.API`).
+
+### Flow
+
+1. Admin clicks **Load Match**
+2. ApexPlay sends server command:
+   - `apexplay_set_match "<matchId>" "<tournamentId>" "<homeTeamName>" "<awayTeamName>"`
+3. Plugin emits signed events to `/api/webhooks/cs2`
+4. API updates match/player state and broadcasts to live UI streams
+
+### Quick local webhook test
+
+```bash
+npm run test:cs2-webhook -- match_live <matchId>
+```
 
 ---
 
@@ -110,7 +138,7 @@ The overlay is a browser source designed for OBS Studio (or any browser-source-c
 ### Overlay URL
 
 ```
-http://localhost:3000/bracket/[tournament-id]/overlay
+http://localhost:4001/bracket/[tournament-id]/overlay
 ```
 
 Find the tournament ID in the URL when managing a tournament.

@@ -11,11 +11,15 @@ export async function GET(request: Request, { params }: { params: { id: string }
                 round: true,
                 matchOrder: true,
                 status: true,
+                bracketType: true,
                 bestOf: true,
                 scoreLimit: true,
                 homeScore: true,
                 awayScore: true,
+                updatedAt: true,
                 winnerId: true,
+                nextMatchId: true,
+                loserNextMatchId: true,
                 homeTeamId: true,
                 awayTeamId: true,
                 mapScores: true,
@@ -24,8 +28,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
                         id: true,
                         name: true,
                         logoUrl: true,
+                        seed: true,
                         players: {
-                            select: { id: true, name: true, seating: true }
+                            select: { id: true, name: true, seating: true, steamId: true, isOnline: true }
                         }
                     }
                 },
@@ -34,8 +39,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
                         id: true,
                         name: true,
                         logoUrl: true,
+                        seed: true,
                         players: {
-                            select: { id: true, name: true, seating: true }
+                            select: { id: true, name: true, seating: true, steamId: true, isOnline: true }
                         }
                     }
                 }

@@ -1,0 +1,13 @@
+C:\repo\apexplay\ApexPlay\plugins\ApexPlayTelemetry\obj\Release\net8.0\ApexPlayTelemetry.csproj.AssemblyReference.cache
+C:\repo\apexplay\ApexPlay\plugins\ApexPlayTelemetry\obj\Release\net8.0\ApexPlayTelemetry.GeneratedMSBuildEditorConfig.editorconfig
+C:\repo\apexplay\ApexPlay\plugins\ApexPlayTelemetry\obj\Release\net8.0\ApexPlayTelemetry.AssemblyInfoInputs.cache
+C:\repo\apexplay\ApexPlay\plugins\ApexPlayTelemetry\obj\Release\net8.0\ApexPlayTelemetry.AssemblyInfo.cs
+C:\repo\apexplay\ApexPlay\plugins\ApexPlayTelemetry\obj\Release\net8.0\ApexPlayTelemetry.csproj.CoreCompileInputs.cache
+C:\repo\apexplay\ApexPlay\plugins\ApexPlayTelemetry\obj\Release\net8.0\ApexPlayTelemetry.sourcelink.json
+C:\repo\apexplay\ApexPlay\plugins\ApexPlayTelemetry\bin\Release\net8.0\ApexPlayTelemetry.deps.json
+C:\repo\apexplay\ApexPlay\plugins\ApexPlayTelemetry\bin\Release\net8.0\ApexPlayTelemetry.dll
+C:\repo\apexplay\ApexPlay\plugins\ApexPlayTelemetry\bin\Release\net8.0\ApexPlayTelemetry.pdb
+C:\repo\apexplay\ApexPlay\plugins\ApexPlayTelemetry\obj\Release\net8.0\ApexPlayTelemetry.dll
+C:\repo\apexplay\ApexPlay\plugins\ApexPlayTelemetry\obj\Release\net8.0\refint\ApexPlayTelemetry.dll
+C:\repo\apexplay\ApexPlay\plugins\ApexPlayTelemetry\obj\Release\net8.0\ApexPlayTelemetry.pdb
+C:\repo\apexplay\ApexPlay\plugins\ApexPlayTelemetry\obj\Release\net8.0\ref\ApexPlayTelemetry.dll

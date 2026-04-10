@@ -1,17 +1,29 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { generateSingleElimination } from '@/lib/bracket-utils';
+import { announceMatch } from '@/lib/discord';
+import { requireAdminApi } from '@/lib/route-auth';
+import { buildAdminActorLabel, recordAudit } from '@/lib/audit';
+import { lockedResponse } from '@/lib/mutation-guards';
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
+    const unauthorized = await requireAdminApi();
+    if (unauthorized) return unauthorized;
+
     try {
         const tournamentId = params.id;
+        const body = await request.json().catch(() => ({}));
 
         const tournament = await prisma.tournament.findUnique({
             where: { id: tournamentId },
-            include: { teams: true },
+            include: { teams: true, _count: { select: { matches: true } } },
         });
 
         if (!tournament) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+        if (tournament.rosterLocked && tournament._count.matches > 0 && !body.overrideLock) {
+            return lockedResponse('Bracket changes are locked. Unlock roster edits in tournament settings before regenerating matches.');
+        }
 
         const teams = tournament.teams;
         if (teams.length < 2) {
@@ -90,6 +102,45 @@ export async function POST(request: Request, { params }: { params: { id: string 
                 return prisma.match.update({ where: { id: m.id }, data: {} }); // No-op
             })
         );
+
+        // 6. Announce initial matches that are already fixed (have both teams)
+        const fixedMatches = await prisma.match.findMany({
+            where: { 
+                tournamentId,
+                homeTeamId: { not: null },
+                awayTeamId: { not: null }
+            },
+            include: { homeTeam: true, awayTeam: true, tournament: true }
+        });
+
+        for (const m of fixedMatches) {
+            await announceMatch({
+                homeTeam: m.homeTeam!.name,
+                awayTeam: m.awayTeam!.name,
+                round: m.round,
+                tournamentName: m.tournament.name,
+                tournamentId,
+                matchUrl: `${process.env.NEXTAUTH_URL}/tournaments/${tournamentId}`
+            });
+        }
+
+        await prisma.tournament.update({
+            where: { id: tournamentId },
+            data: { rosterLocked: true },
+        });
+
+        await recordAudit({
+            action: 'bracket.generated',
+            entityType: 'tournament',
+            entityId: tournamentId,
+            tournamentId,
+            summary: `Generated ${createdMatches.length} matches for ${tournament.name}`,
+            actor: buildAdminActorLabel(),
+            metadata: {
+                matchCount: createdMatches.length,
+                teamCount: teams.length,
+            },
+        });
 
         return NextResponse.json({ success: true, count: createdMatches.length });
     } catch (error: any) {

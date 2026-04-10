@@ -3,10 +3,12 @@
 import React from "react";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
-import { Trophy, Users, Calendar, ArrowRight, Loader2, Search, Gamepad2 } from "lucide-react";
+import { Trophy, Users, ArrowRight, Loader2, Search, Gamepad2, Calendar, Globe, Zap, Shield, Layout } from "lucide-react";
 import Link from "next/link";
 import { getGameMetadata } from "@/lib/games";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { ContextBar } from "@/components/ContextBar";
+import { clientApi } from "@/lib/client-api";
 
 export default function TournamentsOverviewClient() {
   const searchParams = useSearchParams();
@@ -16,11 +18,7 @@ export default function TournamentsOverviewClient() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['tournaments'],
-    queryFn: async () => {
-      const res = await fetch("/api/tournaments");
-      if (!res.ok) throw new Error('Failed to fetch tournaments');
-      return res.json();
-    },
+    queryFn: async () => clientApi.getTournaments('all'),
     staleTime: 60 * 1000,
   });
 
@@ -28,66 +26,91 @@ export default function TournamentsOverviewClient() {
 
   const handleSearch = (term: string) => {
     const params = new URLSearchParams(searchParams);
-    if (term) {
-      params.set("search", term);
-    } else {
-      params.delete("search");
-    }
+    if (term) { params.set("search", term); } else { params.delete("search"); }
     router.replace(`${pathname}?${params.toString()}`);
   };
 
-  const filteredTournaments = tournaments.filter((t: any) => 
+  const filteredTournaments = tournaments.filter((t: any) =>
     t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     t.game.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    <div className="min-h-screen bg-[#0d0f12] text-white selection:bg-blue-500/30">
-      {/* HEADER */}
-      <header className="border-b border-white/5 bg-[#16191d]/50 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-[1400px] mx-auto px-8 h-24 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20">
-              <Trophy size={24} className="text-white" />
-            </Link>
-            <div>
-              <h1 className="text-2xl font-black uppercase tracking-tighter leading-none">Apex<span className="text-blue-500">Play</span></h1>
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">Live Tournament Arena</p>
+    <div className="min-h-screen bg-[var(--mds-page)] overflow-x-hidden flex flex-col">
+      <ContextBar
+        mode="public"
+        contextLabel="Tournament Directory"
+        phase="Discovery"
+        breadcrumbs={["tournaments"]}
+      />
+      <div className="flex-1 overflow-x-hidden">
+        {/* HERO */}
+      <section className="relative pt-32 pb-24 px-6 md:px-10 bg-[var(--mds-page-dark)] overflow-hidden">
+         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,var(--mds-action)_0%,transparent_70%)] blur-3xl transform -translate-y-1/2" />
+         </div>
+         
+         <div className="max-w-[1400px] mx-auto relative z-10">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-12">
+               <div className="max-w-2xl">
+                  <div className="flex items-center gap-3 mb-6">
+                     <span className="h-px w-8 bg-[var(--mds-action)]" />
+                     <span className="mds-uppercase-label text-[var(--mds-action)]">Tournament Directory</span>
+                  </div>
+                  <h1 className="font-brand text-5xl md:text-7xl font-bold tracking-tight text-white leading-[1.05]">
+                     Discover <br/> Active <span className="text-[var(--mds-action)]">Tournaments</span>
+                  </h1>
+                  <p className="mt-8 text-lg font-medium text-white/50 max-w-lg leading-relaxed">
+                     Browse live and upcoming tournaments, track brackets in real time, and jump into the events you care about.
+                  </p>
+               </div>
+
+               <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+                  <div className="relative flex-1 lg:w-80 group">
+                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-[var(--mds-action)] transition-colors" />
+                     <input
+                        type="text"
+                        placeholder="Filter tournaments..."
+                        value={searchQuery}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-mds-comfortable h-14 pl-12 pr-6 text-white font-medium placeholder:text-white/20 focus:outline-none focus:border-[var(--mds-action)]/50 focus:bg-white/10 transition-all"
+                     />
+                  </div>
+               </div>
             </div>
-          </div>
+         </div>
+      </section>
 
-          <div className="flex-1 max-w-md mx-8">
-            <div className="relative group">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-blue-500 transition-colors" />
-              <input
-                type="text"
-                placeholder="Search tournaments or games..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pl-14 pr-6 text-sm font-bold focus:outline-none focus:border-blue-500/50 transition-all placeholder:text-gray-600"
-              />
+      {/* REGISTRY CONTENT */}
+      <main className="py-20 px-6 md:px-10 max-w-[1400px] mx-auto">
+        <div className="flex items-center justify-between mb-12 border-b border-[var(--mds-border)] pb-8">
+            <div className="flex items-center gap-6">
+                <h2 className="mds-uppercase-label">Active Tournaments</h2>
+                <span className="mds-badge bg-[var(--mds-input)] font-bold text-[var(--mds-text-muted)]">
+                   {isLoading ? 'Loading...' : `${filteredTournaments.length} listed`}
+                </span>
             </div>
+            <div className="flex items-center gap-4 text-[10px] font-bold text-[var(--mds-text-muted)] uppercase tracking-widest">
+                <Globe size={14} className="text-[var(--mds-action)]" />
+                Public tournament directory
+            </div>
+        </div>
+
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-40 gap-6">
+            <Loader2 className="w-10 h-10 animate-spin text-[var(--mds-action)]" />
+            <p className="mds-uppercase-label opacity-40">Loading tournaments...</p>
           </div>
-
-          <Link href="/dashboard" className="bg-white/5 hover:bg-white/10 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
-            Organizer Portal
-          </Link>
-        </div>
-      </header>
-
-      <main className="max-w-[1400px] mx-auto px-8 py-16">
-        <div className="mb-12">
-          <h2 className="text-5xl font-black uppercase tracking-tighter mb-4">Discover<br/><span className="text-blue-500 text-6xl">Tournaments</span></h2>
-        </div>
-
-        {filteredTournaments.length === 0 && !isLoading ? (
-          <div className="bg-[#16191d] border border-white/5 rounded-[3rem] p-24 text-center">
-            <Gamepad2 className="w-20 h-20 text-gray-800 mx-auto mb-6" />
-            <h3 className="text-2xl font-black uppercase tracking-tighter text-white/50">
-              {searchQuery ? "No Matches Found" : "No Ongoing Tournaments"}
+        ) : filteredTournaments.length === 0 ? (
+          <div className="mds-card p-32 text-center bg-[var(--mds-input)]/20 border-dashed border-2 border-[var(--mds-border)] shadow-none">
+            <div className="h-16 w-16 mx-auto mb-8 bg-[var(--mds-border)]/20 flex items-center justify-center rounded-xl text-[var(--mds-text-muted)]">
+                <Gamepad2 size={32} />
+            </div>
+            <h3 className="font-brand text-2xl font-bold mb-3 text-[var(--mds-text-primary)]">
+              {searchQuery ? "No Results Found" : "No Active Tournaments"}
             </h3>
-            <p className="text-gray-600 font-bold uppercase tracking-widest text-[10px] mt-2">
-              {searchQuery ? "Try refining your search" : "Check back later or start your own!"}
+            <p className="text-[var(--mds-text-muted)] font-medium max-w-xs mx-auto leading-relaxed">
+              {searchQuery ? "No tournament matched your search." : "No tournaments are available yet."}
             </p>
           </div>
         ) : (
@@ -95,60 +118,56 @@ export default function TournamentsOverviewClient() {
             {filteredTournaments.map((t: any, index: number) => {
               const gameMeta = getGameMetadata(t.game);
               return (
-                <Link 
-                  key={t.id} 
+                <Link
+                  key={t.id}
                   href={`/tournaments/${t.id}`}
-                  className="group relative h-[450px] rounded-[2.5rem] overflow-hidden border border-white/5 hover:border-blue-500/50 transition-all duration-500"
+                  className="group mds-card p-0 overflow-hidden flex flex-col h-[480px] hover:border-[var(--mds-action)]/40 hover:-translate-y-1 transition-all duration-500"
                 >
-                  {/* Banner Image */}
-                  <div className="absolute inset-0 z-0">
-                    <Image 
-                      src={gameMeta?.bannerUrl || "/default-banner.jpg"} 
+                  {/* Banner */}
+                  <div className="relative h-56 w-full overflow-hidden shrink-0 border-b border-[var(--mds-border)]">
+                    <Image
+                      src={gameMeta?.bannerUrl || "/default-banner.jpg"}
                       alt={t.game}
                       fill
-                      className="object-cover grayscale-[0.5] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700"
+                      className="object-cover grayscale opacity-40 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000"
                       style={{ objectPosition: gameMeta?.bannerPosition || 'center' }}
                       priority={index < 3}
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0d0f12] via-[#0d0f12]/40 to-transparent"></div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="relative z-10 h-full flex flex-col justify-end p-10">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="w-12 h-12 bg-white/10 backdrop-blur-md border border-white/10 rounded-xl flex items-center justify-center p-2 relative">
-                        <Image 
-                            src={gameMeta?.logoUrl || ''} 
-                            fill 
-                            className="object-contain" 
-                            alt={t.game} 
-                            sizes="48px"
-                        />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[var(--mds-page)] via-transparent to-transparent opacity-60" />
+                    
+                    <div className="absolute top-6 left-6 flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-mds-comfortable bg-[var(--mds-page)]/90 backdrop-blur-md flex items-center justify-center p-2 border border-[var(--mds-border)] shadow-mds-whisper group-hover:scale-110 transition-transform">
+                        <Image src={gameMeta?.logoUrl || ''} width={24} height={24} className="object-contain" alt="" />
                       </div>
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 bg-blue-500/10 px-4 py-1.5 rounded-full border border-blue-500/20">
+                      <span className="mds-badge bg-black/40 backdrop-blur-md text-white border-white/10 font-bold">
                         {gameMeta?.name}
                       </span>
                     </div>
+                  </div>
 
-                    <h3 className="text-3xl font-black uppercase tracking-tighter leading-tight mb-4 group-hover:text-blue-400 transition-colors">
-                      {t.name}
-                    </h3>
-
-                    <div className="flex items-center gap-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                      <div className="flex items-center gap-2">
-                        <Users size={12} className="text-blue-500" />
-                        <span>{t.teamSize}v{t.teamSize}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar size={12} className="text-blue-500" />
-                        <span>Ongoing</span>
+                  <div className="p-8 flex-1 flex flex-col justify-between">
+                    <div>
+                      <h3 className="font-brand text-2xl font-bold text-[var(--mds-text-primary)] leading-tight group-hover:text-[var(--mds-action)] transition-colors line-clamp-2">
+                        {t.name}
+                      </h3>
+                      <div className="mt-6 flex flex-wrap gap-4">
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-[var(--mds-text-muted)] uppercase tracking-widest">
+                           <Users size={12} className="text-[var(--mds-action)]" />
+                           {t.teamSize}v{t.teamSize} roster
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-[var(--mds-text-muted)] uppercase tracking-widest">
+                           <Calendar size={12} className="text-[var(--mds-action)]" />
+                           Details available
+                        </div>
                       </div>
                     </div>
 
-                    <div className="mt-8 flex items-center gap-2 text-white font-black uppercase tracking-widest text-[9px] group/btn">
-                      <span>View Tournament</span>
-                      <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform text-blue-500" />
+                    <div className="pt-8 mt-auto border-t border-[var(--mds-border)]/50 flex items-center justify-between">
+                        <span className="font-brand text-sm font-bold text-[var(--mds-text-primary)] uppercase tracking-tight">Open Tournament</span>
+                        <div className="h-8 w-8 rounded-full border border-[var(--mds-border)] flex items-center justify-center group-hover:bg-[var(--mds-action)] group-hover:border-[var(--mds-action)] group-hover:text-white transition-all">
+                           <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                        </div>
                     </div>
                   </div>
                 </Link>
@@ -159,22 +178,60 @@ export default function TournamentsOverviewClient() {
       </main>
 
       {/* FOOTER */}
-      <footer className="border-t border-white/5 py-24 mt-24">
-        <div className="max-w-[1400px] mx-auto px-8 flex flex-col items-center text-center">
-          <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center mb-8">
-            <Trophy size={32} className="text-blue-500" />
-          </div>
-          <h4 className="text-2xl font-black uppercase tracking-tighter mb-4">Elevate Your <span className="text-blue-500">Game</span></h4>
-          <p className="text-gray-500 max-w-sm font-bold uppercase tracking-widest text-[10px] leading-relaxed">
-            The ultimate platform for competitive gaming and tournament orchestration.
-          </p>
-          <div className="flex gap-12 mt-12 text-[10px] font-black uppercase tracking-[0.3em] text-gray-600">
-            <span className="hover:text-white cursor-pointer transition-colors">Twitter</span>
-            <span className="hover:text-white cursor-pointer transition-colors">Discord</span>
-            <span className="hover:text-white cursor-pointer transition-colors">Support</span>
-          </div>
+      <footer className="border-t border-[var(--mds-border)] py-20 bg-[var(--mds-input)]/10">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-10 flex flex-col items-center">
+            <div className="h-14 w-14 rounded-mds-comfortable bg-[var(--mds-action)]/10 flex items-center justify-center border border-[var(--mds-action)]/20 mb-8 shadow-mds-whisper">
+                <Shield size={24} className="text-[var(--mds-action)]" />
+            </div>
+            <h4 className="font-brand text-2xl font-bold text-[var(--mds-text-primary)] text-center">
+                Tournament management <span className="text-[var(--mds-action)]">workspace</span>
+            </h4>
+            <p className="mt-4 text-[var(--mds-text-muted)] font-medium text-center max-w-sm leading-relaxed">
+                Brackets, teams, streams, and match updates in one place.
+            </p>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mt-16 w-full max-w-3xl border-t border-[var(--mds-border)] pt-16">
+                <div>
+                   <h5 className="mds-uppercase-label text-[10px] mb-6">Planning</h5>
+                   <ul className="space-y-4 text-sm font-medium text-[var(--mds-text-muted)]">
+                      <li className="hover:text-[var(--mds-action)] cursor-pointer transition-colors">Event setup</li>
+                      <li className="hover:text-[var(--mds-action)] cursor-pointer transition-colors">Bracket flow</li>
+                      <li className="hover:text-[var(--mds-action)] cursor-pointer transition-colors">Sign-up options</li>
+                   </ul>
+                </div>
+                <div>
+                   <h5 className="mds-uppercase-label text-[10px] mb-6">Live Ops</h5>
+                   <ul className="space-y-4 text-sm font-medium text-[var(--mds-text-muted)]">
+                      <li className="hover:text-[var(--mds-action)] cursor-pointer transition-colors">Match updates</li>
+                      <li className="hover:text-[var(--mds-action)] cursor-pointer transition-colors">Overlay output</li>
+                      <li className="hover:text-[var(--mds-action)] cursor-pointer transition-colors">Marshal board</li>
+                   </ul>
+                </div>
+                <div>
+                   <h5 className="mds-uppercase-label text-[10px] mb-6">Resources</h5>
+                   <ul className="space-y-4 text-sm font-medium text-[var(--mds-text-muted)]">
+                      <li className="hover:text-[var(--mds-action)] cursor-pointer transition-colors">Tournament Rules & FAQ</li>
+                      <li className="hover:text-[var(--mds-action)] cursor-pointer transition-colors">Player Guide</li>
+                      <li className="hover:text-[var(--mds-action)] cursor-pointer transition-colors">Service Status</li>
+                   </ul>
+                </div>
+                <div>
+                   <h5 className="mds-uppercase-label text-[10px] mb-6">Connect</h5>
+                   <ul className="space-y-4 text-sm font-medium text-[var(--mds-text-muted)]">
+                      <li className="hover:text-[var(--mds-action)] cursor-pointer transition-colors">Admin Support</li>
+                      <li className="hover:text-[var(--mds-action)] cursor-pointer transition-colors">Feedback</li>
+                      <li className="hover:text-[var(--mds-action)] cursor-pointer transition-colors">Contact Staff</li>
+                   </ul>
+                </div>
+            </div>
+            
+            <div className="mt-20 flex flex-col items-center gap-4">
+                <div className="h-px w-24 bg-[var(--mds-border)]" />
+                <p className="mds-uppercase-label text-[9px] opacity-40">ApexPlay tournament directory</p>
+            </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 }

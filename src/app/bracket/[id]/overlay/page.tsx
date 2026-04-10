@@ -139,22 +139,22 @@ export default function StreamOverlay({ params }: { params: { id: string } }) {
         const totalRounds = winnerMatches.length > 0 ? Math.max(...winnerMatches.map(m => m.round)) : 1;
 
         const getStageName = (round: number, bracketType: string): string => {
-            if (bracketType === 'THIRD_PLACE') return 'Third Place Decider';
+            if (bracketType === 'THIRD_PLACE') return 'Third Place Match';
             const matchesInThisRound = matches.filter(m => m.round === round && m.bracketType === 'WINNERS').length;
             const stepsFromFinal = totalRounds - round;
 
-            if (stepsFromFinal === 0 && matchesInThisRound === 1) return 'Grand Final';
+            if (stepsFromFinal === 0 && matchesInThisRound === 1) return 'Grand Finals';
             if (stepsFromFinal === 1 && matchesInThisRound <= 2) return 'Semi-Finals';
             if (stepsFromFinal === 2 && matchesInThisRound <= 4) return 'Quarter-Finals';
             return `Round ${round}`;
         };
 
         const newNodes: Node[] = matches.map((match: any) => {
-            const r = match.round;
-            const m = match.matchOrder;
+            const r = match.round || 1;
+            const m = match.matchOrder || 0;
             const isWinnerBracket = match.bracketType === 'WINNERS';
             const isThirdPlace = match.bracketType === 'THIRD_PLACE';
-            const matchesInThisRound = matches.filter((mm: any) => mm.round === r && mm.bracketType === match.bracketType).length;
+            const matchesInThisRound = matches.filter((mm: any) => mm.round === r && mm.bracketType === match.bracketType).length || 1;
             
             // Only center the Grand Final (single match in the last round)
             const isCenter = isWinnerBracket && r === totalRounds && matchesInThisRound === 1;
@@ -178,22 +178,33 @@ export default function StreamOverlay({ params }: { params: { id: string } }) {
                 y = (localM - (halfMatches - 1) / 2) * Y_OFFSET * Math.pow(1.5, r - 1);
             }
 
+            let parsedMapScores = [];
+            try {
+                if (typeof match.mapScores === 'string') {
+                    parsedMapScores = JSON.parse(match.mapScores);
+                } else if (Array.isArray(match.mapScores)) {
+                    parsedMapScores = match.mapScores;
+                }
+            } catch (e) {
+                console.error(`Failed to parse mapScores for match ${match.id}`, e);
+            }
+
             return {
                 id: match.id,
                 type: 'streamMatch',
                 position: { x, y },
                 data: {
                     homeTeam: match.homeTeam,
-                    homeScore: match.homeScore,
+                    homeScore: match.homeScore || 0,
                     awayTeam: match.awayTeam,
-                    awayScore: match.awayScore,
-                    mapScores: typeof match.mapScores === 'string' ? JSON.parse(match.mapScores) : (match.mapScores || []),
-                    bestOf: match.bestOf,
-                    status: match.status,
+                    awayScore: match.awayScore || 0,
+                    mapScores: parsedMapScores,
+                    bestOf: match.bestOf || 1,
+                    status: match.status || 'PENDING',
                     isRightSide,
                     isCenter,
                     isThirdPlace,
-                    stageName: getStageName(match.round, match.bracketType)
+                    stageName: getStageName(r, match.bracketType)
                 }
             };
         });
@@ -272,7 +283,7 @@ export default function StreamOverlay({ params }: { params: { id: string } }) {
         <div className="w-screen h-screen bg-[#0a0a0a] flex items-center justify-center">
             <div className="flex flex-col items-center gap-6">
                 <div className="w-20 h-20 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-                <span className="text-gray-500 font-black uppercase tracking-[0.3em] text-xs animate-pulse">Initializing Overlay...</span>
+                <span className="text-gray-500 font-black uppercase tracking-[0.3em] text-xs animate-pulse">Loading Bracket...</span>
             </div>
         </div>
     );

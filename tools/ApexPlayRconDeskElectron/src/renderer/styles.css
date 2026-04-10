@@ -1,0 +1,391 @@
+:root {
+  color-scheme: dark;
+  font-family: "Segoe UI", Inter, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at 20% 0%, #1b2430, #0f1319 55%);
+  color: #e5edf7;
+}
+
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 12px;
+  padding: 12px;
+  min-height: 100vh;
+}
+
+.bar {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 12px;
+  background: #141b22;
+  border: 1px solid #253341;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.left, .right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+label {
+  font-size: 12px;
+  color: #8ea1b5;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #2a3b4b;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.badge.offline {
+  color: #f6b8b8;
+  border-color: #6a2d3a;
+  background: #3a1a21;
+}
+
+.badge.online {
+  color: #c4f0c7;
+  border-color: #2f6a44;
+  background: #173226;
+}
+
+select, input, textarea, button {
+  border-radius: 8px;
+  border: 1px solid #2a3b4b;
+  background: #0f151d;
+  color: #e5edf7;
+}
+
+select, input, button {
+  height: 34px;
+  padding: 0 10px;
+}
+
+button {
+  background: linear-gradient(180deg, #1c2c3d, #182433);
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: #3e5872;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 12px;
+  min-height: 0;
+  align-items: start;
+  max-height: 240px;
+}
+
+.panel {
+  background: #141b22;
+  border: 1px solid #253341;
+  border-radius: 10px;
+  padding: 12px;
+  min-height: 0;
+}
+
+.muted {
+  color: #8ea1b5;
+  font-size: 12px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+}
+
+#hotkeyHint {
+  color: #8ea1b5;
+  font-size: 12px;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+  max-height: 170px;
+  overflow: auto;
+}
+
+.action-btn {
+  height: 64px;
+  text-align: left;
+  padding: 8px;
+}
+
+.action-name {
+  font-weight: 700;
+  display: block;
+}
+
+.action-hotkey, .action-command {
+  display: block;
+  color: #8ea1b5;
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 260px;
+  resize: vertical;
+  padding: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  align-items: center;
+}
+
+.right-align {
+  justify-content: flex-end;
+}
+
+.log-panel {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 250px;
+  max-height: 360px;
+}
+
+.log-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  min-height: 0;
+}
+
+.log-col {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 0;
+}
+
+.log-col h3 {
+  margin: 0 0 6px 0;
+  font-size: 12px;
+  color: #8ea1b5;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+#logList {
+  list-style: none;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid #2a3b4b;
+  border-radius: 8px;
+  background: #0f151d;
+  overflow: auto;
+  height: 260px;
+  max-height: 260px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+
+#eventFeed {
+  list-style: none;
+  margin: 0;
+  padding: 10px;
+  overflow: auto;
+  height: 260px;
+  max-height: 260px;
+  border: 1px solid #2a3b4b;
+  border-radius: 8px;
+  background: #0f151d;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+
+.feed-item {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 4px 0;
+  border-bottom: 1px solid #1f2a35;
+}
+
+.feed-item:last-child {
+  border-bottom: none;
+}
+
+.feed-kind {
+  min-width: 58px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid #34506a;
+  color: #a9c7e6;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.feed-text {
+  color: #d1deea;
+  word-break: break-word;
+}
+
+#manualInput {
+  flex: 1;
+}
+
+.overview-panel {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 10px;
+  min-height: 260px;
+}
+
+.overview-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.card {
+  background: #0f151d;
+  border: 1px solid #2a3b4b;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.card .k {
+  color: #8ea1b5;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.card .v {
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.players-wrap {
+  min-height: 0;
+}
+
+.teamname-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.teamname-bar input {
+  width: 180px;
+}
+
+.team-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.team-col h3 {
+  margin: 0 0 6px 0;
+  font-size: 12px;
+  color: #8ea1b5;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.players-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #2a3b4b;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0f151d;
+}
+
+.players-table thead th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8ea1b5;
+  padding: 8px;
+  border-bottom: 1px solid #2a3b4b;
+}
+
+.players-table tbody td {
+  padding: 8px;
+  font-size: 12px;
+  border-bottom: 1px solid #1f2a35;
+}
+
+.side-assign {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.mini-btn {
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid #2a3b4b;
+  background: #16202b;
+  color: #d9e5f2;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.players-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.macro-panel summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  color: #d7e6f5;
+}
+
+.macro-panel[open] summary {
+  margin-bottom: 10px;
+}
+
+.macro-panel textarea {
+  min-height: 140px;
+}

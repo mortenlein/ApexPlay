@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { requireAdminApi } from '@/lib/route-auth';
 
 export async function GET(
     request: Request,
@@ -21,8 +22,19 @@ export async function POST(
     request: Request,
     { params }: { params: { id: string } }
 ) {
+    const unauthorized = await requireAdminApi();
+    if (unauthorized) return unauthorized;
+
     try {
         const { teamId, kills, placement, points } = await request.json();
+        const team = await prisma.team.findUnique({
+            where: { id: teamId },
+            select: { tournamentId: true },
+        });
+
+        if (!team || team.tournamentId !== params.id) {
+            return NextResponse.json({ error: 'Team does not belong to this tournament' }, { status: 400 });
+        }
 
         const entry = await prisma.scoreboardEntry.upsert({
             where: {

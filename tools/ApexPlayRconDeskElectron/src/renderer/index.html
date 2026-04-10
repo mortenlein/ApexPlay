@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ApexPlay RCON Desk</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="bar">
+        <div class="left">
+          <label>Server</label>
+          <select id="serverSelect"></select>
+          <button id="addServerBtn">Add</button>
+          <button id="saveServerBtn">Save</button>
+          <button id="deleteServerBtn">Delete</button>
+        </div>
+        <div class="right">
+          <span id="connectionBadge" class="badge offline">Offline</span>
+          <label>Host</label>
+          <input id="hostInput" />
+          <label>Port</label>
+          <input id="portInput" type="number" />
+          <label>Public Log URL</label>
+          <input id="publicLogUrlInput" placeholder="http://x.x.x.x:27555/logs" style="width:220px" />
+          <label>Server PW</label>
+          <input id="serverPasswordInput" type="password" />
+          <label>RCON PW</label>
+          <input id="rconPasswordInput" type="password" />
+          <button id="connectBtn">Connect</button>
+          <button id="disconnectBtn" disabled>Disconnect</button>
+        </div>
+      </header>
+
+      <main class="content">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Quick Actions</h2>
+            <span id="hotkeyHint"></span>
+          </div>
+          <div id="actionsGrid" class="actions-grid"></div>
+        </section>
+        <details class="panel macro-panel">
+          <summary>Macro Editor</summary>
+          <textarea id="macroInput">say [ADMIN] Live in 10 seconds
+mp_restartgame 10</textarea>
+          <div class="row right-align">
+            <button id="runMacroBtn">Run Macro</button>
+          </div>
+        </details>
+      </main>
+
+      <section class="panel overview-panel">
+        <div class="panel-head">
+          <h2>Server Overview</h2>
+          <div class="row">
+            <span id="overviewUpdated" class="muted">No status yet</span>
+            <button id="refreshStatusBtn">Refresh Status</button>
+          </div>
+        </div>
+        <div class="overview-cards">
+          <div class="card">
+            <span class="k">Hostname</span>
+            <span id="ovHostname" class="v">-</span>
+          </div>
+          <div class="card">
+            <span class="k">Map</span>
+            <span id="ovMap" class="v">-</span>
+          </div>
+          <div class="card">
+            <span class="k">UDP/IP</span>
+            <span id="ovIp" class="v">-</span>
+          </div>
+          <div class="card">
+            <span class="k">Players</span>
+            <span id="ovPlayers" class="v">-</span>
+          </div>
+        </div>
+
+        <div class="teamname-bar">
+          <label>CT Name</label>
+          <input id="ctNameInput" placeholder="Counter-Terrorists" />
+          <button id="setCtNameBtn">Set CT</button>
+          <label>T Name</label>
+          <input id="tNameInput" placeholder="Terrorists" />
+          <button id="setTNameBtn">Set T</button>
+          <button id="setBothNamesBtn">Set Both</button>
+          <span class="muted">Hotkeys: Ctrl+Shift+1 (CT), Ctrl+Shift+2 (T), Ctrl+Shift+3 (Both)</span>
+        </div>
+
+        <div class="players-wrap">
+          <div class="team-split">
+            <div class="team-col">
+              <h3>CT Side</h3>
+              <table class="players-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>K</th>
+                    <th>A</th>
+                    <th>D</th>
+                    <th>Ping</th>
+                  </tr>
+                </thead>
+                <tbody id="playersCtBody">
+                  <tr><td colspan="5" class="muted">No CT players.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="team-col">
+              <h3>T Side</h3>
+              <table class="players-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>K</th>
+                    <th>A</th>
+                    <th>D</th>
+                    <th>Ping</th>
+                  </tr>
+                </thead>
+                <tbody id="playersTBody">
+                  <tr><td colspan="5" class="muted">No T players.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="team-col">
+              <h3>Unknown / Spec</h3>
+              <table class="players-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Side</th>
+                    <th>Ping</th>
+                    <th>Assign</th>
+                  </tr>
+                </thead>
+                <tbody id="playersUnknownBody">
+                  <tr><td colspan="4" class="muted">No unknown players.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel log-panel">
+        <div class="panel-head">
+          <h2>Console Output</h2>
+        </div>
+        <div class="log-split">
+          <div class="log-col">
+            <h3>Actions</h3>
+            <ul id="logList"></ul>
+          </div>
+          <div class="log-col">
+            <h3>Live Feed</h3>
+            <ul id="eventFeed"></ul>
+          </div>
+        </div>
+        <div class="row">
+          <input id="manualInput" placeholder="Type command..." />
+          <input id="logPortInput" type="number" value="27555" style="width:92px" />
+          <button id="startChatBtn">Start Listener</button>
+          <button id="stopChatBtn">Stop Listener</button>
+          <button id="togglePollBtn">Start Poll</button>
+          <button id="copyJoinLinkBtn">Copy Join Link</button>
+          <button id="sendManualBtn">Send Command</button>
+        </div>
+      </section>
+    </div>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

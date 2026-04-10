@@ -1,11 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import Image from 'next/image';
-import { Trophy, Users, ShieldCheck, ArrowRight, CheckCircle2, AlertCircle, Loader2, Gamepad2, Upload, User, MapPin, AtSign } from 'lucide-react';
+import { Trophy, Users, ShieldCheck, ArrowRight, CheckCircle2, AlertCircle, Loader2, Gamepad2, Upload, Share2, Copy } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { ContextBar } from '@/components/ContextBar';
+import { MockPersonaButtons } from '@/components/MockPersonaButtons';
+import { useToast } from '@/components/ToastProvider';
+import { RouteNotFoundState } from '@/components/RouteStates';
 
 export default function RegisterPage({ params }: { params: { id: string } }) {
+    const { data: session, status } = useSession();
+    const searchParams = useSearchParams();
+    const inviteCode = searchParams.get('invite');
+    const toast = useToast();
+
     const [tournament, setTournament] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -15,13 +26,16 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
     const [teamData, setTeamData] = useState({
         name: '',
         logoUrl: '',
-        players: Array(5).fill({ name: '', nickname: '', countryCode: 'no', seating: '', steamId: '' })
+        players: [] as any[]
     });
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
+    const [userTeam, setUserTeam] = useState<any>(null);
+    const sessionSteamId = (session?.user as any)?.steamId as string | undefined;
+    const requiresSteamAuth = Boolean(tournament?.steamSignupEnabled) && (!session || !sessionSteamId);
 
     useEffect(() => {
-        const fetchTournament = async () => {
+        const fetchData = async () => {
             try {
                 const res = await fetch(`/api/tournaments/${params.id}`);
                 const current = await res.json();
@@ -29,10 +43,19 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
                     setTournament(current);
                     setTeamData(prev => ({
                         ...prev,
-                        players: Array(current.teamSize || 5).fill({ name: '', nickname: '', countryCode: 'no', seating: '', steamId: '' })
+                        players: Array(current.teamSize || 5).fill({ name: '', nickname: '', countryCode: 'no', steamId: '' })
                     }));
                 } else {
                     setError('Tournament not found');
+                }
+
+                if (session && sessionSteamId && current.steamSignupEnabled) {
+                    const teamsRes = await fetch(`/api/tournaments/${params.id}/teams`);
+                    const teams = await teamsRes.json();
+                    const myTeam = teams.find((t: any) => 
+                        t.players.some((p: any) => p.userId === (session?.user as any)?.id)
+                    );
+                    if (myTeam) setUserTeam(myTeam);
                 }
             } catch (err) {
                 setError('Failed to load tournament details');
@@ -40,8 +63,8 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
                 setLoading(false);
             }
         };
-        fetchTournament();
-    }, [params.id]);
+        fetchData();
+    }, [params.id, session, sessionSteamId]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -50,7 +73,6 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
 
         try {
             let logoUrl = teamData.logoUrl;
-
             if (logoFile) {
                 const uploadData = new FormData();
                 uploadData.append('file', logoFile);
@@ -63,27 +85,72 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
                 logoUrl = url;
             }
 
-            const cleanedPlayers = teamData.players.filter(p => p.name.trim() !== '');
-            
-            if (cleanedPlayers.length < (tournament?.teamSize || 1)) {
-                throw new Error(`Minimum ${tournament?.teamSize || 1} players required`);
-            }
+            if (tournament?.steamSignupEnabled) {
+                const res = await fetch(`/api/tournaments/${params.id}/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'CREATE_TEAM',
+                        teamName: teamData.name,
+                        logoUrl: logoUrl,
+                    }),
+                });
 
-            const res = await fetch(`/api/tournaments/${params.id}/teams`, {
+                if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.error || 'Registration failed');
+                }
+                const newTeam = await res.json();
+                setUserTeam(newTeam);
+                setSuccess(true);
+            } else {
+                const cleanedPlayers = teamData.players.filter(p => p.name.trim() !== '');
+                if (cleanedPlayers.length < (tournament?.teamSize || 1)) {
+                    throw new Error(`Minimum ${tournament?.teamSize || 1} players required`);
+                }
+
+                const res = await fetch(`/api/tournaments/${params.id}/teams`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: teamData.name,
+                        logoUrl: logoUrl,
+                        players: cleanedPlayers
+                    }),
+                });
+
+                if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.error || 'Registration failed');
+                }
+                setSuccess(true);
+            }
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleJoinTeam = async () => {
+        setSubmitting(true);
+        setError(null);
+        try {
+            const res = await fetch(`/api/tournaments/${params.id}/signup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    name: teamData.name,
-                    logoUrl: logoUrl,
-                    players: cleanedPlayers
+                    action: 'JOIN_TEAM',
+                    inviteCode: inviteCode,
                 }),
             });
 
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || 'Registration failed');
+                throw new Error(data.error || 'Joining team failed');
             }
-
+            const joinedTeam = await res.json();
+            setUserTeam(joinedTeam);
             setSuccess(true);
         } catch (err: any) {
             setError(err.message);
@@ -98,285 +165,292 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
         setTeamData({ ...teamData, players: newPlayers });
     };
 
-    if (loading) return (
-        <div className="min-h-screen bg-[#0d0f12] flex flex-col items-center justify-center gap-6">
-            <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500">Decrypting Payload...</span>
+    if (loading || status === 'loading') return (
+        <div className="min-h-screen bg-[var(--mds-page)] flex flex-col items-center justify-center gap-6">
+            <Loader2 className="w-12 h-12 text-[var(--mds-action)] animate-spin" />
+            <span className="mds-uppercase-label opacity-40">Loading tournament portal...</span>
         </div>
     );
 
-    if (success) {
+    if (!tournament) {
         return (
-            <div className="min-h-screen bg-[#0d0f12] flex items-center justify-center p-6 relative overflow-hidden font-sans">
-                {/* Glow Background */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-green-500/5 blur-[120px] rounded-full pointer-events-none"></div>
-                
-                <div className="max-w-xl w-full bg-[#16191d] border border-white/5 rounded-[3.5rem] p-16 text-center shadow-2xl relative z-10 overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 blur-[60px] rounded-full -mr-32 -mt-32"></div>
-                    
-                    <div className="w-24 h-24 bg-green-500/10 rounded-[2rem] flex items-center justify-center border border-green-500/20 mx-auto mb-10 shadow-2xl shadow-green-500/10">
-                        <CheckCircle2 className="w-12 h-12 text-green-500" />
+            <RouteNotFoundState
+                title="Tournament Not Found"
+                description="This registration link is invalid or the tournament no longer exists."
+                primaryLabel="Back to Tournaments"
+                primaryHref="/tournaments"
+            />
+        );
+    }
+
+    if (tournament.rosterLocked) {
+        return (
+            <div className="min-h-screen bg-[var(--mds-page)] text-[var(--mds-text-primary)]">
+                <ContextBar mode="public" />
+                <div className="mx-auto flex min-h-[70vh] max-w-xl items-center px-6">
+                    <div className="w-full rounded-xl border border-[var(--mds-border)] bg-[var(--mds-card)] p-8 text-center">
+                        <h1 className="text-2xl font-black uppercase tracking-tight">Registration Closed</h1>
+                        <p className="mt-3 text-sm text-[var(--mds-text-muted)]">
+                            Team registration is locked for {tournament.name}. Contact an admin if this is unexpected.
+                        </p>
+                        <Link href={`/tournaments/${params.id}`} className="mds-btn-primary mt-6 h-11 px-8 text-xs font-black uppercase tracking-widest">
+                            Return to Tournament
+                        </Link>
                     </div>
-                    
-                    <h1 className="text-4xl font-extrabold uppercase tracking-tighter text-white mb-4 not-italic">Registration Verified</h1>
-                    <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px] mb-12 max-w-sm mx-auto leading-relaxed not-italic">
-                        Your unit <span className="text-green-500">"{teamData.name}"</span> has been successfully deployed into the <span className="text-white">{tournament?.name}</span> infrastructure.
-                    </p>
-                    
-                    <Link 
-                        href={`/tournaments/${params.id}`}
-                        className="inline-flex items-center gap-3 bg-blue-600 hover:bg-blue-500 text-white px-12 py-6 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-blue-600/20 active:scale-95"
-                    >
-                        Access Tournament Hub <ArrowRight size={16} />
-                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    if (success || userTeam) {
+        const isFull = (userTeam?.players?.length || 0) >= (tournament?.teamSize || 1);
+        const registrationLink = typeof window !== 'undefined' ? `${window.location.origin}/tournaments/${params.id}/register?invite=${userTeam?.inviteCode}` : '';
+
+        return (
+            <div className="min-h-screen bg-[var(--mds-page)] flex flex-col h-screen overflow-hidden text-[var(--mds-text-primary)]">
+                <ContextBar mode="public" />
+                <div className="flex-1 flex items-center justify-center p-6 bg-grid-pattern bg-fixed">
+                    <div className="max-w-xl w-full mds-card p-10 text-center shadow-2xl relative overflow-hidden">
+                        <div className="w-20 h-20 bg-[var(--mds-action-soft)] rounded-2xl flex items-center justify-center border border-[var(--mds-action)]/20 mx-auto mb-8 shadow-lg shadow-[var(--mds-action)]/10">
+                            <CheckCircle2 className="w-10 h-10 text-[var(--mds-action)]" />
+                        </div>
+                        
+                        <h1 className="text-3xl font-black uppercase tracking-tight mb-4">Registration Confirmed</h1>
+                        <p className="mds-uppercase-label text-[10px] opacity-50 mb-10 leading-relaxed">
+                            Team <span className="text-[var(--mds-action)]">&quot;{userTeam?.name || teamData.name}&quot;</span> is now registered for <span className="text-[var(--mds-text-primary)]">{tournament?.name}</span>.
+                        </p>
+
+                        {!isFull && tournament.steamSignupEnabled && (
+                            <div className="bg-[var(--mds-input)] border border-[var(--mds-border)] rounded-2xl p-8 space-y-6 mb-10">
+                                <h3 className="mds-uppercase-label text-[11px] text-[var(--mds-action)] flex items-center justify-center gap-3">
+                                    <Share2 size={14} /> Invite Teammates
+                                </h3>
+                                <div className="bg-[var(--mds-page)] border border-[var(--mds-border)] rounded-lg px-6 py-4 font-mono text-[11px] truncate text-[var(--mds-text-muted)]">
+                                    {registrationLink}
+                                </div>
+                                <button 
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(registrationLink);
+                                        toast.success('Invite link copied', 'Share it with the rest of your team.');
+                                    }}
+                                    className="mds-btn-primary w-full h-12 text-[11px] font-black uppercase tracking-widest gap-3"
+                                >
+                                    <Copy size={14} /> Copy Invite Link
+                                </button>
+                                <p className="text-[9px] font-bold text-[var(--mds-text-subtle)] uppercase tracking-widest">
+                                    {tournament.teamSize - (userTeam?.players?.length || 0)} slots remaining in the roster.
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="flex flex-col gap-4">
+                            <Link 
+                                href={`/tournaments/${params.id}`}
+                                className="mds-btn-primary h-14 w-full text-[12px] font-black uppercase tracking-widest gap-3"
+                            >
+                                Open Tournament Overview <ArrowRight size={18} />
+                            </Link>
+                        </div>
+                    </div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#0d0f12] text-white selection:bg-blue-500 selection:text-white font-sans overflow-x-hidden">
-            {/* Background Decor */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-blue-600/[0.03] blur-[150px] rounded-full"></div>
-                <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-purple-600/[0.03] blur-[150px] rounded-full"></div>
-            </div>
-
-            <div className="relative z-10 max-w-6xl mx-auto px-10 py-24 md:py-40">
-                <header className="text-center mb-32 space-y-10">
-                    <div className="inline-flex items-center gap-4 bg-white/5 border border-white/5 px-8 py-3 rounded-full shadow-2xl backdrop-blur-md">
-                        <Trophy size={16} className="text-blue-500" />
-                        <span className="text-[11px] font-black uppercase tracking-[0.4em] text-gray-300">Competitive Entry Interface</span>
+        <div className="min-h-screen bg-[var(--mds-page)] text-[var(--mds-text-primary)] selection:bg-[var(--mds-action-soft)] selection:text-white">
+            <ContextBar mode="public" />
+            
+            <div className="max-w-4xl mx-auto px-6 py-16 lg:py-24">
+                <header className="mb-16">
+                    <div className="flex items-center gap-3 mb-6">
+                        <Trophy size={20} className="text-[var(--mds-action)]" />
+                        <span className="mds-uppercase-label text-[11px] tracking-[0.2em]">Official Registration</span>
                     </div>
-                    <div className="space-y-6">
-                        <h1 className="text-6xl md:text-9xl font-extrabold uppercase tracking-tight text-white leading-none not-italic">
-                            {tournament?.name || 'INITIALIZING...'}
-                        </h1>
-                        <p className="text-gray-400 font-bold uppercase tracking-[0.5em] text-[11px] not-italic">
-                            {tournament?.teamSize}v{tournament?.teamSize} Tactical Protocol • {tournament?.format} Framework
-                        </p>
+                    <h1 className="text-4xl lg:text-6xl font-black uppercase tracking-tight leading-none mb-6">
+                        {tournament?.name || 'Loading...'}
+                    </h1>
+                    <div className="flex items-center gap-6 mds-uppercase-label text-[10px] opacity-40">
+                        <span>Format: {tournament?.format}</span>
+                        <span>•</span>
+                        <span>Team Size: {tournament?.teamSize} Players</span>
                     </div>
                 </header>
 
                 <main>
-                    <form onSubmit={handleSubmit} className="space-y-12">
-                        {/* Section: Team Details */}
-                        <section className="bg-[#16191d] border border-white/5 rounded-[3rem] p-12 md:p-16 shadow-2xl relative overflow-hidden group hover:border-white/10 transition-all">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/[0.02] blur-[80px] rounded-full -mr-32 -mt-32"></div>
-                            
-                            <div className="flex items-center justify-between mb-16 relative z-10">
-                                <h2 className="text-2xl font-extrabold uppercase tracking-tighter flex items-center gap-4 not-italic">
-                                    <Users className="text-blue-500" size={28} />
-                                    01. Team Identity
-                                </h2>
-                                <span className="text-[10px] font-black text-white/5 uppercase tracking-[0.4em] not-italic">Section Alpha</span>
+                    {requiresSteamAuth ? (
+                        <div className="mds-card p-12 text-center shadow-xl space-y-10">
+                            <div className="w-16 h-16 bg-[var(--mds-action-soft)] rounded-2xl flex items-center justify-center mx-auto border border-[var(--mds-action)]/20 shadow-lg">
+                                <Gamepad2 size={32} className="text-[var(--mds-action)]" />
                             </div>
+                            <div className="space-y-4">
+                                <h2 className="text-2xl font-black uppercase tracking-tight">Steam Verification Required</h2>
+                                <p className="text-[var(--mds-text-muted)] text-[13px] font-medium max-w-md mx-auto leading-relaxed">
+                                    This tournament requires a Steam-linked login to verify player identities and enable invite links.
+                                </p>
+                            </div>
+                            <button 
+                                onClick={() => signIn('steam', { callbackUrl: `/tournaments/${params.id}/register${inviteCode ? `?invite=${inviteCode}` : ''}` })}
+                                className="mds-btn-primary h-14 px-10 text-[12px] font-black uppercase tracking-widest gap-4 group"
+                            >
+                                <Gamepad2 size={20} className="group-hover:rotate-12 transition-transform" />
+                                Continue with Steam
+                            </button>
+                            {session && !sessionSteamId && (
+                                <button
+                                    type="button"
+                                    onClick={() => signOut({ callbackUrl: `/tournaments/${params.id}/register${inviteCode ? `?invite=${inviteCode}` : ''}` })}
+                                    className="mds-btn-secondary h-12 px-8 text-[11px] font-black uppercase tracking-widest gap-3"
+                                >
+                                    Switch Account
+                                </button>
+                            )}
+                            <MockPersonaButtons callbackUrl={`/tournaments/${params.id}/register${inviteCode ? `?invite=${inviteCode}` : ''}`} />
+                        </div>
+                    ) : inviteCode && tournament?.steamSignupEnabled ? (
+                        <div className="mds-card p-12 text-center shadow-xl space-y-10">
+                            <div className="w-16 h-16 bg-[var(--mds-action-soft)] rounded-2xl flex items-center justify-center mx-auto border border-[var(--mds-action)]/20">
+                                <Users size={32} className="text-[var(--mds-action)]" />
+                            </div>
+                            <div className="space-y-4">
+                                <h2 className="text-2xl font-black uppercase tracking-tight">Join Existing Team</h2>
+                                <p className="text-[var(--mds-text-muted)] text-[13px] font-medium max-w-md mx-auto leading-relaxed">
+                                    You have been invited to join a team with code: <span className="text-[var(--mds-action)] font-mono">{inviteCode}</span>
+                                </p>
+                            </div>
+                            <button 
+                                onClick={handleJoinTeam}
+                                disabled={submitting}
+                                className="mds-btn-primary h-14 px-10 text-[12px] font-black uppercase tracking-widest gap-3 disabled:opacity-50"
+                            >
+                                {submitting ? <Loader2 size={20} className="animate-spin" /> : <ShieldCheck size={20} />}
+                                Join Roster
+                            </button>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="space-y-8">
+                            <section className="mds-card p-10 lg:p-12 space-y-10">
+                                <div className="flex items-center gap-4">
+                                    <div className="h-8 w-8 rounded-lg bg-[var(--mds-action)]/10 text-[var(--mds-action)] flex items-center justify-center font-black text-xs border border-[var(--mds-action)]/20">01</div>
+                                    <h2 className="text-xl font-black uppercase tracking-tight">Team Identity</h2>
+                                </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 relative z-10">
-                                <div className="lg:col-span-12 space-y-12">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                                        <div className="space-y-6">
-                                            <label className="block text-xs font-black text-gray-500 uppercase tracking-[0.3em] ml-1">Team Designation</label>
-                                            <div className="relative">
-                                                <input 
-                                                    type="text"
-                                                    required
-                                                    value={teamData.name}
-                                                    onChange={(e) => setTeamData({ ...teamData, name: e.target.value })}
-                                                    className="w-full bg-black/40 border border-white/5 rounded-[2rem] px-10 py-8 text-2xl font-bold text-white focus:outline-none focus:border-blue-500/50 transition-all placeholder:text-white/10 shadow-inner"
-                                                    placeholder="Enter Team Name..."
-                                                />
-                                                <div className="absolute right-8 top-1/2 -translate-y-1/2 text-blue-500/30"><Gamepad2 size={28} /></div>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-4">
-                                            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Upload Insignia</label>
-                                            <div className="relative group/file">
-                                                <input 
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={(e) => {
-                                                        const file = e.target.files?.[0];
-                                                        if (file) {
-                                                            setLogoFile(file);
-                                                            setLogoPreview(URL.createObjectURL(file));
-                                                        }
-                                                    }}
-                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-                                                />
-                                                <div className="w-full bg-black/40 border border-dashed border-white/5 rounded-[1.5rem] px-8 py-6 flex items-center justify-between group-hover/file:border-blue-500/30 transition-all">
-                                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{logoFile ? logoFile.name : 'Select JPG/PNG File'}</span>
-                                                    <Upload size={18} className="text-gray-700 group-hover/file:text-blue-500 transition-colors" />
-                                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                    <div className="space-y-4">
+                                        <label className="mds-uppercase-label text-[10px] opacity-50">Team Name</label>
+                                        <input 
+                                            type="text"
+                                            required
+                                            value={teamData.name}
+                                            onChange={(e) => setTeamData({ ...teamData, name: e.target.value })}
+                                            className="mds-input h-14 px-6 font-bold uppercase tracking-wide text-sm"
+                                            placeholder="Enter unique team name"
+                                        />
+                                    </div>
+                                    <div className="space-y-4">
+                                        <label className="mds-uppercase-label text-[10px] opacity-50">Team Logo (Optional)</label>
+                                        <div className="relative h-14">
+                                            <input 
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        setLogoFile(file);
+                                                        setLogoPreview(URL.createObjectURL(file));
+                                                    }
+                                                }}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                            />
+                                            <div className="mds-input h-full flex items-center justify-between px-6 bg-[var(--mds-input)]">
+                                                <span className="text-[11px] font-bold text-[var(--mds-text-subtle)] uppercase">
+                                                    {logoFile ? logoFile.name : 'Upload PNG/JPG'}
+                                                </span>
+                                                <Upload size={16} className="text-[var(--mds-text-subtle)]" />
                                             </div>
                                         </div>
                                     </div>
+                                </div>
 
-                                    {/* Preview Block */}
-                                    <div className="bg-black/40 border border-white/5 rounded-[2rem] p-10 flex flex-col md:flex-row items-center gap-10">
-                                        <div className="w-32 h-32 bg-[#0d0f12] rounded-[1.5rem] flex items-center justify-center border border-white/5 relative overflow-hidden group/preview">
+                                {(teamData.name || logoPreview) && (
+                                    <div className="p-8 bg-[var(--mds-input)] rounded-xl border border-[var(--mds-border)] flex items-center gap-8">
+                                        <div className="h-20 w-20 bg-[var(--mds-page)] rounded-lg border border-[var(--mds-border)] flex items-center justify-center p-3 relative overflow-hidden shadow-inner">
                                             {logoPreview ? (
-                                                <Image src={logoPreview} alt="Logo Preview" fill className="object-contain p-4 transition-transform duration-500 group-hover/preview:scale-110" />
+                                                <Image src={logoPreview} alt="" fill className="object-contain p-2" />
                                             ) : (
-                                                <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center border border-white/5">
-                                                    <Users size={20} className="text-gray-700" />
-                                                </div>
+                                                <Users size={24} className="text-[var(--mds-text-subtle)] opacity-50" />
                                             )}
                                         </div>
-                                        <div className="text-center md:text-left space-y-2 flex-1">
-                                            <h4 className="text-lg font-extrabold uppercase tracking-tight text-white">{teamData.name || 'UNNAMED SQUAD'}</h4>
-                                            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest leading-relaxed">Verification of team assets and designation will occur prior to bracket seeding.</p>
+                                        <div>
+                                            <h4 className="text-lg font-black uppercase tracking-tight text-[var(--mds-text-primary)]">
+                                                {teamData.name || 'Your Team Name'}
+                                            </h4>
+                                            <p className="mds-uppercase-label text-[9px] mt-1 opacity-40 uppercase tracking-widest">Team Profile Preview</p>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        </section>
+                                )}
+                            </section>
 
-                        {/* Section: Roster */}
-                        <section className="bg-[#16191d] border border-white/5 rounded-[3.5rem] p-12 md:p-16 shadow-2xl relative overflow-hidden">
-                            <div className="flex items-center justify-between mb-20">
-                                <h2 className="text-2xl font-extrabold uppercase tracking-tighter flex items-center gap-4 not-italic">
-                                    <ShieldCheck className="text-blue-500" size={28} />
-                                    02. Personnel Roster
-                                </h2>
-                                <span className="text-[10px] font-black text-white/5 uppercase tracking-[0.4em] not-italic">Section Beta</span>
-                            </div>
-
-                            <div className="space-y-20 relative z-10">
-                                {teamData.players.map((player, i) => (
-                                    <div key={i} className="relative pl-16 border-l-2 border-white/5 pb-4 group/player last:pb-0">
-                                        {/* Counter */}
-                                        <div className="absolute left-[-17px] top-0 w-8 h-8 bg-black border border-white/5 rounded-full flex items-center justify-center font-black text-[10px] text-gray-500 group-hover/player:text-blue-500 group-hover/player:border-blue-500/50 transition-all">
-                                            {(i + 1).toString().padStart(2, '0')}
-                                        </div>
-                                        
-                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
-                                            <div className="md:col-span-3 space-y-4">
-                                                <label className="block text-[9px] font-black text-gray-600 uppercase tracking-[0.3em] flex items-center gap-2">
-                                                    <User size={12} className="text-blue-500/50" /> Competitive Name
-                                                </label>
-                                                <input 
-                                                    type="text"
-                                                    required
-                                                    value={player.name}
-                                                    onChange={(e) => updatePlayer(i, 'name', e.target.value)}
-                                                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-5 text-base font-bold text-white focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-white/5"
-                                                    placeholder="Real or Global Name..."
-                                                />
-                                            </div>
-                                            <div className="md:col-span-3 space-y-4">
-                                                <label className="block text-[9px] font-black text-gray-600 uppercase tracking-[0.3em] flex items-center gap-2">
-                                                    <User size={12} className="text-blue-500/50" /> Handle / Nickname
-                                                </label>
-                                                <input 
-                                                    type="text"
-                                                    value={player.nickname}
-                                                    onChange={(e) => updatePlayer(i, 'nickname', e.target.value)}
-                                                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-5 text-base font-bold text-white focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-white/5"
-                                                    placeholder="e.g. 'Flash'..."
-                                                />
-                                            </div>
-                                            <div className="md:col-span-2 space-y-4">
-                                                <label className="block text-[9px] font-black text-gray-600 uppercase tracking-[0.3em] flex items-center gap-2">
-                                                    <MapPin size={12} className="text-blue-500/50" /> Seat Pos
-                                                </label>
-                                                <input 
-                                                    type="text"
-                                                    value={player.seating}
-                                                    onChange={(e) => updatePlayer(i, 'seating', e.target.value)}
-                                                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-5 text-base font-bold text-white focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-white/5"
-                                                    placeholder="A1, B2..."
-                                                />
-                                            </div>
-                                            <div className="md:col-span-1 space-y-4">
-                                                <label className="block text-[9px] font-black text-gray-600 uppercase tracking-[0.3em] flex items-center gap-2">
-                                                    Flag
-                                                </label>
-                                                <input 
-                                                    type="text"
-                                                    value={player.countryCode}
-                                                    onChange={(e) => updatePlayer(i, 'countryCode', e.target.value)}
-                                                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-5 text-base font-bold text-white focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-white/5"
-                                                    placeholder="no, se..."
-                                                />
-                                            </div>
-                                            <div className="md:col-span-3 space-y-4">
-                                                <label className="block text-[9px] font-black text-gray-600 uppercase tracking-[0.3em] flex items-center gap-2">
-                                                    <AtSign size={12} className="text-blue-500/50" /> Steam Profile URL
-                                                </label>
-                                                <input 
-                                                    type="text"
-                                                    value={player.steamId}
-                                                    onChange={(e) => updatePlayer(i, 'steamId', e.target.value)}
-                                                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-5 text-[11px] font-mono text-blue-400 focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-white/5"
-                                                    placeholder="https://steamcommunity.com/..."
-                                                />
-                                            </div>
-                                        </div>
+                            {!tournament?.steamSignupEnabled && (
+                                <section className="mds-card p-10 lg:p-12 space-y-12">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-8 w-8 rounded-lg bg-[var(--mds-action)]/10 text-[var(--mds-action)] flex items-center justify-center font-black text-xs border border-[var(--mds-action)]/20">02</div>
+                                        <h2 className="text-xl font-black uppercase tracking-tight">Player Roster</h2>
                                     </div>
-                                ))}
-                            </div>
-                        </section>
 
-                        {error && (
-                            <div className="bg-red-500/10 border border-red-500/20 p-8 rounded-[2rem] flex items-center gap-6 text-red-500">
-                                <AlertCircle size={24} />
-                                <span className="font-extrabold uppercase tracking-widest text-[10px]">{error}</span>
-                            </div>
-                        )}
+                                    <div className="space-y-6">
+                                        {teamData.players.map((player, i) => (
+                                            <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-[var(--mds-input)]/40 rounded-xl border border-[var(--mds-border)]/50 group hover:border-[var(--mds-action)]/30 transition-all">
+                                                <div className="space-y-3">
+                                                    <label className="mds-uppercase-label text-[9px] opacity-40">Player Name (P{i+1})</label>
+                                                    <input 
+                                                        type="text"
+                                                        required
+                                                        value={player.name}
+                                                        onChange={(e) => updatePlayer(i, 'name', e.target.value)}
+                                                        className="mds-input h-11 px-4 text-sm font-bold uppercase tracking-tight"
+                                                        placeholder="Nickname or Full Name"
+                                                    />
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <label className="mds-uppercase-label text-[9px] opacity-40">Steam Profile / ID</label>
+                                                    <input 
+                                                        type="text"
+                                                        required
+                                                        value={player.steamId}
+                                                        onChange={(e) => updatePlayer(i, 'steamId', e.target.value)}
+                                                        className="mds-input h-11 px-4 text-sm font-bold opacity-80"
+                                                        placeholder="Steam Profile Link or ID64"
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
 
-                        <button 
-                            type="submit"
-                            disabled={submitting}
-                            className="w-full bg-blue-600 hover:bg-blue-500 py-12 rounded-[3.5rem] font-black uppercase text-sm tracking-[0.4em] transition-all disabled:opacity-50 shadow-[0_40px_80px_-20px_rgba(37,99,235,0.4)] flex items-center justify-center gap-8 active:scale-[0.98] group overflow-hidden relative"
-                        >
-                            <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-700"></div>
-                            {submitting ? (
-                                <div className="flex items-center gap-6">
-                                    <Loader2 className="animate-spin text-white" size={28} />
-                                    <span>Syncing Roster...</span>
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-6 relative z-10">
-                                    <span>Execute Enrollment Protocol</span>
-                                    <ArrowRight size={24} className="group-hover:translate-x-4 transition-transform duration-500" />
+                            {error && (
+                                <div className="bg-[var(--mds-red)]/10 border border-[var(--mds-red)]/20 p-6 rounded-xl flex items-center gap-4 text-[var(--mds-red)]">
+                                    <AlertCircle size={20} />
+                                    <span className="text-[11px] font-black uppercase tracking-widest">{error}</span>
                                 </div>
                             )}
-                        </button>
-                    </form>
+
+                            <button 
+                                type="submit"
+                                disabled={submitting}
+                                className="mds-btn-primary h-16 w-full text-[13px] font-black uppercase tracking-widest gap-4 shadow-2xl disabled:opacity-50"
+                            >
+                                {submitting ? (
+                                    <><Loader2 size={24} className="animate-spin" /> Submitting Registration...</>
+                                ) : (
+                                    <><CheckCircle2 size={24} /> Complete Registration</>
+                                )}
+                            </button>
+                        </form>
+                    )}
                 </main>
-
-                <footer className="mt-40 text-center pb-20">
-                    <div className="bg-white/[0.02] backdrop-blur-3xl border border-white/5 p-12 rounded-[3rem] inline-block relative overflow-hidden group">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-30"></div>
-                        <div className="flex items-center justify-center gap-10 opacity-20 mb-8 transition-opacity group-hover:opacity-40">
-                            <Gamepad2 size={28} />
-                            <Users size={28} />
-                            <ShieldCheck size={28} />
-                            <Trophy size={28} />
-                        </div>
-                        <p className="text-[10px] font-black text-gray-700 uppercase tracking-[0.6em] mb-2 leading-none not-italic">ApexPlay Tactical Infrastructure</p>
-                        <p className="text-[9px] font-bold text-gray-800 uppercase tracking-[0.2em] opacity-50 not-italic">Authorized Personnel Only Beyond This Point</p>
-                    </div>
-                </footer>
             </div>
-
-            <style jsx global>{`
-                ::selection {
-                    background: rgba(59, 130, 246, 0.4);
-                    color: white;
-                }
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 4px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(255, 255, 255, 0.05);
-                    border-radius: 10px;
-                }
-            `}</style>
         </div>
     );
 }

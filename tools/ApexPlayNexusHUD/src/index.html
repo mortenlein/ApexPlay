@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ApexPlay Nexus HUD - PGL Shanghai Pro Edition</title>
+  <link rel="stylesheet" href="index.css">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="hud-container" class="hud-container">
+    
+    <!-- PGL TOP HUB: SHANGHAI STRIP -->
+    <div id="top-bar-overlay">
+        <div class="top-bar-strip">
+            <!-- Left Side -->
+            <div class="team-section left">
+                <div class="team-meta">
+                    <div class="team-name" id="ct-name">COUNTER-TERRORISTS</div>
+                </div>
+            </div>
+
+            <div class="main-score blue" id="ct-score">0</div>
+
+            <div class="center-meta">
+                <div class="clock-box" id="clock-box">
+                    <img src="assets/icons/planted-bomb.svg" class="bomb-icon" id="bomb-icon">
+                    <div id="clock" class="main-time">0:00</div>
+                </div>
+                <div class="round-detail">ROUND <span id="round-num">1</span></div>
+            </div>
+
+            <div class="main-score orange" id="t-score">0</div>
+
+            <!-- Right Side -->
+            <div class="team-section right">
+                <div class="team-meta">
+                    <div class="team-name" id="t-name">TERRORISTS</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Roster Columns: Anchored to bottom, grow upward -->
+    <div class="players-viewport">
+        <div id="ct-players" class="players-list ct-list"></div>
+        <div id="t-players" class="players-list t-list"></div>
+    </div>
+
+    <!-- Bottom Center: Spectator Hub -->
+    <div id="active-player-hub">
+        <div class="active-side-stripe" id="active-stripe"></div>
+        <div class="active-content">
+            <div class="active-left">
+                <div class="active-p-name" id="active-name">PLAYER</div>
+                <div class="hp-icon-unit">
+                   <span id="active-hp">100</span>
+                </div>
+            </div>
+            <div class="active-center" id="active-weapon-icon"></div>
+            <div class="active-right">
+                <div class="active-stats" id="active-stats">
+                    <div class="stat-item"><span class="label">K</span><span id="active-k">0</span></div>
+                    <div class="stat-item"><span class="label">A</span><span id="active-a">0</span></div>
+                    <div class="stat-item"><span class="label">D</span><span id="active-d">0</span></div>
+                    <div class="stat-item"><span class="label">ADR</span><span id="active-adr">0</span></div>
+                </div>
+                <div class="active-nades" id="active-nades"></div>
+                <div class="active-ammo" id="active-ammo">0/0</div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <script src="icons.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

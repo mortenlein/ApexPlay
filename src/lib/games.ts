@@ -4,6 +4,7 @@ export interface GameMetadata {
     id: string;
     name: string;
     category: GameCategory;
+    type: string; // Used for UI display
     teamSize: number[];
     teamSizeLabels?: Record<number, string>;
     hasIntegration: boolean;
@@ -17,6 +18,7 @@ export const SUPPORTED_GAMES: GameMetadata[] = [
         id: 'CS2', 
         name: 'Counter-Strike 2', 
         category: 'BRACKET', 
+        type: 'Tactical',
         teamSize: [2, 5], 
         hasIntegration: true,
         logoUrl: '/images/games/cs2_logo.png',
@@ -27,6 +29,7 @@ export const SUPPORTED_GAMES: GameMetadata[] = [
         id: 'FORTNITE', 
         name: 'Fortnite', 
         category: 'BATTLE_ROYALE', 
+        type: 'Royale',
         teamSize: [1, 2, 3, 4], 
         teamSizeLabels: { 1: 'Solo', 2: 'Duos', 3: 'Trios', 4: 'Squads' },
         hasIntegration: false,
@@ -38,6 +41,7 @@ export const SUPPORTED_GAMES: GameMetadata[] = [
         id: 'VALORANT', 
         name: 'Valorant', 
         category: 'BRACKET', 
+        type: 'Tactical',
         teamSize: [1, 2, 3, 5], 
         teamSizeLabels: { 1: '1v1', 2: '2v2', 3: '3v3', 5: '5v5' },
         hasIntegration: false,
@@ -49,6 +53,7 @@ export const SUPPORTED_GAMES: GameMetadata[] = [
         id: 'RAINBOW6', 
         name: 'Rainbow Six Siege', 
         category: 'BRACKET', 
+        type: 'Tactical',
         teamSize: [1, 2, 3, 5], 
         teamSizeLabels: { 1: '1v1 / FFA', 2: '2v2', 3: '3v3', 5: '5v5' },
         hasIntegration: false,
@@ -60,6 +65,7 @@ export const SUPPORTED_GAMES: GameMetadata[] = [
         id: 'PUBG', 
         name: 'PUBG', 
         category: 'BATTLE_ROYALE', 
+        type: 'Royale',
         teamSize: [1, 2, 3, 4, 5], 
         teamSizeLabels: { 1: 'Solo', 2: '2v2', 3: '3v3', 4: 'Squads', 5: '5v5' },
         hasIntegration: false,

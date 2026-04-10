@@ -1,21 +1,22 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Lock, ShieldAlert, Loader2 } from "lucide-react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { Lock, ShieldAlert, Loader2, ShieldCheck, ArrowLeft } from "lucide-react";
+import Link from 'next/link';
 
-export default function LoginPage() {
+function LoginContent() {
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const rawCallbackUrl = searchParams.get("callbackUrl") || "/admin";
+  const callbackUrl = rawCallbackUrl.startsWith("/") ? rawCallbackUrl : "/admin";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     setError("");
-    setIsLoading(true);
 
     try {
       const response = await fetch("/api/auth/login", {
@@ -24,87 +25,118 @@ export default function LoginPage() {
         body: JSON.stringify({ password }),
       });
 
-      if (response.ok) {
-        router.push(callbackUrl);
-        router.refresh();
-      } else {
-        const data = await response.json();
-        setError(data.error || "Invalid password");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        setError(data?.error || "Invalid admin password.");
+        return;
       }
-    } catch (err) {
-      setError("An unexpected error occurred");
+
+      window.location.assign(callbackUrl);
+      return;
+    } catch {
+      setError("Unable to sign in right now. Please try again.");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
+  const heading = callbackUrl.startsWith("/marshal")
+    ? "Staff Access"
+    : "Admin Access";
+
   return (
-    <div className="min-h-screen bg-[#0d0f12] flex items-center justify-center p-8 relative overflow-hidden font-sans">
-      {/* Visual background flair */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 blur-[120px] rounded-full -mr-64 -mt-64"></div>
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/5 blur-[120px] rounded-full -ml-64 -mb-64"></div>
-      
-      <div className="w-full max-w-xl relative z-10">
-        <div className="bg-[#16191d] border border-white/5 rounded-[2.5rem] shadow-2xl overflow-hidden shadow-black/50">
-          <div className="p-12 md:p-20">
-            <div className="flex justify-center mb-10">
-              <div className="h-20 w-20 bg-blue-600/10 rounded-3xl flex items-center justify-center border border-blue-500/20 shadow-xl shadow-blue-500/10">
-                <Lock className="h-10 w-10 text-blue-500" />
-              </div>
-            </div>
-            
-            <h1 className="text-3xl md:text-4xl font-black text-white text-center mb-3 uppercase tracking-tighter">
-              ApexPlay Command
-            </h1>
-            <p className="text-gray-500 text-center mb-12 font-bold uppercase tracking-widest text-xs">
-              Secure Management Authentication
-            </p>
+    <div className="min-h-screen bg-[var(--mds-page)] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[var(--mds-action)]/5 blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[var(--mds-action)]/5 blur-[120px]" />
+      </div>
 
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] pl-2">System Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-black border border-white/5 rounded-2xl px-8 py-6 text-white placeholder-gray-800 focus:outline-none focus:border-blue-500 transition-all font-bold text-lg shadow-inner"
-                  autoFocus
-                />
-              </div>
-
-              {error && (
-                <div className="flex items-center gap-4 text-red-500 bg-red-500/5 border border-red-500/10 rounded-2xl px-8 py-5 text-sm font-bold uppercase tracking-tight">
-                  <ShieldAlert className="h-5 w-5 shrink-0" />
-                  <p>{error}</p>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black py-6 rounded-2xl transition-all shadow-xl shadow-blue-600/30 flex items-center justify-center gap-4 uppercase tracking-[0.2em] text-xs active:scale-95"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  "Infiltrate Dashboard"
-                )}
-              </button>
-            </form>
+      <div className="w-full max-w-[420px] relative z-10 space-y-10">
+        <div className="text-center space-y-5">
+          <div className="inline-flex h-16 w-16 items-center justify-center rounded-mds-comfortable bg-[var(--mds-action)] text-white shadow-[0_0_20px_var(--mds-action)] animate-in zoom-in duration-500">
+            <Lock size={28} strokeWidth={2.5} />
           </div>
-          
-          <div className="bg-black/40 px-12 py-6 border-t border-white/5">
-            <p className="text-[10px] text-gray-600 text-center font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-              Strategic Operations Center • Restricted
+          <div className="space-y-3">
+            <h1 className="font-brand text-4xl md:text-5xl font-black tracking-tighter text-[var(--mds-text-primary)] uppercase leading-[0.9] animate-in slide-in-from-top-8 duration-700">
+              {heading}
+            </h1>
+            <p className="text-[var(--mds-text-muted)] font-medium leading-relaxed max-w-sm mx-auto">
+              Use the admin password to open tournaments, brackets, match controls, and floor tools.
             </p>
           </div>
         </div>
+
+        <form 
+          onSubmit={handleSubmit} 
+          className="mds-card p-10 space-y-8 bg-[var(--mds-input)]/20 backdrop-blur-xl border-[var(--mds-border)] shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200"
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="mds-uppercase-label text-[10px] tracking-[0.15em] opacity-50">Admin Password</label>
+              <div className="h-1 w-8 bg-[var(--mds-border)]" />
+            </div>
+            <div className="relative group">
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                autoFocus
+                data-testid="admin-password"
+                className="w-full bg-[var(--mds-page)] border-2 border-[var(--mds-border)] rounded-mds-comfortable h-14 px-5 font-mono text-sm tracking-wider text-[var(--mds-text-primary)] placeholder:opacity-20 focus:outline-none focus:border-[var(--mds-action)] focus:ring-4 focus:ring-[var(--mds-action)]/5 transition-all"
+              />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--mds-text-muted)] opacity-20 group-focus-within:opacity-100 transition-opacity">
+                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              </div>
+            </div>
+          </div>
+
+          {error && (
+            <div className="flex items-center gap-3 p-4 bg-[var(--mds-red)]/10 border border-[var(--mds-red)]/20 rounded-mds-comfortable animate-in shake duration-300">
+              <ShieldAlert size={18} className="text-[var(--mds-red)]" />
+              <p className="text-xs font-bold text-[var(--mds-red)] uppercase tracking-tight">{error}</p>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isSubmitting || !password}
+            data-testid="admin-login-submit"
+            className="mds-btn-primary w-full h-14 font-black uppercase tracking-[0.2em] text-xs gap-3 shadow-[0_4px_15px_rgba(var(--mds-action-rgb),0.3)] hover:shadow-[0_8px_25px_rgba(var(--mds-action-rgb),0.4)] disabled:opacity-50 disabled:shadow-none transition-all group"
+          >
+            {isSubmitting ? (
+              <Loader2 className="animate-spin" size={18} />
+            ) : (
+              <>
+                <ShieldCheck size={18} />
+                Open Workspace
+              </>
+            )}
+          </button>
+        </form>
+
+        <div className="flex items-center justify-between pt-2 animate-in fade-in duration-1000 delay-500">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="h-10 w-10 rounded-full border border-[var(--mds-border)] flex items-center justify-center group-hover:bg-[var(--mds-input)] transition-all">
+              <ArrowLeft size={16} className="text-[var(--mds-text-muted)] group-hover:text-[var(--mds-text-primary)] group-hover:-translate-x-0.5 transition-all" />
+            </div>
+            <span className="mds-uppercase-label text-[9px] opacity-40 font-bold group-hover:opacity-100 transition-all uppercase tracking-widest">Back to home</span>
+          </Link>
+          <p className="mds-uppercase-label text-[8px] opacity-40 font-bold">Secure admin sign-in</p>
+        </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+        <div className="min-h-screen bg-[var(--mds-page)] flex items-center justify-center">
+            <Loader2 className="animate-spin text-[var(--mds-action)]" size={40} />
+        </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }
