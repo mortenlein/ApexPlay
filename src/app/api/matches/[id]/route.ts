@@ -154,12 +154,12 @@ export async function POST(request: Request, { params }: { params: { id: string 
             eventBus.emit(`tournament:${nextMatch.tournamentId}`, payload);
         };
 
-        if (wasJustCompleted && winnerId && match.nextMatchId) {
+        if (status === 'COMPLETED' && winnerId && match.nextMatchId) {
             const isNextHome = match.matchOrder % 2 === 0;
             await handleAdvance(match.nextMatchId, winnerId, isNextHome);
         }
 
-        if (wasJustCompleted && loserId && match.loserNextMatchId) {
+        if (status === 'COMPLETED' && loserId && match.loserNextMatchId) {
             const isNextHome = match.matchOrder % 2 === 0;
             await handleAdvance(match.loserNextMatchId, loserId, isNextHome);
         }
