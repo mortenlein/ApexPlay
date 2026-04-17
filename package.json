@@ -32,6 +32,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "reactflow": "^11.11.4",
+    "sharp": "^0.33.5",
     "utf-8-validate": "^6.0.6",
     "uuid": "^13.0.0",
     "zlib-sync": "^0.1.10"
