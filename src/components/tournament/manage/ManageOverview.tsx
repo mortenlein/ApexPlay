@@ -172,11 +172,34 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
           <div className="relative group">
             <div className="bg-[var(--mds-card)] border border-[var(--mds-border)] rounded-lg px-4 py-3 flex items-center justify-between overflow-hidden shadow-inner">
               <span className="font-mono text-[10px] text-[var(--mds-action)] font-bold truncate opacity-80 group-hover:opacity-100 transition-opacity">
-                {typeof window !== 'undefined' ? `${window.location.host}/tournaments/${tournament.id}` : ''}
+                {typeof window !== 'undefined' ? `${window.location.origin}/tournaments/${tournament.id}` : ''}
               </span>
               <button
                 onClick={onCopyPublicLink}
                 className="mds-btn-secondary h-8 w-8 p-0 shrink-0 text-[var(--mds-action)] hover:bg-[var(--mds-action)]/10"
+              >
+                <Copy size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="mds-card p-6 bg-[var(--mds-red)]/5 border-[var(--mds-red)]/20">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="mds-uppercase-label text-[var(--mds-red)]">OBS Stream Overlay</h3>
+            <Zap size={16} className="text-[var(--mds-red)] opacity-40" />
+          </div>
+          <div className="relative group">
+            <div className="bg-[var(--mds-card)] border border-[var(--mds-border)] rounded-lg px-4 py-3 flex items-center justify-between overflow-hidden shadow-inner">
+              <span className="font-mono text-[10px] text-[var(--mds-red)] font-bold truncate opacity-80 group-hover:opacity-100 transition-opacity">
+                {typeof window !== 'undefined' ? `${window.location.origin}/bracket/${tournament.id}/overlay` : ''}
+              </span>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/bracket/${tournament.id}/overlay`);
+                  alert('Overlay link copied for OBS!');
+                }}
+                className="mds-btn-secondary h-8 w-8 p-0 shrink-0 text-[var(--mds-red)] hover:bg-[var(--mds-red)]/10"
               >
                 <Copy size={14} />
               </button>

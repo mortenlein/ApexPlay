@@ -198,9 +198,12 @@ export default function PublicBracket({ tournamentId, matches, onMatchClick }: {
                 proOptions={{ hideAttribution: true }}
                 nodesDraggable={false}
                 nodesConnectable={false}
-                zoomOnScroll={false}
-                panOnScroll={true}
+                zoomOnScroll={true}
+                panOnScroll={false}
                 panOnDrag={true}
+                selectionOnDrag={false}
+                minZoom={0.1}
+                maxZoom={1.5}
             >
                 <Background color="var(--mds-border)" gap={40} size={1} />
             </ReactFlow>
