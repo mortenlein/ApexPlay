@@ -53,4 +53,4 @@ ENV PORT=4001
 ENV HOSTNAME=0.0.0.0
 
 # Run Prisma db push to ensure schema is up to date, then start the server
-CMD ["sh", "-c", "DATABASE_URL=file:/app/data/prod.db npx prisma db push --schema=/app/prisma/schema.prisma && DATABASE_URL=file:/app/data/prod.db node server.js"]
+CMD ["sh", "-c", "DATABASE_URL=file:/app/data/prod.db npx prisma@6 db push --schema=/app/prisma/schema.prisma && DATABASE_URL=file:/app/data/prod.db node server.js"]
