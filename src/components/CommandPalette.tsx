@@ -135,7 +135,7 @@ export default function CommandPalette() {
         label: "Open Public Tournament Page",
         keywords: ["public", "view", "page"],
         contexts: ["admin", "marshal"],
-        run: () => window.open(`/tournaments/${tournamentId}`, "_blank", "noopener,noreferrer"),
+        run: () => { window.open(`/tournaments/${tournamentId}`, "_blank", "noopener,noreferrer"); },
       });
       base.push({
         id: "start-match",
