@@ -13,6 +13,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
             id: true,
             name: true,
             logoUrl: true,
+            inviteCode: true,
             seed: true,
             updatedAt: true,
             players: {
