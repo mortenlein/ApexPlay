@@ -21,7 +21,7 @@ export const setAuthSession = async () => {
 
   cookies().set(ADMIN_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: false, // Set to false to allow login over HTTP (non-SSL) on LAN/local
     sameSite: "lax",
     maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
     path: "/",

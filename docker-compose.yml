@@ -12,7 +12,7 @@ services:
       - DATABASE_URL=file:/app/data/prod.db
       - ADMIN_PASSWORD=Tjarb123
       - STEAM_API_KEY=YOUR_STEAM_API_KEY_HERE
-      - NEXTAUTH_URL=http://localhost:4001
+      - NEXTAUTH_URL=http://192.168.3.20:4001
       - NEXTAUTH_SECRET=changeme_secret_random_string
       - ENABLE_DATHOST=false
       - ENABLE_MATCHZY=false
