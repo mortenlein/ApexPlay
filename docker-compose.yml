@@ -7,6 +7,7 @@ services:
     volumes:
       # Persist the SQLite database across container restarts
       - apexplay_data:/app/data
+      - apexplay_uploads:/app/public/uploads
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/prod.db
@@ -20,4 +21,6 @@ services:
 
 volumes:
   apexplay_data:
+    driver: local
+  apexplay_uploads:
     driver: local

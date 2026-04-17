@@ -44,8 +44,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modul
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/sharp ./node_modules/sharp
 
-# Data directory for SQLite database (mount a volume here)
-RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
+# Data directory for SQLite database and uploads
+RUN mkdir -p /app/data /app/public/uploads && chown -R nextjs:nodejs /app/data /app/public
 
 USER nextjs
 

@@ -3,6 +3,7 @@ const nextConfig = {
     reactStrictMode: true,
     output: 'standalone',
     images: {
+        unoptimized: true,
         remotePatterns: [
             { hostname: 'upload.wikimedia.org' },
             { hostname: 'assets.xboxservices.com' },
