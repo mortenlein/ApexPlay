@@ -171,7 +171,6 @@ function broadcastUpdate(match: any) {
     tournamentId: match.tournamentId,
     match,
   };
-  eventBus.emit('telemetry', data);
   eventBus.emit(`match:${match.id}`, data);
   eventBus.emit(`tournament:${match.tournamentId}`, data);
 }
@@ -186,7 +185,6 @@ function broadcastTelemetry(matchId: string, tournamentId: string, eventType: st
       payload,
     },
   };
-  eventBus.emit('telemetry', data);
   eventBus.emit(`match:${matchId}`, data);
   eventBus.emit(`tournament:${tournamentId}`, data);
 }
@@ -388,20 +386,6 @@ async function handlePlayerSnapshot(payload: Cs2WebhookPayload) {
   const full = match ? await getFullMatch(match.id) : null;
   if (full) {
     broadcastUpdate(full);
-  } else {
-    // If no match in DB, send a skeleton to the HUD so it can start rendering
-    eventBus.emit('telemetry', {
-       matchId,
-       match: {
-          id: matchId,
-          homeTeam: { name: payload.team1?.name || "Counter-Terrorists", players: [] },
-          awayTeam: { name: payload.team2?.name || "Terrorists", players: [] },
-          homeScore: 0,
-          awayScore: 0,
-          status: "LIVE",
-          bestOf: 1
-       }
-    });
   }
   
   broadcastTelemetry(matchId, tournamentId, "player_snapshot", payload);
@@ -446,8 +430,6 @@ async function mirrorWebhook(payload: Cs2WebhookPayload) {
 }
 
 export async function POST(request: Request) {
-  // Bypassing strict auth for HUD discovery test - ensure telemetry reaches EventBus
-  /*
   const webhookKey = process.env.CS2_WEBHOOK_KEY;
   if (webhookKey) {
     const authHeader = request.headers.get("Authorization");
@@ -455,7 +437,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
   }
-  */
 
   try {
     const payload = (await request.json()) as Cs2WebhookPayload;
