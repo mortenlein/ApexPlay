@@ -13,6 +13,8 @@ services:
       - ADMIN_PASSWORD=changeme  # Replace with your secure password
       - ENABLE_DATHOST=false
       - ENABLE_MATCHZY=false
+      - NEXTAUTH_URL=http://localhost:4001
+      - NEXTAUTH_SECRET=changeme_secret_random_string
     restart: unless-stopped
 
 volumes:
