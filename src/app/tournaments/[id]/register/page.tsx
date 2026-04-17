@@ -225,12 +225,30 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
                                 <h3 className="mds-uppercase-label text-[11px] text-[var(--mds-action)] flex items-center justify-center gap-3">
                                     <Share2 size={14} /> Invite Teammates
                                 </h3>
-                                <div className="bg-[var(--mds-page)] border border-[var(--mds-border)] rounded-lg px-6 py-4 font-mono text-[11px] truncate text-[var(--mds-text-muted)]">
+                                <div className="bg-[var(--mds-page)] border border-[var(--mds-border)] rounded-lg px-6 py-4 font-mono text-[11px] break-all text-[var(--mds-text-muted)] text-left">
                                     {registrationLink}
                                 </div>
                                 <button 
                                     onClick={() => {
-                                        navigator.clipboard.writeText(registrationLink);
+                                        if (navigator.clipboard && window.isSecureContext) {
+                                            navigator.clipboard.writeText(registrationLink);
+                                        } else {
+                                            // Fallback for non-HTTPS/LAN environments
+                                            const textArea = document.createElement("textarea");
+                                            textArea.value = registrationLink;
+                                            textArea.style.position = "fixed";
+                                            textArea.style.left = "-999999px";
+                                            textArea.style.top = "-999999px";
+                                            document.body.appendChild(textArea);
+                                            textArea.focus();
+                                            textArea.select();
+                                            try {
+                                                document.execCommand('copy');
+                                            } catch (err) {
+                                                console.error('Fallback copy failed', err);
+                                            }
+                                            document.body.removeChild(textArea);
+                                        }
                                         toast.success('Invite link copied', 'Share it with the rest of your team.');
                                     }}
                                     className="mds-btn-primary w-full h-12 text-[11px] font-black uppercase tracking-widest gap-3"
