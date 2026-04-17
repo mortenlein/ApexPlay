@@ -5,9 +5,8 @@ services:
     ports:
       - "4001:4001"
     volumes:
-      # Persist the SQLite database across container restarts
-      - apexplay_data:/app/data
-      - apexplay_uploads:/app/public/uploads
+      - ./data:/app/data
+      - ./uploads:/app/public/uploads
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/prod.db
@@ -19,8 +18,3 @@ services:
       - ENABLE_MATCHZY=false
     restart: unless-stopped
 
-volumes:
-  apexplay_data:
-    driver: local
-  apexplay_uploads:
-    driver: local
