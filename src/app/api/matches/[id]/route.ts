@@ -123,11 +123,6 @@ export async function POST(request: Request, { params }: { params: { id: string 
                 return null;
             }
 
-            const currentSlotTeamId = isNextHome ? existingNextMatch.homeTeamId : existingNextMatch.awayTeamId;
-            if (currentSlotTeamId && currentSlotTeamId !== advancedTeamId) {
-                return null;
-            }
-
             const nextMatch = await prisma.match.update({
                 where: { id: nextMatchId },
                 data: {

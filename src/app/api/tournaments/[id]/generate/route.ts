@@ -48,6 +48,9 @@ export async function POST(request: Request, { params }: { params: { id: string 
         const createdMatches = await prisma.$transaction(async (tx: any) => {
             const records = [];
             for (const m of bracketMatches) {
+                // Determine if this is a Bye (only one team)
+                const isBye = (m.homeTeamId && !m.awayTeamId) || (!m.homeTeamId && m.awayTeamId);
+                
                 const record = await tx.match.create({
                     data: {
                         tournamentId,
@@ -55,7 +58,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
                         matchOrder: m.matchOrder,
                         homeTeamId: m.homeTeamId,
                         awayTeamId: m.awayTeamId,
-                        status: 'PENDING',
+                        status: isBye ? 'FINISHED' : 'PENDING',
+                        winnerId: isBye ? (m.homeTeamId || m.awayTeamId) : null,
                         bestOf: m.bestOf,
                         scoreLimit: m.scoreLimit,
                         bracketType: m.bracketType,
@@ -67,7 +71,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
         });
 
         // 5. Link matches using nextMatchId and loserNextMatchId
-        await prisma.$transaction(
+        const linkedMatches = await prisma.$transaction(
             createdMatches.map((m: any) => {
                 const template = bracketMatches.find(
                     (t: any) => t.round === m.round && t.matchOrder === m.matchOrder && t.bracketType === m.bracketType
@@ -92,14 +96,24 @@ export async function POST(request: Request, { params }: { params: { id: string 
                     if (loserNextMatch) updateData.loserNextMatchId = loserNextMatch.id;
                 }
 
-                if (Object.keys(updateData).length > 0) {
-                    return prisma.match.update({
-                        where: { id: m.id },
-                        data: updateData,
-                    });
-                }
+                return prisma.match.update({
+                    where: { id: m.id },
+                    data: updateData,
+                });
+            })
+        );
 
-                return prisma.match.update({ where: { id: m.id }, data: {} }); // No-op
+        // 5.5. Propagate Bye winners to the next round
+        const finalMatches = await prisma.match.findMany({ where: { tournamentId } });
+        await prisma.$transaction(
+            finalMatches.filter(m => m.status === 'FINISHED' && m.winnerId && m.nextMatchId).map(m => {
+                const isHome = m.matchOrder % 2 === 0;
+                return prisma.match.update({
+                    where: { id: m.nextMatchId! },
+                    data: {
+                        [isHome ? 'homeTeamId' : 'awayTeamId']: m.winnerId
+                    }
+                });
             })
         );
 
