@@ -10,6 +10,7 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/prod.db
+      - ADMIN_PASSWORD=changeme  # Replace with your secure password
       - ENABLE_DATHOST=false
       - ENABLE_MATCHZY=false
     restart: unless-stopped
