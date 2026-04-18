@@ -23,7 +23,10 @@
           <label>Port</label>
           <input id="portInput" type="number" />
           <label>Public Log URL</label>
-          <input id="publicLogUrlInput" placeholder="http://x.x.x.x:27555/logs" style="width:220px" />
+          <div style="display:flex; gap:4px">
+            <input id="publicLogUrlInput" placeholder="http://x.x.x.x:27555/logs" style="width:200px" />
+            <button id="detectPublicIpBtn" style="height:34px; padding:0 8px; font-size:10px">Detect</button>
+          </div>
           <label>Server PW</label>
           <input id="serverPasswordInput" type="password" />
           <label>RCON PW</label>
@@ -164,6 +167,7 @@ mp_restartgame 10</textarea>
           <input id="logPortInput" type="number" value="27555" style="width:92px" />
           <button id="startChatBtn">Start Listener</button>
           <button id="stopChatBtn">Stop Listener</button>
+          <button id="openChatWinBtn">Open Chat Window</button>
           <button id="togglePollBtn">Start Poll</button>
           <button id="copyJoinLinkBtn">Copy Join Link</button>
           <button id="sendManualBtn">Send Command</button>

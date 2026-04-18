@@ -15,6 +15,7 @@ let settingsCache = null;
 let logHttpServer = null;
 let logEnabled = false;
 let logBindPort = 27555;
+let chatWin = null;
 
 const DEFAULT_SETTINGS = {
   servers: [
@@ -116,6 +117,15 @@ function parsePackets(chunk) {
     const type = packet.readInt32LE(4);
     const bodyLen = size - 10;
     const body = bodyLen > 0 ? packet.subarray(8, 8 + bodyLen).toString("utf8") : "";
+    
+    // Process every line individually for chat patterns
+    if (body) {
+      const lines = body.split(/[\r\n]+/);
+      lines.forEach(l => {
+        if (l.trim()) maybeEmitChatFromLog(l.trim());
+      });
+    }
+
     if (win) {
       win.webContents.send("rcon-raw", {
         id,
@@ -123,24 +133,23 @@ function parsePackets(chunk) {
         body: (body || "").trim()
       });
     }
+    if (body) {
+      const line = body.trim();
+      if (win) win.webContents.send("rcon-log", line);
+      if (chatWin) chatWin.webContents.send("rcon-log", line); // Send to chat window's debug listener
+    }
+
     const resolver = pendingResponses.get(id);
     if (resolver) {
       resolver({ id, type, body });
       pendingResponses.delete(id);
-    } else if (win) {
-      win.webContents.send("rcon-log", body.trim());
     }
   }
 }
 
 function registerGlobalHotkeys(actions) {
+  // Global hotkeys disabled as per user request
   globalShortcut.unregisterAll();
-  actions.forEach((action) => {
-    if (!action.hotkey) return;
-    globalShortcut.register(action.hotkey, () => {
-      if (win) win.webContents.send("trigger-action-hotkey", action.name);
-    });
-  });
 }
 
 ipcMain.handle("settings:load", async () => {
@@ -268,6 +277,21 @@ ipcMain.handle("rcon:send", async (_event, command) => {
 ipcMain.handle("app:state", async () => ({ connected }));
 ipcMain.handle("app:ping", async () => ({ ok: true, ts: Date.now() }));
 
+ipcMain.handle("app:getPublicIp", async () => {
+  return new Promise((resolve) => {
+    const req = http.get("http://api.ipify.org", (res) => {
+      let data = "";
+      res.on("data", (chunk) => data += chunk);
+      res.on("end", () => resolve(data.trim()));
+    });
+    req.on("error", () => resolve(null));
+    req.setTimeout(3000, () => {
+      req.destroy();
+      resolve(null);
+    });
+  });
+});
+
 ipcMain.handle("log:start", async (_event, opts) => {
   const requestedPort = Number(opts?.port || logBindPort);
   logBindPort = Number.isFinite(requestedPort) && requestedPort > 0 ? requestedPort : 27555;
@@ -287,8 +311,9 @@ ipcMain.handle("log:start", async (_event, opts) => {
       req.on("data", (chunk) => chunks.push(chunk));
       req.on("end", () => {
         const body = Buffer.concat(chunks).toString("utf8").trim();
-        if (body && win) {
-          win.webContents.send("log-line", body);
+        if (body) {
+          if (win) win.webContents.send("log-line", body);
+          if (chatWin) chatWin.webContents.send("log-line", body);
         }
         try {
           const parsed = body ? JSON.parse(body) : null;
@@ -303,6 +328,15 @@ ipcMain.handle("log:start", async (_event, opts) => {
           }
         }
         maybeEmitChatFromLog(body);
+        
+        // Handle multi-line logs if bundled
+        if (body.includes("\n")) {
+          const lines = body.split(/[\r\n]+/);
+          lines.forEach(l => {
+            if (l.trim()) maybeEmitChatFromLog(l);
+          });
+        }
+
         res.statusCode = 200;
         res.end("ok");
       });
@@ -352,6 +386,35 @@ ipcMain.handle("log:state", async () => ({
   localIp: getBestLocalIpv4()
 }));
 
+ipcMain.handle("win:openChat", async () => {
+  if (chatWin) {
+    chatWin.focus();
+    return { ok: true };
+  }
+
+  chatWin = new BrowserWindow({
+    width: 600,
+    height: 800,
+    backgroundColor: "#0f1319",
+    title: "ApexPlay Chat Feed",
+    frame: false,
+    transparent: false,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  chatWin.loadFile(path.join(__dirname, "renderer", "chat.html"));
+
+  chatWin.on("closed", () => {
+    chatWin = null;
+  });
+
+  return { ok: true };
+});
+
 app.whenReady().then(() => {
   createWindow();
   app.on("activate", () => {
@@ -381,9 +444,13 @@ function getBestLocalIpv4() {
   return "127.0.0.1";
 }
 
-function emitChatLine(line) {
+function emitChatLine(line, team = "none") {
+  const payload = { line, team, ts: Date.now() };
   if (win) {
-    win.webContents.send("chat-line", line);
+    win.webContents.send("chat-line", payload);
+  }
+  if (chatWin) {
+    chatWin.webContents.send("chat-line", payload);
   }
 }
 
@@ -391,20 +458,64 @@ function maybeEmitChatFromLog(line) {
   const text = String(line || "").trim();
   if (!text) return;
 
-  const quoted = text.match(/"([^"]+)<\d+><[^>]*><[^>]*>"\s+say\s+"(.+)"$/i);
-  if (quoted) {
-    emitChatLine(`${quoted[1]}: ${quoted[2]}`);
+  // Pattern A: MatchZy / Pretty Chat format (extremely broad)
+  // Matches: [Anything] optional_symbols Name: Message
+  const prettyMatch = text.match(/\[([^\]]+)\]\s*.*?\s*([^:\s]+):\s*(.+)/i);
+  if (prettyMatch) {
+    let tag = prettyMatch[1].toLowerCase();
+    let name = prettyMatch[2].trim();
+    let msg = prettyMatch[3].trim();
+    
+    // Skip internal system-like tags that aren't chat
+    if (tag === "status" || tag === "console" || tag === "rcon") return;
+
+    let team = "none";
+    if (tag.includes("ct")) team = "ct";
+    else if (tag.includes("t")) team = "t";
+    
+    emitChatLine(`${name}: ${msg}`, team);
     return;
   }
 
-  const rawSay = text.match(/L\s+\d+\/\d+\/\d+\s+-\s+\d+:\d+:\d+:\s+(.+?)\s+say\s+(.+)$/i);
-  if (rawSay) {
-    emitChatLine(`${rawSay[1]}: ${rawSay[2].replace(/^"|"$/g, "")}`);
+  // Pattern B: MatchZy System Messages
+  // Example: [MatchZy] Unready players: Naeem...
+  const mzMatch = text.match(/\[MatchZy\]\s*(.+)/i);
+  if (mzMatch) {
+    emitChatLine(`[MatchZy]: ${mzMatch[1].trim()}`, "console");
     return;
   }
 
-  const loose = text.match(/say:\s*(.+)$/i);
-  if (loose) {
-    emitChatLine(loose[1]);
+  // Use a more aggressive approach: look for the " say " delimiter
+  const sayIdx = text.toLowerCase().lastIndexOf(" say ");
+  if (sayIdx === -1) {
+    // Try loose "say:" format
+    const loose = text.match(/say:\s*(.+)$/i);
+    if (loose) emitChatLine(loose[1].trim(), "none");
+    return;
+  }
+
+  let rawName = text.substring(0, sayIdx).trim();
+  let rawMsg = text.substring(sayIdx + 5).trim();
+
+  // Clean up Name: Remove timestamp prefix if present (L 00/00/0000 - 00:00:00: )
+  rawName = rawName.replace(/^L\s+\d+\/\d+\/\d+\s+-\s+\d+:\d+:\d+:\s+/, "");
+  // Clean up Name: Remove surrounding quotes and handle metadata tags
+  // Example: "PlayerName<1><STEAM_1><CT>" -> PlayerName
+  const nameMatch = rawName.match(/"?([^"<]+)(?:<[^>]*>)*"?/);
+  const name = nameMatch ? nameMatch[1].trim() : rawName;
+
+  // Detect Team from rawName
+  let team = "none";
+  if (rawName.includes("<CT>")) team = "ct";
+  else if (rawName.includes("<T>")) team = "t";
+  else if (name.toLowerCase() === "console") team = "console";
+  else if (name.toLowerCase().includes("matchzy")) team = "console";
+
+  // Clean up Message: Remove surrounding quotes if they exist
+  // Example: "Hello World" -> Hello World
+  const msg = rawMsg.replace(/^"|"$/g, "").trim();
+
+  if (name && msg) {
+    emitChatLine(`${name}: ${msg}`, team);
   }
 }

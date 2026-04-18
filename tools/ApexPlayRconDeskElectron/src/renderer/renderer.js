@@ -28,6 +28,7 @@ const els = {
   hostInput: document.getElementById("hostInput"),
   portInput: document.getElementById("portInput"),
   publicLogUrlInput: document.getElementById("publicLogUrlInput"),
+  detectPublicIpBtn: document.getElementById("detectPublicIpBtn"),
   serverPasswordInput: document.getElementById("serverPasswordInput"),
   rconPasswordInput: document.getElementById("rconPasswordInput"),
   connectBtn: document.getElementById("connectBtn"),
@@ -59,6 +60,7 @@ const els = {
   setBothNamesBtn: document.getElementById("setBothNamesBtn"),
   startChatBtn: document.getElementById("startChatBtn"),
   stopChatBtn: document.getElementById("stopChatBtn"),
+  openChatWinBtn: document.getElementById("openChatWinBtn"),
   logPortInput: document.getElementById("logPortInput")
 };
 
@@ -158,9 +160,9 @@ function renderActions() {
     `;
     btn.addEventListener("click", () => runAction(action));
     els.actionsGrid.appendChild(btn);
-    if (action.hotkey) hint.push(action.hotkey);
+    els.actionsGrid.appendChild(btn);
   });
-  els.hotkeyHint.textContent = hint.length ? `Hotkeys: ${hint.join(", ")}` : "No hotkeys configured";
+  els.hotkeyHint.textContent = "Global hotkeys disabled";
 }
 
 function parseScript(script) {
@@ -269,9 +271,21 @@ async function enableServerChatForwarding() {
   // CS2 server log forwarding via HTTP. Requires server to reach this listener endpoint.
   await sendCommand(`log on`);
   await sendCommand(`mp_logdetail 3`);
+  await sendCommand(`sv_logchat 1`);
+  await sendCommand(`sv_logecho 1`);
+  
   const profile = currentProfile();
   const override = profile?.publicLogUrl?.trim();
   const endpoint = override || listener.endpointUrl;
+  
+  const isLocalIp = listener.localIp.startsWith("192.168.") || listener.localIp.startsWith("10.") || listener.localIp.startsWith("172.");
+  const isRemoteServer = profile?.host && !profile.host.startsWith("192.168.") && !profile.host.startsWith("127.0.0.1") && !profile.host.startsWith("localhost");
+  
+  if (isLocalIp && isRemoteServer && !override) {
+    addLog("WARNING: You are sending a local IP to a remote server. The server won't be able to reach your PC.");
+    addLog("Please use a Public IP or Ngrok in the 'Public Log URL' field.");
+  }
+
   await sendCommand(`logaddress_add_http "${endpoint}"`);
   addLog(`Requested server log forwarding to ${endpoint}`);
   addFeed("system", `Requested log forwarding to ${endpoint}`);
@@ -678,6 +692,27 @@ function bindUi() {
     await stopChatListener();
   });
 
+  els.openChatWinBtn.addEventListener("click", async () => {
+    await window.deskApi.openChat();
+  });
+
+  els.detectPublicIpBtn.addEventListener("click", async () => {
+    els.detectPublicIpBtn.disabled = true;
+    els.detectPublicIpBtn.textContent = "...";
+    try {
+      const ip = await window.deskApi.getPublicIp();
+      if (ip) {
+        els.publicLogUrlInput.value = `http://${ip}:${els.logPortInput.value || 27555}/logs`;
+        addLog(`Detected public IP: ${ip}`);
+      } else {
+        addLog("Failed to detect public IP. Check your internet connection.");
+      }
+    } finally {
+      els.detectPublicIpBtn.disabled = false;
+      els.detectPublicIpBtn.textContent = "Detect";
+    }
+  });
+
   els.togglePollBtn.addEventListener("click", async () => {
     if (state.pollTimer) {
       clearInterval(state.pollTimer);
@@ -740,31 +775,7 @@ function bindUi() {
   });
 
   window.addEventListener("keydown", async (event) => {
-    const key = [
-      event.ctrlKey ? "Control+" : "",
-      event.shiftKey ? "Shift+" : "",
-      event.altKey ? "Alt+" : "",
-      event.key.length === 1 ? event.key.toUpperCase() : event.key
-    ].join("");
-    const action = state.settings.actions.find((x) => normalizeHotkey(x.hotkey) === normalizeHotkey(key));
-    if (action) {
-      event.preventDefault();
-      await runAction(action);
-      return;
-    }
-
-    if (event.ctrlKey && event.shiftKey && !event.altKey) {
-      if (event.key === "1") {
-        event.preventDefault();
-        els.setCtNameBtn.click();
-      } else if (event.key === "2") {
-        event.preventDefault();
-        els.setTNameBtn.click();
-      } else if (event.key === "3") {
-        event.preventDefault();
-        els.setBothNamesBtn.click();
-      }
-    }
+    // Local hotkeys disabled as per user request
   });
 }
 
@@ -795,7 +806,13 @@ async function init() {
   }
 
   window.deskApi.onLog((line) => {
-    if (line) addLog(line);
+    if (line) {
+      addLog(line);
+      // Fallback: If the server is streaming logs over RCON, check for chat
+      if (line.toLowerCase().includes(" say ")) {
+        maybeEmitChatFromLog(line);
+      }
+    }
   });
   window.deskApi.onDebug((line) => {
     if (line) addLog(line);
