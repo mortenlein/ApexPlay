@@ -6,7 +6,14 @@ import prisma from '@/lib/prisma';
 import { requireSignedInUser, isAdminAuthenticated } from '@/lib/route-auth';
 
 const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
-const ALLOWED_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
+// Extension is derived from the (validated) MIME type, never from the user-supplied filename —
+// see the write path below. A filename like "x.png/../../evil" would otherwise traverse out.
+const EXT_BY_MIME: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/webp': 'webp',
+};
+const ALLOWED_MIME_TYPES = new Set(Object.keys(EXT_BY_MIME));
 
 export async function POST(request: Request) {
   try {
@@ -28,10 +35,11 @@ export async function POST(request: Request) {
 
       const tournament = await prisma.tournament.findUnique({
         where: { id: tournamentId },
-        select: { steamSignupEnabled: true },
+        select: { steamSignupEnabled: true, rosterLocked: true },
       });
 
-      if (!tournament || tournament.steamSignupEnabled) {
+      // Anonymous uploads are only for open registration on non-Steam tournaments.
+      if (!tournament || tournament.steamSignupEnabled || tournament.rosterLocked) {
         return NextResponse.json({ error: 'Sign in required for uploads' }, { status: 401 });
       }
     }
@@ -47,9 +55,8 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Create a unique filename
-    const ext = file.name.split('.').pop();
-    const filename = `${uuidv4()}.${ext}`;
+    // Unique filename with a MIME-derived extension (no user input in the path).
+    const filename = `${uuidv4()}.${EXT_BY_MIME[file.type]}`;
     
     // Ensure directory exists
     const uploadDir = join(process.cwd(), 'public', 'uploads', 'logos');
