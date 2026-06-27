@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { generateSingleElimination } from '@/lib/bracket-utils';
+import { generateSingleElimination, generateDoubleElimination } from '@/lib/bracket-utils';
 import { announceMatch } from '@/lib/discord';
 import { requireAdminApi } from '@/lib/route-auth';
 import { buildAdminActorLabel, recordAudit } from '@/lib/audit';
@@ -37,7 +37,23 @@ export async function POST(request: Request, { params }: { params: { id: string 
         };
 
         // 2. Generate bracket structure
-        const bracketMatches = generateSingleElimination(teams, options);
+        const isDouble = tournament.format === 'DOUBLE_ELIMINATION';
+        if (isDouble) {
+            const n = teams.length;
+            const isPow2 = n >= 4 && (n & (n - 1)) === 0;
+            if (!isPow2) {
+                const nextPow2 = Math.max(4, Math.pow(2, Math.ceil(Math.log2(Math.max(n, 1)))));
+                return NextResponse.json(
+                    {
+                        error: `Double elimination currently requires a power-of-two team count (4, 8, 16, 32). You have ${n}. Add ${nextPow2 - n} team(s) or switch to Single Elimination.`,
+                    },
+                    { status: 400 }
+                );
+            }
+        }
+        const bracketMatches = isDouble
+            ? generateDoubleElimination(teams, options)
+            : generateSingleElimination(teams, options);
 
         // 3. Clear existing matches
         await prisma.match.deleteMany({
@@ -82,18 +98,30 @@ export async function POST(request: Request, { params }: { params: { id: string 
                 const updateData: any = {};
 
                 if (template.nextMatchRound !== null) {
+                    const nextType = template.nextMatchBracketType ?? 'WINNERS';
                     const nextMatch = createdMatches.find(
-                        (nm: any) => nm.round === template.nextMatchRound && nm.matchOrder === template.nextMatchOrder && nm.bracketType === 'WINNERS'
+                        (nm: any) => nm.round === template.nextMatchRound && nm.matchOrder === template.nextMatchOrder && nm.bracketType === nextType
                     );
-                    if (nextMatch) updateData.nextMatchId = nextMatch.id;
+                    if (nextMatch) {
+                        updateData.nextMatchId = nextMatch.id;
+                        if (template.nextMatchSlot) updateData.nextMatchSlot = template.nextMatchSlot;
+                    }
                 }
 
                 if (template.loserNextMatchRound !== null) {
-                    // Find the 3rd place match (or losers bracket match)
+                    // Loser destination: an explicit bracket type (double-elim LOSERS) or, for
+                    // single-elim, the optional third-place match.
                     const loserNextMatch = createdMatches.find(
-                        (nm: any) => nm.round === template.loserNextMatchRound && nm.matchOrder === template.loserNextMatchOrder && (nm.bracketType === 'THIRD_PLACE' || nm.bracketType === 'LOSERS')
+                        (nm: any) => nm.round === template.loserNextMatchRound && nm.matchOrder === template.loserNextMatchOrder && (
+                            template.loserNextMatchBracketType
+                                ? nm.bracketType === template.loserNextMatchBracketType
+                                : (nm.bracketType === 'THIRD_PLACE' || nm.bracketType === 'LOSERS')
+                        )
                     );
-                    if (loserNextMatch) updateData.loserNextMatchId = loserNextMatch.id;
+                    if (loserNextMatch) {
+                        updateData.loserNextMatchId = loserNextMatch.id;
+                        if (template.loserNextMatchSlot) updateData.loserNextMatchSlot = template.loserNextMatchSlot;
+                    }
                 }
 
                 return prisma.match.update({

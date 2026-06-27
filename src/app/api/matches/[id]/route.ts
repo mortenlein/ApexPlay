@@ -155,12 +155,12 @@ export async function POST(request: Request, { params }: { params: { id: string 
         };
 
         if (status === 'COMPLETED' && winnerId && match.nextMatchId) {
-            const isNextHome = match.matchOrder % 2 === 0;
+            const isNextHome = match.nextMatchSlot ? match.nextMatchSlot === 'HOME' : match.matchOrder % 2 === 0;
             await handleAdvance(match.nextMatchId, winnerId, isNextHome);
         }
 
         if (status === 'COMPLETED' && loserId && match.loserNextMatchId) {
-            const isNextHome = match.matchOrder % 2 === 0;
+            const isNextHome = match.loserNextMatchSlot ? match.loserNextMatchSlot === 'HOME' : match.matchOrder % 2 === 0;
             await handleAdvance(match.loserNextMatchId, loserId, isNextHome);
         }
 

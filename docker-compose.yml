@@ -1,3 +1,13 @@
+# ApexPlay — single-container self-host deploy.
+# Copy .env.example -> .env and fill in REAL values. Compose fails fast (`${VAR:?...}`)
+# if a required secret is unset, so nothing sensitive is ever baked into the image/repo.
+#
+#   cp .env.example .env   # set NEXTAUTH_SECRET, ADMIN_STEAMIDS, STEAM_API_KEY, NEXTAUTH_URL
+#   docker compose up -d --build
+#
+# Admin is an identity, not a password: a Steam user whose steamid64 is in ADMIN_STEAMIDS
+# is granted organizer/admin access. Everyone else is a player.
+
 services:
   apexplay:
     build: .
@@ -8,13 +18,19 @@ services:
       - ./data:/app/data
       - ./uploads:/app/public/uploads
     environment:
-      - NODE_ENV=production
-      - DATABASE_URL=file:/app/data/prod.db
-      - ADMIN_PASSWORD=Tjarb123
-      - STEAM_API_KEY=YOUR_STEAM_API_KEY_HERE
-      - NEXTAUTH_URL=http://192.168.3.20:4001
-      - NEXTAUTH_SECRET=changeme_secret_random_string
-      - ENABLE_DATHOST=false
-      - ENABLE_MATCHZY=false
+      NODE_ENV: production
+      DATABASE_URL: file:/app/data/prod.db
+      # Public origin used to build Steam realm/return_to URLs (never trust request headers).
+      NEXTAUTH_URL: ${NEXTAUTH_URL:?set NEXTAUTH_URL in .env (e.g. http://192.168.3.20:4001)}
+      # Signs session cookies. Generate: openssl rand -hex 32
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set a long random NEXTAUTH_SECRET in .env}
+      # Comma-separated steamid64 allowlist that resolves to admin at login.
+      ADMIN_STEAMIDS: ${ADMIN_STEAMIDS:?set ADMIN_STEAMIDS in .env (comma-separated steamid64)}
+      # Steam Web API key (https://steamcommunity.com/dev/apikey)
+      STEAM_API_KEY: ${STEAM_API_KEY:?set STEAM_API_KEY in .env}
+      # Required to accept CS2 plugin webhooks (fail-closed if unset).
+      CS2_WEBHOOK_KEY: ${CS2_WEBHOOK_KEY:-}
+      MATCHZY_WEBHOOK_KEY: ${MATCHZY_WEBHOOK_KEY:-}
+      ENABLE_DATHOST: ${ENABLE_DATHOST:-false}
+      ENABLE_MATCHZY: ${ENABLE_MATCHZY:-false}
     restart: unless-stopped
-

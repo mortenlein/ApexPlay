@@ -15,13 +15,15 @@ import { eventBus } from '@/lib/eventBus';
  */
 
 export async function POST(request: Request) {
-    // --- Auth Check ---
+    // --- Auth Check (fail closed: a missing key is a misconfiguration) ---
     const webhookKey = process.env.MATCHZY_WEBHOOK_KEY;
-    if (webhookKey) {
-        const authHeader = request.headers.get('Authorization');
-        if (authHeader !== `Bearer ${webhookKey}`) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+    if (!webhookKey) {
+        console.error('[MatchZy Webhook] MATCHZY_WEBHOOK_KEY is not set; rejecting request.');
+        return NextResponse.json({ error: 'Webhook not configured' }, { status: 503 });
+    }
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader !== `Bearer ${webhookKey}`) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
@@ -81,7 +83,8 @@ async function resolveMatch(payload: any) {
         if (match) return match;
     }
 
-    // Strategy 2: Team-name matching — find a PENDING or IN_PROGRESS match
+    // Strategy 2: exact two-name match, and only if it's unambiguous. We require BOTH names to
+    // match and exactly one candidate — never return "the first active match that looks close".
     const team1Name = payload.team1?.name;
     const team2Name = payload.team2?.name;
 
@@ -94,18 +97,22 @@ async function resolveMatch(payload: any) {
         include: { homeTeam: true, awayTeam: true },
     });
 
-    // Find match where team names match (in either order)
-    return matches.find((m) => {
+    const t1 = team1Name?.toLowerCase();
+    const t2 = team2Name?.toLowerCase();
+    const exact = matches.filter((m) => {
         const homeName = m.homeTeam?.name?.toLowerCase();
         const awayName = m.awayTeam?.name?.toLowerCase();
-        const t1 = team1Name?.toLowerCase();
-        const t2 = team2Name?.toLowerCase();
-
         return (
             (homeName === t1 && awayName === t2) ||
             (homeName === t2 && awayName === t1)
         );
-    }) || null;
+    });
+
+    if (exact.length === 1) return exact[0];
+    if (exact.length > 1) {
+        console.warn(`[MatchZy] Ambiguous match for "${team1Name}" vs "${team2Name}" (${exact.length} candidates). Ignoring event.`);
+    }
+    return null;
 }
 
 /**
@@ -115,11 +122,13 @@ async function resolveMatch(payload: any) {
 function resolveTeamMapping(match: any, payload: any): { homeKey: string; awayKey: string } {
     const homeName = match.homeTeam?.name?.toLowerCase();
     const t1Name = payload.team1?.name?.toLowerCase();
+    const t2Name = payload.team2?.name?.toLowerCase();
 
-    if (homeName === t1Name) {
-        return { homeKey: 'team1', awayKey: 'team2' };
+    if (homeName && homeName === t2Name) {
+        return { homeKey: 'team2', awayKey: 'team1' };
     }
-    return { homeKey: 'team2', awayKey: 'team1' };
+    // Exact match to team1, or indistinguishable → assume the plugin's natural order.
+    return { homeKey: 'team1', awayKey: 'team2' };
 }
 
 // --- Event Handlers ---

@@ -3,7 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 const DATABASE_URL = `file:${path.resolve(process.cwd(), 'prisma', 'e2e.db').replace(/\\/g, '/')}`;
 process.env.DATABASE_URL = DATABASE_URL;
-process.env.ADMIN_PASSWORD = 'test-admin';
+// Admin is an identity now: the "marcus" mock persona (steamid below) resolves to admin.
+process.env.ADMIN_STEAMIDS = '76561198000000001';
 process.env.MOCK_AUTH_MODE = 'true';
 process.env.NEXT_PUBLIC_MOCK_AUTH = 'true';
 process.env.NEXT_PUBLIC_STRATEGY_3_MOCK = 'true';

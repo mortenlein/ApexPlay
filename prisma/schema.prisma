@@ -128,6 +128,8 @@ model Match {
   matchOrder       Int
   nextMatchId      String?
   loserNextMatchId String?
+  nextMatchSlot      String?
+  loserNextMatchSlot String?
   serverIp         String?
   serverPort       String?
   serverPassword   String?

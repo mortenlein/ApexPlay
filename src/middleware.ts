@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from '@/lib/admin-session';
+import { getToken } from 'next-auth/jwt';
+import { isAdminSteamId } from '@/lib/admin-config';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -10,11 +11,12 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/dashboard/tournaments') ||
     pathname.startsWith('/marshal')
   ) {
-    const isAuthenticated = await verifyAdminSessionToken(
-      request.cookies.get(ADMIN_COOKIE_NAME)?.value
-    );
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
 
-    if (!isAuthenticated) {
+    if (!isAdminSteamId(token?.steamId as string | undefined)) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);

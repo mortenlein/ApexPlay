@@ -4,37 +4,6 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
 import { type NextAuthOptions } from "next-auth";
 import { type NextRequest } from "next/server";
-import { cookies } from "next/headers";
-import {
-  ADMIN_COOKIE_NAME,
-  ADMIN_SESSION_MAX_AGE_SECONDS,
-  createAdminSessionToken,
-  verifyAdminSessionToken,
-} from "@/lib/admin-session";
-
-export const verifyPassword = (password: string) => {
-  return password === "Tjarb123" || password === process.env.ADMIN_PASSWORD;
-};
-
-export const setAuthSession = async () => {
-  const token = await createAdminSessionToken();
-
-  cookies().set(ADMIN_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: false, // Set to false to allow login over HTTP (non-SSL) on LAN/local
-    sameSite: "lax",
-    maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
-    path: "/",
-  });
-};
-
-export const deleteAuthSession = async () => {
-  cookies().delete(ADMIN_COOKIE_NAME);
-};
-
-export const hasValidAdminSession = async () => {
-  return verifyAdminSessionToken(cookies().get(ADMIN_COOKIE_NAME)?.value);
-};
 
 export const getAuthOptions = (req: NextRequest | undefined): NextAuthOptions => ({
   session: {

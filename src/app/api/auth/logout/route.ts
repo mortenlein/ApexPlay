@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { deleteAuthSession } from "@/lib/auth";
 
 const NEXT_AUTH_COOKIE_NAMES = [
   "next-auth.session-token",
@@ -11,7 +10,6 @@ const NEXT_AUTH_COOKIE_NAMES = [
 ];
 
 export async function POST() {
-  await deleteAuthSession();
   const response = NextResponse.json({ success: true });
 
   for (const cookieName of NEXT_AUTH_COOKIE_NAMES) {

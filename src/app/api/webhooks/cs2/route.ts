@@ -74,70 +74,105 @@ function getSeriesScore(team: Cs2TeamPayload | undefined, fallback: number) {
   return normalizeScore(team.seriesScore ?? team.series_score, fallback);
 }
 
+const ACTIVE_MATCH_STATUSES = ["PENDING", "READY", "WAITING_FOR_PLAYERS", "IN_PROGRESS", "LIVE"];
+
+function namesMatch(a: string | null | undefined, b: string | null | undefined) {
+  if (!a || !b) return false;
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+// A name we're allowed to overwrite with the live server name (bracket placeholder, not a
+// deliberately chosen team name). Used to fill in "TBA"/"Team 1" once a match goes live.
+function looksLikePlaceholderName(name: string | null | undefined) {
+  if (!name) return true;
+  const n = name.trim().toLowerCase();
+  if (!n) return true;
+  return (
+    /^team\s*\d*$/.test(n) ||
+    n === "tba" ||
+    n === "tbd" ||
+    n === "bye" ||
+    n.startsWith("winner of") ||
+    n.startsWith("loser of")
+  );
+}
+
+/**
+ * Resolve which match a webhook is about — deterministically, never by guessing.
+ *
+ * 1. Explicit `matchId` (the real plugin flow via Load Match) is trusted. An unknown id is a
+ *    config error, so we ignore the event rather than fall through to some other match.
+ * 2. Otherwise we only resolve *within an explicit tournament*, and only when the target is
+ *    unambiguous (exactly one active match, or exactly one whose two team names match the
+ *    payload). We never fall back to "the most recent LIVE match" globally — that's how a
+ *    stray webhook used to rewrite an unrelated match's score.
+ */
 async function resolveMatch(payload: Cs2WebhookPayload) {
   const directId = getPayloadMatchId(payload);
-  let match = null;
+  let match: any = null;
+  let resolvedByExplicitId = false;
 
   if (directId) {
     match = await prisma.match.findUnique({
       where: { id: directId },
       include: { homeTeam: true, awayTeam: true },
     });
+    if (!match) {
+      console.warn(`[CS2 Webhook] Unknown matchId "${directId}"; ignoring event.`);
+      return null;
+    }
+    resolvedByExplicitId = true;
   }
 
   if (!match) {
-     const tournamentId = getPayloadTournamentId(payload);
-     if (tournamentId) {
-       match = await prisma.match.findFirst({
-         where: {
-           tournamentId,
-           status: { in: ["PENDING", "READY", "WAITING_FOR_PLAYERS", "IN_PROGRESS", "LIVE"] },
-         },
-         include: { homeTeam: true, awayTeam: true },
-         orderBy: [{ round: "asc" }, { matchOrder: "asc" }],
-       });
-     }
-  }
+    const tournamentId = getPayloadTournamentId(payload);
+    if (!tournamentId) {
+      return null;
+    }
 
-  if (!match) {
-    const team1Name = payload.team1?.name?.toLowerCase();
-    const team2Name = payload.team2?.name?.toLowerCase();
-    if (team1Name || team2Name) {
-      const candidates = await prisma.match.findMany({
-        where: {
-          status: { in: ["PENDING", "READY", "WAITING_FOR_PLAYERS", "IN_PROGRESS", "LIVE"] },
-        },
-        include: { homeTeam: true, awayTeam: true },
-        orderBy: [{ round: "asc" }, { matchOrder: "asc" }],
+    const candidates = await prisma.match.findMany({
+      where: { tournamentId, status: { in: ACTIVE_MATCH_STATUSES } },
+      include: { homeTeam: true, awayTeam: true },
+      orderBy: [{ round: "asc" }, { matchOrder: "asc" }],
+    });
+
+    if (candidates.length === 1) {
+      match = candidates[0];
+    } else if (candidates.length > 1) {
+      const t1 = payload.team1?.name;
+      const t2 = payload.team2?.name;
+      const exact = candidates.filter((m) => {
+        const h = m.homeTeam?.name;
+        const a = m.awayTeam?.name;
+        return (
+          (namesMatch(h, t1) && namesMatch(a, t2)) ||
+          (namesMatch(h, t2) && namesMatch(a, t1))
+        );
       });
-      match = candidates.find((m) => {
-        const h = m.homeTeam?.name?.toLowerCase();
-        const a = m.awayTeam?.name?.toLowerCase();
-        return (h === team1Name && a === team2Name) || (h === team2Name && a === team1Name) || (h?.includes("team") || a?.includes("team") || h?.includes("tba") || a?.includes("tba"));
-      }) || null;
+      if (exact.length === 1) {
+        match = exact[0];
+      } else {
+        console.warn(
+          `[CS2 Webhook] Ambiguous match in tournament ${tournamentId}: ${candidates.length} active, ${exact.length} name matches. Ignoring event.`
+        );
+        return null;
+      }
+    } else {
+      return null;
     }
   }
 
-  if (!match) {
-    match = await prisma.match.findFirst({
-      where: {
-        status: { in: ["LIVE", "IN_PROGRESS", "READY"] },
-      },
-      include: { homeTeam: true, awayTeam: true },
-      orderBy: { updatedAt: "desc" },
-    });
-  }
-
-  // CRITICAL: If we have a match and the payload has real names, SYNC them to the DB
-  if (match) {
+  // Only sync names when resolution is trustworthy (explicit matchId) AND the stored name is
+  // still a placeholder. Never clobber an organizer-set name from a live payload.
+  if (match && resolvedByExplicitId) {
     const { homeKey, awayKey } = resolveTeamMapping(match, payload);
     const liveHomeName = payload[homeKey]?.name;
     const liveAwayName = payload[awayKey]?.name;
 
-    if (liveHomeName && match.homeTeamId && match.homeTeam?.name !== liveHomeName) {
+    if (liveHomeName && match.homeTeamId && looksLikePlaceholderName(match.homeTeam?.name)) {
       await prisma.team.update({ where: { id: match.homeTeamId }, data: { name: liveHomeName } });
     }
-    if (liveAwayName && match.awayTeamId && match.awayTeam?.name !== liveAwayName) {
+    if (liveAwayName && match.awayTeamId && looksLikePlaceholderName(match.awayTeam?.name)) {
       await prisma.team.update({ where: { id: match.awayTeamId }, data: { name: liveAwayName } });
     }
   }
@@ -146,13 +181,16 @@ async function resolveMatch(payload: Cs2WebhookPayload) {
 }
 
 function resolveTeamMapping(match: any, payload: Cs2WebhookPayload): { homeKey: "team1" | "team2"; awayKey: "team1" | "team2" } {
-  // If we're in discovery/fallback mode, try to match by existing name
-  const homeName = match.homeTeam?.name?.toLowerCase();
-  const team1Name = payload.team1?.name?.toLowerCase();
-  if (homeName && team1Name && (homeName === team1Name || homeName.includes("team") || homeName.includes("tba"))) {
+  const homeName = match.homeTeam?.name;
+  // Map by exact name when the teams are distinguishable…
+  if (namesMatch(homeName, payload.team1?.name)) {
     return { homeKey: "team1", awayKey: "team2" };
   }
-  return { homeKey: "team2", awayKey: "team1" };
+  if (namesMatch(homeName, payload.team2?.name)) {
+    return { homeKey: "team2", awayKey: "team1" };
+  }
+  // …otherwise assume the plugin's natural order (team1 = home).
+  return { homeKey: "team1", awayKey: "team2" };
 }
 
 async function getFullMatch(matchId: string) {
@@ -285,7 +323,7 @@ async function handleMatchEnd(payload: Cs2WebhookPayload) {
   });
 
   if (winnerId && match.nextMatchId) {
-    const placeWinnerHome = match.matchOrder % 2 === 0;
+    const placeWinnerHome = match.nextMatchSlot ? match.nextMatchSlot === "HOME" : match.matchOrder % 2 === 0;
     await prisma.match.update({
       where: { id: match.nextMatchId },
       data: placeWinnerHome ? { homeTeamId: winnerId } : { awayTeamId: winnerId },
@@ -293,7 +331,7 @@ async function handleMatchEnd(payload: Cs2WebhookPayload) {
   }
 
   if (loserId && match.loserNextMatchId) {
-    const placeLoserHome = match.matchOrder % 2 === 0;
+    const placeLoserHome = match.loserNextMatchSlot ? match.loserNextMatchSlot === "HOME" : match.matchOrder % 2 === 0;
     await prisma.match.update({
       where: { id: match.loserNextMatchId },
       data: placeLoserHome ? { homeTeamId: loserId } : { awayTeamId: loserId },
@@ -431,11 +469,14 @@ async function mirrorWebhook(payload: Cs2WebhookPayload) {
 
 export async function POST(request: Request) {
   const webhookKey = process.env.CS2_WEBHOOK_KEY;
-  if (webhookKey) {
-    const authHeader = request.headers.get("Authorization");
-    if (authHeader !== `Bearer ${webhookKey}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  // Fail closed: a missing key is a misconfiguration, not an open door.
+  if (!webhookKey) {
+    console.error("[CS2 Webhook] CS2_WEBHOOK_KEY is not set; rejecting request.");
+    return NextResponse.json({ error: "Webhook not configured" }, { status: 503 });
+  }
+  const authHeader = request.headers.get("Authorization");
+  if (authHeader !== `Bearer ${webhookKey}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {

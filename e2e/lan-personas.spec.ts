@@ -4,9 +4,9 @@ import { seedEmptyTournament, seedLanScenario } from './helpers/seed';
 test.describe.configure({ mode: 'serial' });
 
 async function loginAsAdmin(page: import('@playwright/test').Page) {
+  // "marcus" mock persona's steamid is in ADMIN_STEAMIDS (see playwright.config.ts).
   await page.goto('/login?callbackUrl=/admin');
-  await page.getByTestId('admin-password').fill('test-admin');
-  await page.getByTestId('admin-login-submit').click();
+  await page.getByTestId('mock-persona-marcus').click();
   await expect(page).toHaveURL(/\/admin$/);
 }
 
