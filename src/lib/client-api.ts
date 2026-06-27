@@ -44,6 +44,7 @@ export const clientApi = {
   getMatches: (tournamentId: string) => apiRequest<any[]>(`/api/tournaments/${tournamentId}/matches`),
   getScoreboard: (tournamentId: string) => apiRequest<any[]>(`/api/tournaments/${tournamentId}/scoreboard`),
   getProfile: () => apiRequest<any>("/api/user/profile"),
+  getQueue: () => apiRequest<{ queue: any[] }>("/api/me/queue"),
   getNotifications: (tournamentId?: string) =>
     apiRequest<any>(`/api/notifications/log${tournamentId ? `?tournamentId=${tournamentId}` : ""}`),
   getAuditLog: (tournamentId?: string) =>

@@ -9,6 +9,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMatchStream } from "@/hooks/useMatchStream";
 import PublicBracket from "@/components/PublicBracket";
 import { getGameMetadata } from "@/lib/games";
+import { clientApi, ApiError } from "@/lib/client-api";
 import { TopNav } from "@/components/ui";
 import { LayoutDashboard } from "lucide-react";
 import { useToast } from "@/components/ToastProvider";
@@ -109,40 +110,29 @@ export default function TournamentView({ id }: TournamentViewProps) {
   const { data: tournament } = useQuery({
     queryKey: ['tournament', id],
     queryFn: async () => {
-      const res = await fetch(`/api/tournaments/${id}`);
-      if (res.status === 404) {
-        return null;
+      try {
+        return await clientApi.getTournament(id);
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) return null;
+        throw err;
       }
-      if (!res.ok) {
-        throw new Error('Failed to fetch tournament');
-      }
-      return res.json();
     },
     staleTime: Infinity
   });
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams', id],
-    queryFn: async () => {
-      const res = await fetch(`/api/tournaments/${id}/teams`);
-      return res.json();
-    }
+    queryFn: () => clientApi.getTeams(id),
   });
 
   const { data: matches = [] } = useQuery({
     queryKey: ['matches', id],
-    queryFn: async () => {
-      const res = await fetch(`/api/tournaments/${id}/matches`);
-      return res.json();
-    }
+    queryFn: () => clientApi.getMatches(id),
   });
 
   const { data: scoreboard = [] } = useQuery({
     queryKey: ['scoreboard', id],
-    queryFn: async () => {
-      const res = await fetch(`/api/tournaments/${id}/scoreboard`);
-      return res.json();
-    }
+    queryFn: () => clientApi.getScoreboard(id),
   });
 
   useMatchStream(id, (data) => {

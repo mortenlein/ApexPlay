@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import ReactFlow, { Background, Edge, Node, Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useMatchStream } from '@/hooks/useMatchStream';
+import { clientApi } from '@/lib/client-api';
 
 // A custom high-contrast node for the overlay
 const StreamMatchNode = ({ data }: any) => {
@@ -255,8 +256,7 @@ export default function StreamOverlay({ params }: { params: { id: string } }) {
     useEffect(() => {
         const fetchMatches = async () => {
             try {
-                const res = await fetch(`/api/tournaments/${params.id}/matches`);
-                const matches = await res.json();
+                const matches = await clientApi.getMatches(params.id);
                 if (Array.isArray(matches)) {
                     setMatchesData(matches);
                     buildNodesAndEdges(matches);

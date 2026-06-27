@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { clientApi } from '@/lib/client-api';
 
 export default function RosterOverlay({ params }: { params: { id: string } }) {
     const searchParams = useSearchParams();
@@ -13,8 +14,7 @@ export default function RosterOverlay({ params }: { params: { id: string } }) {
     useEffect(() => {
         const fetchTeams = async () => {
             try {
-                const res = await fetch(`/api/tournaments/${params.id}/teams`);
-                const data = await res.json();
+                const data = await clientApi.getTeams(params.id);
                 if (Array.isArray(data)) {
                     setTeams(data);
                 }

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { Radio, Swords, Clock, Hourglass, Flag } from 'lucide-react';
 import { Card, StatusBadge } from '@/components/ui';
+import { clientApi } from '@/lib/client-api';
 
 interface NextMatch {
   id: string;
@@ -72,11 +73,7 @@ function QueuePosition({ entry }: { entry: QueueEntry }) {
 export function MyQueue() {
   const { data, isLoading, error } = useQuery<{ queue: QueueEntry[] }>({
     queryKey: ['me-queue'],
-    queryFn: async () => {
-      const res = await fetch('/api/me/queue');
-      if (!res.ok) throw new Error('Failed to load your queue');
-      return res.json();
-    },
+    queryFn: () => clientApi.getQueue(),
     refetchInterval: 15000,
   });
 

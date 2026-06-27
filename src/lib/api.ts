@@ -1,3 +1,5 @@
+// Server-only data helpers (direct Prisma) used for SSR prefetch in server components.
+// Client components must NOT import this — they use the fetch layer in `client-api.ts`.
 import prisma from './prisma';
 
 export async function getTournament(id: string) {
