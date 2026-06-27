@@ -25,7 +25,7 @@ function runStep(command, args) {
 }
 
 runStep(nodeCommand, ["scripts/reset-e2e-db.js"]);
-runStep(nodeCommand, ["scripts/setup-db.js"]);
+runStep(nodeCommand, ["scripts/migrate.js"]);
 
 const devServer =
   process.platform === "win32"

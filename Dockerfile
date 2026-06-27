@@ -53,5 +53,6 @@ EXPOSE 4001
 ENV PORT=4001
 ENV HOSTNAME=0.0.0.0
 
-# Run Prisma db push to ensure schema is up to date, then start the server
-CMD ["sh", "-c", "DATABASE_URL=file:/app/data/prod.db npx prisma@6 db push --schema=/app/prisma/schema.prisma && DATABASE_URL=file:/app/data/prod.db node server.js"]
+# Apply migrations, then start the server. An existing pre-migrations DB needs a one-time
+# `npx prisma@6 migrate resolve --applied <baseline> --schema=/app/prisma/schema.prisma`.
+CMD ["sh", "-c", "DATABASE_URL=file:/app/data/prod.db npx prisma@6 migrate deploy --schema=/app/prisma/schema.prisma && DATABASE_URL=file:/app/data/prod.db node server.js"]
