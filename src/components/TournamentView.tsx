@@ -9,7 +9,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMatchStream } from "@/hooks/useMatchStream";
 import PublicBracket from "@/components/PublicBracket";
 import { getGameMetadata } from "@/lib/games";
-import { ContextBar } from "@/components/ContextBar";
+import { TopNav } from "@/components/ui";
+import { LayoutDashboard } from "lucide-react";
 import { useToast } from "@/components/ToastProvider";
 
 // Modular Components
@@ -196,13 +197,19 @@ export default function TournamentView({ id }: TournamentViewProps) {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[var(--mds-page)] font-sans antialiased text-[var(--mds-text-primary)]">
-      <ContextBar
-        mode="public"
-        contextLabel={tournament.name}
-        phase={activeTab.toUpperCase()}
-        breadcrumbs={["tournaments", tournament.name, activeTab]}
+      <TopNav
+        links={[{ href: "/tournaments", label: "Tournaments" }]}
+        right={
+          <Link
+            href="/dashboard"
+            className="hidden items-center gap-1.5 text-xs font-semibold text-fg-muted transition-colors hover:text-fg sm:flex"
+          >
+            <LayoutDashboard size={14} />
+            My desk
+          </Link>
+        }
       />
-      
+
       <div className="flex flex-1 overflow-hidden">
         {/* SIDEBAR (DESKTOP) */}
         <aside className="hidden w-72 flex-col border-r border-[var(--mds-border)] bg-[var(--mds-card)] lg:flex shrink-0">
