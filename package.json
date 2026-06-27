@@ -36,6 +36,7 @@
     "sharp": "^0.33.5",
     "utf-8-validate": "^6.0.6",
     "uuid": "^13.0.0",
+    "web-push": "^3.6.7",
     "zlib-sync": "^0.1.10"
   },
   "devDependencies": {
@@ -43,6 +44,7 @@
     "@types/node": "^22",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
+    "@types/web-push": "^3.6.4",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.24",

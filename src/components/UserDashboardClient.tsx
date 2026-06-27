@@ -8,6 +8,7 @@ import { Trophy, ShieldCheck, Loader2, Gamepad2, ArrowRight, Shield, Activity, Z
 import { buildSteamConnectUrl } from '@/lib/match-links';
 import { MockPersonaButtons } from '@/components/MockPersonaButtons';
 import { MyQueue } from '@/components/player/MyQueue';
+import { EnableAlertsButton } from '@/components/player/EnableAlertsButton';
 import { clientApi } from '@/lib/client-api';
 import { EmptyState, PanelHeader, WorkspaceChrome } from '@/components/workspace/WorkspaceChrome';
 import FirstRunCoach from '@/components/FirstRunCoach';
@@ -116,6 +117,10 @@ export default function UserDashboardClient() {
           ]}
           cta={<Link href="/tournaments" className="mds-btn-primary h-9 px-4 text-[10px] font-black uppercase tracking-widest">Browse Tournaments</Link>}
         />
+
+        <div className="flex justify-end">
+          <EnableAlertsButton />
+        </div>
 
         <MyQueue />
 

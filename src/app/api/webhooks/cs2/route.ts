@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { eventBus } from "@/lib/eventBus";
+import { notifyMatchReady } from "@/lib/notify";
 
 type Cs2TeamPayload = {
   name?: string;
@@ -230,12 +231,16 @@ function broadcastTelemetry(matchId: string, tournamentId: string, eventType: st
 async function handleMatchLive(payload: Cs2WebhookPayload) {
   const match = await resolveMatch(payload);
   if (!match) return;
+  const wasLive = match.status === "LIVE";
   const updated = await prisma.match.update({
     where: { id: match.id },
     data: { status: "LIVE" },
   });
   const full = await getFullMatch(updated.id);
   if (full) broadcastUpdate(full);
+  if (!wasLive) {
+    await notifyMatchReady(updated.id, "LIVE");
+  }
 }
 
 async function handleRoundEnd(payload: Cs2WebhookPayload) {

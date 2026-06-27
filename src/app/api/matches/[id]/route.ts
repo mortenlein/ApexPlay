@@ -4,6 +4,7 @@ import { announceResult, announceMatch } from '@/lib/discord';
 import { requireAdminApi } from '@/lib/route-auth';
 import { eventBus } from '@/lib/eventBus';
 import { buildActorLabel, recordAudit } from '@/lib/audit';
+import { notifyMatchReady } from '@/lib/notify';
 import { conflictResponse, hasTimestampConflict, normalizeExpectedUpdatedAt } from '@/lib/mutation-guards';
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
@@ -165,6 +166,12 @@ export async function POST(request: Request, { params }: { params: { id: string 
         }
 
         await broadcastMatch(updatedMatch.id);
+
+        // Notify both teams when a match becomes ready/live (web push + in-app log).
+        const wasJustActivated = (status === 'LIVE' || status === 'READY') && match.status !== status;
+        if (wasJustActivated) {
+            await notifyMatchReady(updatedMatch.id, status);
+        }
 
         await recordAudit({
             action: 'match.updated',
