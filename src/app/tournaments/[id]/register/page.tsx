@@ -6,10 +6,12 @@ import Image from 'next/image';
 import { Trophy, Users, ShieldCheck, ArrowRight, CheckCircle2, AlertCircle, Loader2, Gamepad2, Upload, Share2, Copy } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ContextBar } from '@/components/ContextBar';
+import { TopNav } from '@/components/ui';
 import { MockPersonaButtons } from '@/components/MockPersonaButtons';
 import { useToast } from '@/components/ToastProvider';
 import { RouteNotFoundState } from '@/components/RouteStates';
+
+const PUBLIC_NAV = [{ href: '/tournaments', label: 'Tournaments' }];
 
 export default function RegisterPage({ params }: { params: { id: string } }) {
     const { data: session, status } = useSession();
@@ -186,7 +188,7 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
     if (tournament.rosterLocked) {
         return (
             <div className="min-h-screen bg-[var(--mds-page)] text-[var(--mds-text-primary)]">
-                <ContextBar mode="public" />
+                <TopNav links={PUBLIC_NAV} />
                 <div className="mx-auto flex min-h-[70vh] max-w-xl items-center px-6">
                     <div className="w-full rounded-xl border border-[var(--mds-border)] bg-[var(--mds-card)] p-8 text-center">
                         <h1 className="text-2xl font-black uppercase tracking-tight">Registration Closed</h1>
@@ -208,7 +210,7 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
 
         return (
             <div className="min-h-screen bg-[var(--mds-page)] flex flex-col h-screen overflow-hidden text-[var(--mds-text-primary)]">
-                <ContextBar mode="public" />
+                <TopNav links={PUBLIC_NAV} />
                 <div className="flex-1 flex items-center justify-center p-6 bg-grid-pattern bg-fixed">
                     <div className="max-w-xl w-full mds-card p-10 text-center shadow-2xl relative overflow-hidden">
                         <div className="w-20 h-20 bg-[var(--mds-action-soft)] rounded-2xl flex items-center justify-center border border-[var(--mds-action)]/20 mx-auto mb-8 shadow-lg shadow-[var(--mds-action)]/10">
@@ -277,8 +279,8 @@ export default function RegisterPage({ params }: { params: { id: string } }) {
 
     return (
         <div className="min-h-screen bg-[var(--mds-page)] text-[var(--mds-text-primary)] selection:bg-[var(--mds-action-soft)] selection:text-white">
-            <ContextBar mode="public" />
-            
+            <TopNav links={PUBLIC_NAV} />
+
             <div className="max-w-4xl mx-auto px-6 py-16 lg:py-24">
                 <header className="mb-16">
                     <div className="flex items-center gap-3 mb-6">
