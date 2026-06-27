@@ -19,6 +19,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 // Modular Components
 import { ManageSidebar } from './tournament/manage/ManageSidebar';
+import { StageStepper } from './tournament/manage/StageStepper';
 import { ManageControl } from './tournament/manage/ManageControl';
 import { ManageOverview } from './tournament/manage/ManageOverview';
 import { ManageParticipants } from './tournament/manage/ManageParticipants';
@@ -480,7 +481,25 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
 
                     {/* VIEWPORT AREA */}
                     <div className="flex-1 overflow-y-auto p-10 lg:p-12 custom-scrollbar">
-                        <div className="max-w-[1400px] mx-auto">
+                        <div className="max-w-[1400px] mx-auto space-y-6">
+                            <StageStepper
+                                teams={teams}
+                                matches={matches}
+                                onAction={(stage) => {
+                                    if (stage === 'DRAFT') {
+                                        updateActiveTab('participants');
+                                    } else if (stage === 'REGISTRATION') {
+                                        if (window.confirm('Generate the bracket now?\n\nThis creates the first round from the seeded teams and locks roster edits.')) {
+                                            generateMatchesMutation.mutate();
+                                        }
+                                    } else if (stage === 'LIVE') {
+                                        updateActiveTab('control');
+                                    } else {
+                                        window.open(`/tournaments/${tournamentId}`, '_blank');
+                                    }
+                                }}
+                            />
+
                             {activeTab === 'control' && (
                                 <ManageControl
                                     tournament={tournament}
