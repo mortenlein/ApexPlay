@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Activity, Users, Sword, Settings2, ExternalLink, X } from 'lucide-react';
+import { ArrowLeft, Activity, Users, Sword, Settings2, ExternalLink, X, LayoutGrid } from 'lucide-react';
 
 interface ManageSidebarProps {
   tournamentId: string;
@@ -22,6 +22,7 @@ export const ManageSidebar: React.FC<ManageSidebarProps> = ({
   category
 }) => {
   const tabs = [
+    { id: "control", icon: LayoutGrid, label: "Control" },
     { id: "overview", icon: Activity, label: "Overview" },
     { id: "participants", icon: Users, label: "Teams" },
     { id: category === 'BATTLE_ROYALE' ? "scoreboard" : "matches", icon: Sword, label: "Matches" },

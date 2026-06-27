@@ -19,6 +19,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 // Modular Components
 import { ManageSidebar } from './tournament/manage/ManageSidebar';
+import { ManageControl } from './tournament/manage/ManageControl';
 import { ManageOverview } from './tournament/manage/ManageOverview';
 import { ManageParticipants } from './tournament/manage/ManageParticipants';
 import { ManageMatches } from './tournament/manage/ManageMatches';
@@ -39,7 +40,7 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
     const searchParams = useSearchParams();
     const toast = useToast();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('overview');
+    const [activeTab, setActiveTab] = useState('control');
     const [newTeam, setNewTeam] = useState({ name: '', logoUrl: '', seed: '', players: [] });
     const [generating, setGenerating] = useState(false);
     const [editingTeam, setEditingTeam] = useState<any>(null);
@@ -480,6 +481,24 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
                     {/* VIEWPORT AREA */}
                     <div className="flex-1 overflow-y-auto p-10 lg:p-12 custom-scrollbar">
                         <div className="max-w-[1400px] mx-auto">
+                            {activeTab === 'control' && (
+                                <ManageControl
+                                    tournament={tournament}
+                                    teams={teams}
+                                    matches={matches}
+                                    onOpenMatchModal={(m) => {
+                                        setEditingMatch(m);
+                                        setMatchForm({
+                                            homeScore: m.homeScore || 0,
+                                            awayScore: m.awayScore || 0,
+                                            bestOf: m.bestOf || 1,
+                                            status: m.status || 'READY',
+                                            mapScores: typeof m.mapScores === 'string' ? JSON.parse(m.mapScores) : (Array.isArray(m.mapScores) ? m.mapScores : []),
+                                        });
+                                    }}
+                                />
+                            )}
+
                             {activeTab === 'overview' && (
                                 <ManageOverview 
                                     tournament={tournament}
