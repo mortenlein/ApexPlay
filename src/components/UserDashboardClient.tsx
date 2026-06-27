@@ -9,6 +9,7 @@ import { buildSteamConnectUrl } from '@/lib/match-links';
 import { MockPersonaButtons } from '@/components/MockPersonaButtons';
 import { MyQueue } from '@/components/player/MyQueue';
 import { EnableAlertsButton } from '@/components/player/EnableAlertsButton';
+import { PlayerHome } from '@/components/player/PlayerHome';
 import { clientApi } from '@/lib/client-api';
 import { EmptyState, PanelHeader, WorkspaceChrome } from '@/components/workspace/WorkspaceChrome';
 import FirstRunCoach from '@/components/FirstRunCoach';
@@ -55,6 +56,10 @@ export default function UserDashboardClient() {
         <MockPersonaButtons callbackUrl="/dashboard" />
       </div>
     );
+  }
+
+  if (!error) {
+    return <PlayerHome user={session?.user} profile={profile} />;
   }
 
   const { registrations = [], stats, activeMatches = [] } = profile || {};
