@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { announceMatch, announceResult } from '@/lib/discord';
 import { requireAdminApi } from '@/lib/route-auth';
-import { buildAdminActorLabel, recordAudit } from '@/lib/audit';
+import { buildActorLabel, recordAudit } from '@/lib/audit';
 
 export async function POST(req: Request) {
     const unauthorized = await requireAdminApi();
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
             entityId: matchId,
             tournamentId,
             summary: `Sent ${type.toLowerCase()} announcement for match ${matchId.slice(0, 8)}`,
-            actor: buildAdminActorLabel(),
+            actor: await buildActorLabel(),
         });
 
         return NextResponse.json({ success: true });

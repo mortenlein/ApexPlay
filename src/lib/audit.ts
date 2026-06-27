@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { getSessionIdentity } from "@/lib/route-auth";
 
 interface AuditEntryInput {
   action: string;
@@ -28,6 +29,17 @@ export async function recordAudit(input: AuditEntryInput) {
   }
 }
 
-export function buildAdminActorLabel() {
-  return "Admin session";
+/**
+ * Identity-aware actor label for the audit trail, e.g. "Marcus · admin".
+ * Falls back gracefully when no session is present.
+ */
+export async function buildActorLabel(): Promise<string> {
+  try {
+    const { name, steamId, role } = await getSessionIdentity();
+    if (name) return `${name} · ${role}`;
+    if (steamId) return `${steamId} · ${role}`;
+    return "Staff session";
+  } catch {
+    return "Staff session";
+  }
 }

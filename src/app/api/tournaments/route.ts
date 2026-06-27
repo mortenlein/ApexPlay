@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { SUPPORTED_GAMES } from '@/lib/games';
 import { requireAdminApi } from '@/lib/route-auth';
-import { buildAdminActorLabel, recordAudit } from '@/lib/audit';
+import { buildActorLabel, recordAudit } from '@/lib/audit';
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
             entityId: tournament.id,
             tournamentId: tournament.id,
             summary: `Created tournament ${tournament.name}`,
-            actor: buildAdminActorLabel(),
+            actor: await buildActorLabel(),
             metadata: {
                 game: tournament.game,
                 format: tournament.format,

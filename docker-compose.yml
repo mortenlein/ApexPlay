@@ -26,6 +26,8 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set a long random NEXTAUTH_SECRET in .env}
       # Comma-separated steamid64 allowlist that resolves to admin at login.
       ADMIN_STEAMIDS: ${ADMIN_STEAMIDS:?set ADMIN_STEAMIDS in .env (comma-separated steamid64)}
+      # Optional floor-staff (marshal) allowlist.
+      MARSHAL_STEAMIDS: ${MARSHAL_STEAMIDS:-}
       # Steam Web API key (https://steamcommunity.com/dev/apikey)
       STEAM_API_KEY: ${STEAM_API_KEY:?set STEAM_API_KEY in .env}
       # Required to accept CS2 plugin webhooks (fail-closed if unset).

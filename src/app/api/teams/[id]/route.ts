@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAdminApi } from '@/lib/route-auth';
-import { buildAdminActorLabel, recordAudit } from '@/lib/audit';
+import { buildActorLabel, recordAudit } from '@/lib/audit';
 import { conflictResponse, hasTimestampConflict, lockedResponse, normalizeExpectedUpdatedAt } from '@/lib/mutation-guards';
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
@@ -53,7 +53,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
             entityId: updatedTeam.id,
             tournamentId: updatedTeam.tournamentId,
             summary: `Updated team ${updatedTeam.name}`,
-            actor: buildAdminActorLabel(),
+            actor: await buildActorLabel(),
             metadata: data,
         });
 
@@ -97,7 +97,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
             entityId: team.id,
             tournamentId: team.tournamentId,
             summary: `Removed team ${team.name}`,
-            actor: buildAdminActorLabel(),
+            actor: await buildActorLabel(),
         });
 
         return NextResponse.json({ success: true });

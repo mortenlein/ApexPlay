@@ -18,3 +18,30 @@ export function isAdminSteamId(steamId: string | null | undefined): boolean {
   if (!steamId) return false;
   return getAdminSteamIds().includes(String(steamId).trim());
 }
+
+export type UserRole = "admin" | "marshal" | "player";
+
+// Marshals are floor staff: they run match flow but aren't full organizers.
+// Seeded the same way as admins — a steamid64 allowlist in the deploy env.
+export function getMarshalSteamIds(): string[] {
+  return (process.env.MARSHAL_STEAMIDS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+export function isMarshalSteamId(steamId: string | null | undefined): boolean {
+  if (!steamId) return false;
+  return getMarshalSteamIds().includes(String(steamId).trim());
+}
+
+// "Staff" = anyone who can touch match control: admins (a superset) or marshals.
+export function isStaffSteamId(steamId: string | null | undefined): boolean {
+  return isAdminSteamId(steamId) || isMarshalSteamId(steamId);
+}
+
+export function getRoleForSteamId(steamId: string | null | undefined): UserRole {
+  if (isAdminSteamId(steamId)) return "admin";
+  if (isMarshalSteamId(steamId)) return "marshal";
+  return "player";
+}

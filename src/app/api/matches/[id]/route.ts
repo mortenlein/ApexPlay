@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import { announceResult, announceMatch } from '@/lib/discord';
 import { requireAdminApi } from '@/lib/route-auth';
 import { eventBus } from '@/lib/eventBus';
-import { buildAdminActorLabel, recordAudit } from '@/lib/audit';
+import { buildActorLabel, recordAudit } from '@/lib/audit';
 import { conflictResponse, hasTimestampConflict, normalizeExpectedUpdatedAt } from '@/lib/mutation-guards';
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
@@ -172,7 +172,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
             entityId: updatedMatch.id,
             tournamentId: updatedMatch.tournamentId,
             summary: `Updated match ${updatedMatch.id.slice(0, 8)} to ${updatedMatch.homeScore}:${updatedMatch.awayScore} (${updatedMatch.status})`,
-            actor: buildAdminActorLabel(),
+            actor: await buildActorLabel(),
             metadata: {
                 homeScore: updatedMatch.homeScore,
                 awayScore: updatedMatch.awayScore,

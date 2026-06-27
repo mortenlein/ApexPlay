@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { requireAdminApi } from '@/lib/route-auth';
+import { requireStaffApi } from '@/lib/route-auth';
 
 export async function GET(request: Request) {
-    const unauthorized = await requireAdminApi();
+    const unauthorized = await requireStaffApi();
     if (unauthorized) return unauthorized;
 
     try {

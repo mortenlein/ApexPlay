@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import { resolveSteamId } from '@/lib/steam';
 import { requireAdminApi, requireSignedInUser } from '@/lib/route-auth';
 import { buildTeamsCsv, parseCsvRows } from '@/lib/csv';
-import { buildAdminActorLabel, recordAudit } from '@/lib/audit';
+import { buildActorLabel, recordAudit } from '@/lib/audit';
 import { lockedResponse } from '@/lib/mutation-guards';
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
@@ -144,7 +144,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
                 entityId: params.id,
                 tournamentId: params.id,
                 summary: `Imported ${createdTeams.length} teams into ${tournament.name}`,
-                actor: buildAdminActorLabel(),
+                actor: await buildActorLabel(),
                 metadata: { teamCount: createdTeams.length },
             });
 
@@ -198,7 +198,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
             entityId: team.id,
             tournamentId: params.id,
             summary: `Added team ${team.name}`,
-            actor: isAdminRequest ? buildAdminActorLabel() : userSession?.user?.name || 'Signed-in player',
+            actor: isAdminRequest ? await buildActorLabel() : userSession?.user?.name || 'Signed-in player',
             metadata: {
                 playerCount: resolvedPlayers.length,
             },

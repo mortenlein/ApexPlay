@@ -4,7 +4,7 @@ import { sendConsoleCommand, getServerInfo } from '@/lib/dathost';
 import { requireAdminApi } from '@/lib/route-auth';
 import { eventBus } from '@/lib/eventBus';
 import { announceMatch } from '@/lib/discord';
-import { buildAdminActorLabel, recordAudit } from '@/lib/audit';
+import { buildActorLabel, recordAudit } from '@/lib/audit';
 
 function quoteForConsole(value: string) {
     return `"${String(value ?? '').replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
@@ -223,7 +223,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
             entityId: updated.id,
             tournamentId: updated.tournamentId,
             summary: `Loaded match ${updated.id.slice(0, 8)} and marked it waiting for players`,
-            actor: buildAdminActorLabel(),
+            actor: await buildActorLabel(),
             metadata: {
                 serverIp,
                 serverPort,

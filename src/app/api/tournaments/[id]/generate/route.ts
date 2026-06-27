@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import { generateSingleElimination, generateDoubleElimination } from '@/lib/bracket-utils';
 import { announceMatch } from '@/lib/discord';
 import { requireAdminApi } from '@/lib/route-auth';
-import { buildAdminActorLabel, recordAudit } from '@/lib/audit';
+import { buildActorLabel, recordAudit } from '@/lib/audit';
 import { lockedResponse } from '@/lib/mutation-guards';
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
@@ -177,7 +177,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
             entityId: tournamentId,
             tournamentId,
             summary: `Generated ${createdMatches.length} matches for ${tournament.name}`,
-            actor: buildAdminActorLabel(),
+            actor: await buildActorLabel(),
             metadata: {
                 matchCount: createdMatches.length,
                 teamCount: teams.length,
