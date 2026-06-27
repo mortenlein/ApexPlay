@@ -30,13 +30,10 @@ services:
       MARSHAL_STEAMIDS: ${MARSHAL_STEAMIDS:-}
       # Steam Web API key (https://steamcommunity.com/dev/apikey)
       STEAM_API_KEY: ${STEAM_API_KEY:?set STEAM_API_KEY in .env}
-      # Required to accept CS2 plugin webhooks (fail-closed if unset).
+      # Required to accept inbound CS2 / EON (GSI) score webhooks (fail-closed if unset).
       CS2_WEBHOOK_KEY: ${CS2_WEBHOOK_KEY:-}
-      MATCHZY_WEBHOOK_KEY: ${MATCHZY_WEBHOOK_KEY:-}
       # Web push (optional). Generate with: npx web-push generate-vapid-keys
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@apexplay.local}
-      ENABLE_DATHOST: ${ENABLE_DATHOST:-false}
-      ENABLE_MATCHZY: ${ENABLE_MATCHZY:-false}
     restart: unless-stopped

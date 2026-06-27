@@ -61,30 +61,22 @@ docker compose down -v
 |---|---|---|
 | `DATABASE_URL` | `file:./dev.db` | Path to the SQLite database file |
 | `PORT` | `4001` | Port the server listens on |
-| `CS2_WEBHOOK_KEY` | *(required for CS2 plugin webhook auth)* | Bearer key expected by `/api/webhooks/cs2` |
-| `ENABLE_CS2_PLUGIN` | `false` | When true, `Load Match` binds match context in plugin via console command |
-| `CS2_PLUGIN_SET_MATCH_COMMAND` | `apexplay_set_match` | Server command used to bind `matchId`/`tournamentId` in plugin |
+| `CS2_WEBHOOK_KEY` | *(required to accept score webhooks)* | Bearer key expected by `/api/webhooks/cs2` |
 
 For local dev, these are set in `.env`. Docker Compose sets `DATABASE_URL` automatically to point to the persistent volume.
 
 ---
 
-## CS2 Plugin Telemetry (Full Path)
+## Live scores (inbound webhook)
 
-This repo includes a CounterStrikeSharp plugin scaffold and webhook receiver:
+Live scores are pushed **into** ApexPlay over a single webhook — `POST /api/webhooks/cs2`
+(bearer-authed with `CS2_WEBHOOK_KEY`). Any source that reads the CS2 **GSI** stream can
+forward scores there; the planned **EON** integration works this way (EON already consumes the
+GSI file, so it can relay score updates to this endpoint). ApexPlay updates match state and
+broadcasts to the live UI.
 
-- Plugin scaffold: `plugins/ApexPlayTelemetry`
-- Webhook endpoint: `POST /api/webhooks/cs2`
-
-Plugin build target: `.NET 8` (`CounterStrikeSharp.API`).
-
-### Flow
-
-1. Admin clicks **Load Match**
-2. ApexPlay sends server command:
-   - `apexplay_set_match "<matchId>" "<tournamentId>" "<homeTeamName>" "<awayTeamName>"`
-3. Plugin emits signed events to `/api/webhooks/cs2`
-4. API updates match/player state and broadcasts to live UI streams
+> Organizers can always update scores manually from the Control view — the webhook just
+> automates it when a GSI source is wired up.
 
 ### Quick local webhook test
 
