@@ -5,6 +5,7 @@
 import {
   generateSingleElimination,
   generateDoubleElimination,
+  bestOfForRound,
   BracketMatch,
 } from "../src/lib/bracket-utils";
 
@@ -116,6 +117,41 @@ for (const n of [4, 8, 16, 32]) {
   );
 
   verifyLinking(`DE${n}`, m, n);
+}
+
+console.log("\nBest-of (stage-relative, last-N-rounds):");
+{
+  // 8 teams = 3 rounds (R1 quarters, R2 semis, R3 final).
+  const bo = (r: number, totalRounds: number, opts: any) => bestOfForRound(r, totalRounds, opts).bestOf;
+
+  check("default (no settings) = BO1 every round", [1, 2, 3].every((r) => bo(r, 3, {}) === 1));
+
+  // BO3 from Semi-Finals (last 2 rounds) in an 8-team bracket.
+  check("BO3 last-2: R1 quarters stays BO1", bo(1, 3, { bo3LastRounds: 2 }) === 1);
+  check("BO3 last-2: R2 semis = BO3", bo(2, 3, { bo3LastRounds: 2 }) === 3);
+  check("BO3 last-2: R3 final = BO3", bo(3, 3, { bo3LastRounds: 2 }) === 3);
+
+  // BO5 Grand Final overrides BO3 at the final.
+  check("BO5 last-1 + BO3 last-2: final = BO5", bo(3, 3, { bo3LastRounds: 2, bo5LastRounds: 1 }) === 5);
+  check("BO5 last-1 + BO3 last-2: semis = BO3", bo(2, 3, { bo3LastRounds: 2, bo5LastRounds: 1 }) === 3);
+
+  // Works for a small (4-team = 2 round) bracket — the bug we fixed.
+  check("4-team, Grand Final BO3: R1 BO1", bo(1, 2, { bo3LastRounds: 1 }) === 1);
+  check("4-team, Grand Final BO3: final BO3", bo(2, 2, { bo3LastRounds: 1 }) === 3);
+
+  // Stage deeper than the bracket -> applies to all its rounds (no silent no-op).
+  check("stage deeper than bracket applies to all rounds", [1, 2, 3].every((r) => bo(r, 3, { bo3LastRounds: 4 }) === 3));
+
+  // Through the generator.
+  const se = generateSingleElimination(makeTeams(8), { bo3LastRounds: 2, bo5LastRounds: 1 });
+  const byRound = (r: number) => se.find((m) => m.bracketType === "WINNERS" && m.round === r);
+  check("SE8 generated: R1 bestOf 1", byRound(1)?.bestOf === 1);
+  check("SE8 generated: R2 bestOf 3", byRound(2)?.bestOf === 3);
+  check("SE8 generated: R3 (final) bestOf 5", byRound(3)?.bestOf === 5);
+
+  const de = generateDoubleElimination(makeTeams(8), { bo5LastRounds: 1 });
+  check("DE8: grand final bestOf 5", de.find((m) => m.bracketType === "GRAND_FINAL")?.bestOf === 5);
+  check("DE8: losers bracket stays BO1", de.filter((m) => m.bracketType === "LOSERS").every((m) => m.bestOf === 1));
 }
 
 console.log("\nValidation:");

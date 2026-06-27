@@ -55,8 +55,8 @@ export async function POST(request: Request) {
         const game = typeof data.game === 'string' ? data.game : 'CS2';
         const format = typeof data.format === 'string' ? data.format : 'SINGLE_ELIMINATION';
         const teamSize = Number.parseInt(String(data.teamSize ?? '5'), 10);
-        const bo3StartRound = data.bo3StartRound ? Number.parseInt(String(data.bo3StartRound), 10) : null;
-        const bo5StartRound = data.bo5StartRound ? Number.parseInt(String(data.bo5StartRound), 10) : null;
+        const bo3LastRounds = data.bo3LastRounds ? Number.parseInt(String(data.bo3LastRounds), 10) : null;
+        const bo5LastRounds = data.bo5LastRounds ? Number.parseInt(String(data.bo5LastRounds), 10) : null;
         const hasThirdPlace = Boolean(data.hasThirdPlace);
         const gameMeta = SUPPORTED_GAMES.find(g => g.id === game);
 
@@ -78,8 +78,8 @@ export async function POST(request: Request) {
                 type: data.type || format,
                 format,
                 teamSize,
-                bo3StartRound,
-                bo5StartRound,
+                bo3LastRounds,
+                bo5LastRounds,
                 hasThirdPlace
             },
         });

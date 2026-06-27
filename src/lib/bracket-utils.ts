@@ -22,9 +22,27 @@ export interface BracketMatch {
 }
 
 interface GenerateOptions {
-    bo3StartRound?: number | null;
-    bo5StartRound?: number | null;
+    // "Last N rounds" semantics, counted from the final (see schema). 0/null = off.
+    bo3LastRounds?: number | null;
+    bo5LastRounds?: number | null;
     hasThirdPlace?: boolean;
+}
+
+/**
+ * Resolve the best-of for a given round, stage-relative to the final so it's correct for any
+ * bracket size. `bo3LastRounds`/`bo5LastRounds` = how many of the final rounds use that best-of
+ * (1 = Grand Final only, 2 = Semi-Finals onward, …). BO5 takes precedence where they overlap.
+ */
+export function bestOfForRound(
+    round: number,
+    totalRounds: number,
+    opts: { bo3LastRounds?: number | null; bo5LastRounds?: number | null }
+): { bestOf: number; limit: number } {
+    const bo5 = opts.bo5LastRounds ?? 0;
+    const bo3 = opts.bo3LastRounds ?? 0;
+    if (bo5 > 0 && round > totalRounds - bo5) return { bestOf: 5, limit: 3 };
+    if (bo3 > 0 && round > totalRounds - bo3) return { bestOf: 3, limit: 2 };
+    return { bestOf: 1, limit: 1 };
 }
 
 export function generateSingleElimination(
@@ -39,18 +57,7 @@ export function generateSingleElimination(
     const numSlots = Math.pow(2, rounds);
     const matches: BracketMatch[] = [];
 
-    // Helper for Best-Of logic
-    const getFormat = (currentRound: number) => {
-        // boXStartRound in DB is absolute round number: 1, 2, 3...
-        // Rounds in logic: 1 is the first round, rounds is the final.
-        
-        const bo5Start = options.bo5StartRound;
-        const bo3Start = options.bo3StartRound;
-
-        if (bo5Start && bo5Start > 0 && currentRound >= bo5Start) return { bestOf: 5, limit: 3 };
-        if (bo3Start && bo3Start > 0 && currentRound >= bo3Start) return { bestOf: 3, limit: 2 };
-        return { bestOf: 1, limit: 1 };
-    };
+    const getFormat = (currentRound: number) => bestOfForRound(currentRound, rounds, options);
 
     // Create Main Bracket
     for (let r = 1; r <= rounds; r++) {
@@ -194,13 +201,9 @@ export function generateDoubleElimination(
     const numSlots = numTeams;
     const matches: BracketMatch[] = [];
 
-    const getFormat = (currentRound: number) => {
-        const bo5Start = options.bo5StartRound;
-        const bo3Start = options.bo3StartRound;
-        if (bo5Start && bo5Start > 0 && currentRound >= bo5Start) return { bestOf: 5, limit: 3 };
-        if (bo3Start && bo3Start > 0 && currentRound >= bo3Start) return { bestOf: 3, limit: 2 };
-        return { bestOf: 1, limit: 1 };
-    };
+    // WB rounds (and the grand final) escalate best-of stage-relative to the WB final; the
+    // losers bracket stays BO1.
+    const getFormat = (currentRound: number) => bestOfForRound(currentRound, k, options);
 
     // --- Winners bracket ---
     for (let r = 1; r <= k; r++) {

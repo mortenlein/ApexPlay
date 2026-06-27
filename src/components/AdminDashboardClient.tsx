@@ -94,8 +94,8 @@ export default function AdminDashboardClient() {
       game: source.game,
       format: source.format,
       teamSize: source.teamSize,
-      bo3StartRound: source.bo3StartRound || null,
-      bo5StartRound: source.bo5StartRound || null,
+      bo3LastRounds: source.bo3LastRounds || null,
+      bo5LastRounds: source.bo5LastRounds || null,
       hasThirdPlace: source.hasThirdPlace || false,
       type: source.type || source.format,
     };

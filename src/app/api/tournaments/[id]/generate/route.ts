@@ -31,8 +31,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
         }
 
         const options = {
-            bo3StartRound: tournament.bo3StartRound,
-            bo5StartRound: tournament.bo5StartRound,
+            bo3LastRounds: tournament.bo3LastRounds,
+            bo5LastRounds: tournament.bo5LastRounds,
             hasThirdPlace: tournament.hasThirdPlace,
         };
 

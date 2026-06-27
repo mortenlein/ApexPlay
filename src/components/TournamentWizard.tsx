@@ -10,6 +10,17 @@ interface TournamentWizardProps {
     onComplete: (data: any) => Promise<string | void>;
 }
 
+// Best-of stage options, value = "last N rounds from the final" (works for any bracket size).
+const STAGE_LABELS: Record<string, string> = {
+    '0': 'None (BO1)',
+    '1': 'Grand Final',
+    '2': 'Semi-Finals',
+    '3': 'Quarter-Finals',
+    '4': 'Round of 16',
+};
+const BO3_STAGES = ['0', '1', '2', '3', '4'];
+const BO5_STAGES = ['0', '1', '2', '3'];
+
 export default function TournamentWizard({ onClose, onComplete }: TournamentWizardProps) {
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
@@ -18,8 +29,9 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
         format: 'SINGLE_ELIMINATION',
         teamSize: '5',
         hasThirdPlace: false,
-        bo3StartRound: '1',
-        bo5StartRound: '0',
+        // "Last N rounds" from the final: 0 = off (BO1 default). See STAGE_OPTIONS below.
+        bo3LastRounds: '0',
+        bo5LastRounds: '0',
     });
     const [createdId, setCreatedId] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -207,42 +219,40 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                 <div className="space-y-4">
-                                    <label className="mds-uppercase-label opacity-40">BO3 Start Round</label>
+                                    <label className="mds-uppercase-label opacity-40">BO3 From Stage</label>
                                     <div className="relative">
-                                        <select 
-                                            value={formData.bo3StartRound} 
-                                            onChange={(e) => setFormData({ ...formData, bo3StartRound: e.target.value })}
+                                        <select
+                                            value={formData.bo3LastRounds}
+                                            onChange={(e) => setFormData({ ...formData, bo3LastRounds: e.target.value })}
                                             className="mds-input h-14 cursor-pointer appearance-none px-6 pr-10 font-bold uppercase tracking-tight"
                                         >
-                                            <option value="1">Round 1</option>
-                                            <option value="2">Round 2</option>
-                                            <option value="3">Round 3</option>
-                                            <option value="4">Quarter Finals</option>
-                                            <option value="5">Semi Finals</option>
-                                            <option value="0">Disabled</option>
+                                            {BO3_STAGES.map((v) => (
+                                                <option key={v} value={v}>{STAGE_LABELS[v]}</option>
+                                            ))}
                                         </select>
                                         <div className="absolute top-1/2 right-4 -translate-y-1/2 pointer-events-none opacity-40">
                                             <ChevronRight size={16} className="rotate-90" />
                                         </div>
                                     </div>
+                                    <p className="text-[10px] text-[var(--mds-text-subtle)] font-medium leading-relaxed">BO3 applies from this stage through to the final. Earlier rounds stay BO1.</p>
                                 </div>
                                 <div className="space-y-4">
-                                    <label className="mds-uppercase-label opacity-40">BO5 Start Round</label>
+                                    <label className="mds-uppercase-label opacity-40">BO5 From Stage</label>
                                     <div className="relative">
-                                        <select 
-                                            value={formData.bo5StartRound} 
-                                            onChange={(e) => setFormData({ ...formData, bo5StartRound: e.target.value })}
+                                        <select
+                                            value={formData.bo5LastRounds}
+                                            onChange={(e) => setFormData({ ...formData, bo5LastRounds: e.target.value })}
                                             className="mds-input h-14 cursor-pointer appearance-none px-6 pr-10 font-bold uppercase tracking-tight"
                                         >
-                                            <option value="0">Disabled</option>
-                                            <option value="4">Quarter Finals</option>
-                                            <option value="5">Semi Finals</option>
-                                            <option value="6">Grand Finals</option>
+                                            {BO5_STAGES.map((v) => (
+                                                <option key={v} value={v}>{STAGE_LABELS[v]}</option>
+                                            ))}
                                         </select>
                                         <div className="absolute top-1/2 right-4 -translate-y-1/2 pointer-events-none opacity-40">
                                             <ChevronRight size={16} className="rotate-90" />
                                         </div>
                                     </div>
+                                    <p className="text-[10px] text-[var(--mds-text-subtle)] font-medium leading-relaxed">BO5 overrides BO3 for the stages they share.</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-4 p-6 mds-card border-[var(--mds-action)]/20 bg-[var(--mds-action-soft)]">
@@ -278,8 +288,8 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                     {[
                                         { label: 'Format Style', value: formData.format === 'SINGLE_ELIMINATION' ? 'Single' : 'Double' },
                                         { label: 'Decider Match', value: formData.hasThirdPlace ? 'Active' : 'N/A' },
-                                        { label: 'BO3 Stage', value: formData.bo3StartRound === '0' ? 'None' : `Round ${formData.bo3StartRound}` },
-                                        { label: 'BO5 Stage', value: formData.bo5StartRound === '0' ? 'None' : `Round ${formData.bo5StartRound}` },
+                                        { label: 'BO3 From', value: STAGE_LABELS[formData.bo3LastRounds] || 'None (BO1)' },
+                                        { label: 'BO5 From', value: STAGE_LABELS[formData.bo5LastRounds] || 'None (BO1)' },
                                     ].map(item => (
                                         <div key={item.label}>
                                             <p className="mds-uppercase-label text-[8px] opacity-40 mb-1.5">{item.label}</p>

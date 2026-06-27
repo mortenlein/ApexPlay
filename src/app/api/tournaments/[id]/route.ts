@@ -47,11 +47,11 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
         const data = {
             ...(typeof body.name === 'string' ? { name: body.name.trim() } : {}),
-            ...(typeof body.bo3StartRound === 'number' || body.bo3StartRound === null
-                ? { bo3StartRound: body.bo3StartRound }
+            ...(typeof body.bo3LastRounds === 'number' || body.bo3LastRounds === null
+                ? { bo3LastRounds: body.bo3LastRounds }
                 : {}),
-            ...(typeof body.bo5StartRound === 'number' || body.bo5StartRound === null
-                ? { bo5StartRound: body.bo5StartRound }
+            ...(typeof body.bo5LastRounds === 'number' || body.bo5LastRounds === null
+                ? { bo5LastRounds: body.bo5LastRounds }
                 : {}),
             ...(typeof body.hasThirdPlace === 'boolean' ? { hasThirdPlace: body.hasThirdPlace } : {}),
             ...(typeof body.steamSignupEnabled === 'boolean' ? { steamSignupEnabled: body.steamSignupEnabled } : {}),

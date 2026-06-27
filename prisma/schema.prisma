@@ -16,8 +16,11 @@ model Tournament {
   type               String
   format             String            @default("SINGLE_ELIMINATION")
   teamSize           Int               @default(5)
-  bo3StartRound      Int?
-  bo5StartRound      Int?
+  // Best-of escalation, counted from the Grand Final backward (stage-relative, so it works for
+  // any bracket size): N = the last N rounds use this best-of. 0/null = off (BO1).
+  // 1 = Grand Final only, 2 = Semi-Finals onward, 3 = Quarter-Finals onward, 4 = Round-of-16 onward.
+  bo3LastRounds      Int?
+  bo5LastRounds      Int?
   hasThirdPlace      Boolean           @default(false)
   steamSignupEnabled Boolean           @default(false)
   createdAt          DateTime          @default(now())
