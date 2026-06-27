@@ -7,3 +7,5 @@ export { Input } from "./Input";
 export type { InputProps } from "./Input";
 export { EmptyState } from "./EmptyState";
 export { PageHeader } from "./PageHeader";
+export { TopNav } from "./TopNav";
+export type { NavLink } from "./TopNav";

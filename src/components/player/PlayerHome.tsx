@@ -4,9 +4,15 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Trophy, Zap, ArrowRight, Gamepad2, Radio, Activity, Shield, Hash } from 'lucide-react';
 import { buildSteamConnectUrl } from '@/lib/match-links';
-import { Button, Card, Badge, StatusBadge, EmptyState } from '@/components/ui';
+import { Button, Card, Badge, StatusBadge, EmptyState, TopNav } from '@/components/ui';
 import { MyQueue } from '@/components/player/MyQueue';
 import { EnableAlertsButton } from '@/components/player/EnableAlertsButton';
+
+const PLAYER_NAV = [
+  { href: '/dashboard', label: 'My desk' },
+  { href: '/tournaments', label: 'Tournaments' },
+  { href: '/profile', label: 'Profile' },
+];
 
 /**
  * Redesigned Player surface (exemplar for the new IA). Self-contained shell + content built
@@ -29,20 +35,10 @@ export function PlayerHome({ user, profile }: { user: any; profile: any }) {
 
   return (
     <div className="min-h-screen bg-page text-fg">
-      {/* Top bar */}
-      <header className="sticky top-0 z-30 border-b border-line bg-page/80 backdrop-blur">
-        <div className="mds-container flex h-14 items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link href="/" className="font-brand text-lg font-bold tracking-tight">
-              Apex<span className="text-brand">Play</span>
-            </Link>
-            <nav className="hidden items-center gap-1 md:flex">
-              <span className="rounded-sm bg-brand-soft px-3 py-1.5 text-sm font-semibold text-brand">My desk</span>
-              <Link href="/tournaments" className="rounded-sm px-3 py-1.5 text-sm font-semibold text-fg-muted hover:text-fg">Tournaments</Link>
-              <Link href="/profile" className="rounded-sm px-3 py-1.5 text-sm font-semibold text-fg-muted hover:text-fg">Profile</Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-3">
+      <TopNav
+        links={PLAYER_NAV}
+        right={
+          <>
             <EnableAlertsButton />
             <div className="flex items-center gap-2">
               {user?.image ? (
@@ -52,9 +48,9 @@ export function PlayerHome({ user, profile }: { user: any; profile: any }) {
               )}
               <span className="hidden text-sm font-semibold text-fg-muted sm:block">{user?.name}</span>
             </div>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <main className="mds-container space-y-8 py-8">
         {/* Hero: next match */}
