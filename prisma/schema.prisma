@@ -23,6 +23,7 @@ model Tournament {
   bo5LastRounds      Int?
   hasThirdPlace      Boolean           @default(false)
   steamSignupEnabled Boolean           @default(false)
+  eonBridgeToken     String?           @unique
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @default(now()) @updatedAt
   rosterLocked       Boolean           @default(false)

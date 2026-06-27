@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, MapPin, Crown, Users, Swords, Trophy, GitBranch } from 'lucide-react';
 import PublicBracket from '@/components/PublicBracket';
 import { Card, Badge, StatusBadge } from '@/components/ui';
+import { EonBridgePanel } from './EonBridgePanel';
 
 interface ManageControlProps {
   tournament: any;
@@ -206,8 +207,10 @@ export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: 
         </Card>
       </section>
 
-      {/* Games queue */}
+      {/* Games queue + live source */}
       <aside className="col-span-12 space-y-5 lg:col-span-3">
+        <EonBridgePanel tournamentId={tournament.id} />
+
         <div className="flex items-center gap-2">
           <Swords size={16} className="text-brand" />
           <h2 className="mds-uppercase-label text-fg-subtle">Games</h2>
