@@ -6,7 +6,7 @@ import Header from "./Header";
 
 // Surfaces that render their own top chrome (via ui/TopNav) — the global header is
 // suppressed there so there's exactly one header per surface.
-const SELF_CHROME_PREFIXES = ["/dashboard", "/tournaments", "/bracket", "/login"];
+const SELF_CHROME_PREFIXES = ["/dashboard", "/tournaments", "/bracket", "/login", "/marshal"];
 // Exact paths that own their chrome (their sub-routes are not yet migrated — e.g. the
 // /admin dashboard is redesigned but /admin/tournaments/[id] manage isn't).
 const SELF_CHROME_EXACT = ["/admin"];
