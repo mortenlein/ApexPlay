@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Trophy, ShieldCheck, Loader2, Gamepad2, ArrowRight, Shield, Activity, Zap, Hash, LayoutDashboard, User, Play, Radio } from 'lucide-react';
 import { buildSteamConnectUrl } from '@/lib/match-links';
 import { MockPersonaButtons } from '@/components/MockPersonaButtons';
+import { MyQueue } from '@/components/player/MyQueue';
 import { clientApi } from '@/lib/client-api';
 import { EmptyState, PanelHeader, WorkspaceChrome } from '@/components/workspace/WorkspaceChrome';
 import FirstRunCoach from '@/components/FirstRunCoach';
@@ -115,6 +116,8 @@ export default function UserDashboardClient() {
           ]}
           cta={<Link href="/tournaments" className="mds-btn-primary h-9 px-4 text-[10px] font-black uppercase tracking-widest">Browse Tournaments</Link>}
         />
+
+        <MyQueue />
 
         <section className="grid grid-cols-1 gap-6 md:grid-cols-4">
           {statCards.map((stat) => (
