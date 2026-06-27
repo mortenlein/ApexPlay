@@ -6,7 +6,8 @@ import { Plus, Trophy, LayoutDashboard, ExternalLink, LogOut, Radio, Users, Swor
 import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import TournamentWizard from '@/components/TournamentWizard';
-import { EmptyState, PanelHeader, WorkspaceChrome } from '@/components/workspace/WorkspaceChrome';
+import { EmptyState, PanelHeader } from '@/components/workspace/WorkspaceChrome';
+import { TopNav } from '@/components/ui';
 import { ApiError, apiRequest, clientApi } from '@/lib/client-api';
 import { useToast } from '@/components/ToastProvider';
 import FirstRunCoach from '@/components/FirstRunCoach';
@@ -156,34 +157,31 @@ export default function AdminDashboardClient() {
   };
 
   return (
-    <WorkspaceChrome
-      mode="admin"
-      navLabel="Admin Dashboard"
-      title="Tournament control center"
-      subtitle="Create events, monitor readiness, and jump straight into bracket, marshal, or overlay views from one place."
-      navItems={[
-        { href: '/admin', label: 'Overview', icon: LayoutDashboard, matchMode: 'exact' },
-        { href: '/marshal/dashboard', label: 'Marshal Board', icon: Radio, matchMode: 'prefix' },
-        { href: '/tournaments', label: 'Public Site', icon: Trophy, matchMode: 'prefix' },
-      ]}
-      actions={
-        <>
-          <button onClick={() => setIsCreating(true)} className="mds-btn-primary h-10 px-5 text-xs font-black uppercase tracking-widest">
-            <Plus size={16} />
-            Create Tournament
+    <div className="min-h-screen bg-page text-fg">
+      <TopNav
+        links={[
+          { href: '/admin', label: 'Overview' },
+          { href: '/marshal/dashboard', label: 'Marshal' },
+          { href: '/tournaments', label: 'Public site' },
+        ]}
+        right={
+          <button
+            onClick={() => setIsCreating(true)}
+            className="mds-btn-primary h-9 gap-2 px-4 text-xs font-bold uppercase tracking-wide"
+          >
+            <Plus size={15} />
+            Create
           </button>
-        </>
-      }
-      footer={
-        <button
-          onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[var(--mds-text-muted)] hover:bg-[var(--mds-red)]/10 hover:text-[var(--mds-red)] transition-all"
-        >
-          <LogOut size={18} />
-          <span>Logout Session</span>
-        </button>
-      }
-    >
+        }
+      />
+      <main className="mds-container space-y-8 py-8">
+        <div>
+          <p className="mds-uppercase-label text-brand">Admin</p>
+          <h1 className="mt-1 font-brand text-3xl font-bold tracking-tight">Tournament control center</h1>
+          <p className="mt-2 max-w-2xl text-fg-muted">
+            Create events, monitor readiness, and jump straight into bracket, marshal, or overlay views.
+          </p>
+        </div>
       <div className="space-y-8">
         <FirstRunCoach
           id="admin"
@@ -426,6 +424,7 @@ export default function AdminDashboardClient() {
           </div>
         </div>
       ) : null}
-    </WorkspaceChrome>
+      </main>
+    </div>
   );
 }

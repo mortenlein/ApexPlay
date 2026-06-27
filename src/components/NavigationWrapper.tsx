@@ -7,12 +7,15 @@ import Header from "./Header";
 // Surfaces that render their own top chrome (via ui/TopNav) — the global header is
 // suppressed there so there's exactly one header per surface.
 const SELF_CHROME_PREFIXES = ["/dashboard", "/tournaments", "/bracket", "/login"];
+// Exact paths that own their chrome (their sub-routes are not yet migrated — e.g. the
+// /admin dashboard is redesigned but /admin/tournaments/[id] manage isn't).
+const SELF_CHROME_EXACT = ["/admin"];
 
 export default function NavigationWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const selfChrome = SELF_CHROME_PREFIXES.some(
-    (p) => pathname === p || pathname.startsWith(p + "/")
-  );
+  const selfChrome =
+    SELF_CHROME_EXACT.includes(pathname) ||
+    SELF_CHROME_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
   if (selfChrome) {
     return <>{children}</>;
