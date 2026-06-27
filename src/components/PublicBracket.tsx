@@ -85,12 +85,113 @@ const PublicMatchNode = ({ data }: any) => {
     );
 };
 
+/**
+ * Left-to-right layout for double elimination: winners bracket on top, losers bracket below,
+ * grand final to the right. Solid edges follow winners advancement (nextMatchId); faint dashed
+ * red edges show the losers drop (loserNextMatchId).
+ */
+function buildDoubleEliminationLayout(matches: any[], onMatchClick?: (id: string) => void) {
+    const COL_W = 340;
+    const UNIT_Y = 150;
+
+    const wb = matches.filter((m) => m.bracketType === 'WINNERS');
+    const lb = matches.filter((m) => m.bracketType === 'LOSERS');
+    const gf = matches.filter((m) => m.bracketType === 'GRAND_FINAL');
+    const tp = matches.filter((m) => m.bracketType === 'THIRD_PLACE');
+
+    const k = wb.length ? Math.max(...wb.map((m) => m.round)) : 0;
+    const lbFinalRound = lb.length ? Math.max(...lb.map((m) => m.round)) : 0;
+
+    const wbBandH = Math.pow(2, Math.max(0, k - 1)) * UNIT_Y;
+    const lbBandH = Math.pow(2, Math.max(0, k - 2)) * UNIT_Y;
+    const lbYBase = wbBandH + 200;
+
+    const lbCounts: Record<number, number> = {};
+    lb.forEach((m) => { lbCounts[m.round] = (lbCounts[m.round] || 0) + 1; });
+
+    const makeNode = (m: any, x: number, y: number, stageName: string, scale = 1): Node => ({
+        id: m.id,
+        type: 'publicMatch',
+        position: { x, y },
+        data: {
+            id: m.id,
+            homeTeam: m.homeTeam,
+            homeScore: m.homeScore,
+            awayTeam: m.awayTeam,
+            awayScore: m.awayScore,
+            status: m.status,
+            isRightSide: false,
+            isCenter: false,
+            isThirdPlace: m.bracketType === 'THIRD_PLACE',
+            stageName,
+            scale,
+            onMatchClick,
+        },
+    });
+
+    const nodes: Node[] = [];
+
+    wb.forEach((m) => {
+        const x = (m.round - 1) * COL_W;
+        const y = (m.matchOrder + 0.5) * Math.pow(2, m.round - 1) * UNIT_Y;
+        nodes.push(makeNode(m, x, y, m.round === k ? 'Winners Final' : `WB Round ${m.round}`));
+    });
+
+    lb.forEach((m) => {
+        const count = lbCounts[m.round] || 1;
+        const x = (m.round - 1) * COL_W;
+        const y = lbYBase + (m.matchOrder + 0.5) * (lbBandH / count);
+        nodes.push(makeNode(m, x, y, m.round === lbFinalRound ? 'Losers Final' : `LB Round ${m.round}`));
+    });
+
+    const maxCol = Math.max(k, lbFinalRound);
+    const gfY = (wbBandH / 2 + lbYBase + lbBandH / 2) / 2 - 60;
+    gf.forEach((m) => {
+        nodes.push(makeNode(m, maxCol * COL_W, gfY + m.matchOrder * 220, m.matchOrder === 1 ? 'Bracket Reset' : 'Grand Final', 1.15));
+    });
+
+    tp.forEach((m) => {
+        nodes.push(makeNode(m, Math.max(0, k - 1) * COL_W, lbYBase + lbBandH + 220, '3rd Place'));
+    });
+
+    const edges: Edge[] = [];
+    matches.forEach((m) => {
+        const isLive = m.status === 'LIVE' || m.status === 'IN_PROGRESS';
+        if (m.nextMatchId) {
+            edges.push({
+                id: `w-${m.id}-${m.nextMatchId}`,
+                source: m.id,
+                target: m.nextMatchId,
+                type: 'smoothstep',
+                style: { stroke: isLive ? 'var(--mds-action)' : 'var(--mds-border)', strokeWidth: isLive ? 3 : 2, opacity: isLive ? 1 : 0.45 },
+                animated: isLive,
+            });
+        }
+        if (m.loserNextMatchId) {
+            edges.push({
+                id: `l-${m.id}-${m.loserNextMatchId}`,
+                source: m.id,
+                target: m.loserNextMatchId,
+                type: 'smoothstep',
+                style: { stroke: 'var(--mds-red)', strokeWidth: 1.5, opacity: 0.22, strokeDasharray: '4 4' },
+            });
+        }
+    });
+
+    return { nodes, edges };
+}
+
 export default function PublicBracket({ tournamentId, matches, onMatchClick }: { tournamentId: string, matches: any[], onMatchClick?: (id: string) => void }) {
     // Memoize nodeTypes to avoid React Flow warnings
     const nodeTypes = useMemo(() => ({ publicMatch: PublicMatchNode }), []);
 
     const { nodes, edges } = useMemo(() => {
         if (!Array.isArray(matches) || matches.length === 0) return { nodes: [], edges: [] };
+
+        // Double elimination uses a dedicated left-to-right layout (winners top, losers below).
+        if (matches.some((m) => m.bracketType === 'LOSERS')) {
+            return buildDoubleEliminationLayout(matches, onMatchClick);
+        }
 
         const X_OFFSET = 500;
         const Y_OFFSET = 280;
