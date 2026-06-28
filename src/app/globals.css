@@ -9,44 +9,92 @@
 
 :root,
 [data-theme='dark'] {
-  /* Backgrounds */
-  --mds-page:           #0b0d0f;
-  --mds-card:           #151719;
-  --mds-card-hover:     #1c1f22;
-  --mds-input:          #08090a;
-  --mds-input-border:   #2a2e33;
-  --mds-overlay:        rgba(11, 13, 15, 0.95);
+  /* ============================================================
+     SUBTICK DESIGN SYSTEM — warm-charcoal, mono-everywhere, tactical.
+     Adopted from the Subtick design system (sibling app). All legacy
+     --mds-* tokens below are remapped onto these, so every surface
+     (both the `ui/` token components and the `mds-*` classes) reskins.
+     ============================================================ */
+  --bg-0: oklch(0.155 0.006 70);
+  --bg-1: oklch(0.185 0.007 70);
+  --bg-2: oklch(0.215 0.008 70);
+  --bg-3: oklch(0.255 0.009 72);
+  --bg-4: oklch(0.305 0.010 72);
+  --line-0: oklch(0.275 0.008 72);
+  --line-1: oklch(0.345 0.010 72);
+  --line-2: oklch(0.430 0.012 72);
+  --ink-0: oklch(0.965 0.004 80);
+  --ink-1: oklch(0.795 0.007 80);
+  --ink-2: oklch(0.620 0.009 78);
+  --ink-3: oklch(0.480 0.010 76);
+  --ink-4: oklch(0.380 0.010 74);
 
-  /* Text */
-  --mds-text-primary:   #ffffff;
-  --mds-text-muted:     #a0a0a5;
-  --mds-text-subtle:    #6b6b72;
+  /* CS2 team coding (T = warm orange, CT = cool blue) */
+  --t: oklch(0.755 0.155 58);
+  --t-dim: oklch(0.560 0.110 56);
+  --t-ghost: oklch(0.755 0.155 58 / 0.14);
+  --ct: oklch(0.725 0.125 242);
+  --ct-dim: oklch(0.540 0.090 244);
+  --ct-ghost: oklch(0.725 0.125 242 / 0.14);
 
-  /* Status Colors */
-  --mds-action:         #0070f3;
-  --mds-action-hover:   #005bcc;
-  --mds-action-soft:    rgba(0, 112, 243, 0.1);
-  --mds-green:          #00c853;
-  --mds-red:            #ff1744;
-  --mds-amber:          #ffab00;
+  /* semantic */
+  --win: oklch(0.790 0.150 152);
+  --win-dim: oklch(0.560 0.090 152);
+  --loss: oklch(0.660 0.190 26);
+  --loss-dim: oklch(0.520 0.140 27);
+  --warn: oklch(0.815 0.140 86);
+  --warn-dim: oklch(0.600 0.105 84);
 
-  /* Borders */
-  --mds-border:         #2a2e33;
-  --mds-border-hover:   #3f444c;
+  /* signature accent — ApexPlay blue. One token: change hue 256 -> 58 for Subtick's orange. */
+  --accent:       oklch(0.625 0.205 256);
+  --accent-hover: oklch(0.560 0.190 256);
+  --accent-ink:   oklch(0.985 0.004 256);
+  --accent-ghost: oklch(0.625 0.205 256 / 0.16);
+  --accent-line:  oklch(0.625 0.205 256 / 0.45);
 
-  /* Layout */
+  /* type */
+  --mono:    var(--font-jet), ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --display: var(--font-martian), var(--font-jet), ui-monospace, monospace;
+
+  /* geometry + shadows */
+  --r-sm: 4px;  --r-md: 7px;  --r-lg: 11px;  --r-xl: 16px;
+  --shadow-1: 0 1px 0 oklch(0.99 0 0 / 0.02) inset, 0 1px 2px oklch(0 0 0 / 0.4);
+  --shadow-2: 0 8px 30px oklch(0 0 0 / 0.45), 0 2px 8px oklch(0 0 0 / 0.35);
+  --shadow-pop: 0 24px 70px oklch(0 0 0 / 0.6), 0 4px 14px oklch(0 0 0 / 0.45);
+
+  /* ---- legacy --mds-* tokens, remapped onto Subtick ---- */
+  --mds-page:           var(--bg-0);
+  --mds-card:           var(--bg-1);
+  --mds-card-hover:     var(--bg-2);
+  --mds-input:          var(--bg-1);
+  --mds-input-border:   var(--line-1);
+  --mds-overlay:        oklch(0.12 0.006 70 / 0.72);
+
+  --mds-text-primary:   var(--ink-0);
+  --mds-text-muted:     var(--ink-2);
+  --mds-text-subtle:    var(--ink-3);
+
+  --mds-action:         var(--accent);
+  --mds-action-hover:   var(--accent-hover);
+  --mds-action-soft:    var(--accent-ghost);
+  --mds-green:          var(--win);
+  --mds-red:            var(--loss);
+  --mds-amber:          var(--warn);
+
+  --mds-border:         var(--line-0);
+  --mds-border-hover:   var(--line-1);
+
   --mds-max-content:    1400px;
-  --mds-radius-small:   4px;
-  --mds-radius-medium:  8px;
-  --mds-radius-large:   12px;
+  --mds-radius-small:   var(--r-sm);
+  --mds-radius-medium:  var(--r-md);
+  --mds-radius-large:   var(--r-lg);
 
-  /* Shadows */
-  --mds-shadow-sm:      0 1px 2px rgba(0, 0, 0, 0.4);
-  --mds-shadow-md:      0 4px 6px -1px rgba(0, 0, 0, 0.5);
-  --mds-shadow-lg:      0 10px 15px -3px rgba(0, 0, 0, 0.6);
-  --mds-context-bar:    rgba(12, 15, 18, 0.92);
-  --mds-font-display:   var(--font-outfit), 'Outfit', system-ui, sans-serif;
-  --mds-font-body:      var(--font-inter), 'Inter', system-ui, sans-serif;
+  --mds-shadow-sm:      var(--shadow-1);
+  --mds-shadow-md:      var(--shadow-2);
+  --mds-shadow-lg:      var(--shadow-pop);
+  --mds-context-bar:    oklch(0.165 0.006 70 / 0.92);
+  --mds-font-display:   var(--display);
+  --mds-font-body:      var(--mono);
 }
 
 [data-theme='light'] {
@@ -80,12 +128,21 @@
 
 body {
   color: var(--mds-text-primary);
-  background: var(--mds-page);
+  background:
+    radial-gradient(1200px 600px at 78% -8%, oklch(0.24 0.02 65 / 0.30), transparent 60%),
+    radial-gradient(900px 500px at 8% 4%, oklch(0.22 0.015 250 / 0.22), transparent 55%),
+    var(--mds-page);
+  background-attachment: fixed;
   font-family: var(--mds-font-body);
-  font-size: 14px; /* Standard data density */
+  font-size: 13px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "ss02", "calt", "zero";
 }
+
+/* Light mode keeps a flat surface (the warm radial reads as grime on light). */
+[data-theme='light'] body { background: var(--mds-page); }
 
 h1, h2, h3, h4, h5, h6 {
   color: var(--mds-text-primary);
@@ -122,16 +179,14 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
 .mds-card {
   background: var(--mds-card);
   border: 1px solid var(--mds-border);
-  border-radius: var(--mds-radius-medium);
+  border-radius: var(--mds-radius-large);
   box-shadow: var(--mds-shadow-sm);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.15s ease, background 0.15s ease;
   padding: 1.5rem;
 }
 
 .mds-card:hover {
-  border-color: rgba(0, 112, 243, 0.3);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-  transform: translateY(-2px);
+  border-color: var(--mds-border-hover);
 }
 
 .workspace-header {
@@ -226,11 +281,6 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
 
 .mds-btn-primary:hover {
   background: var(--mds-action-hover);
-  transform: translateY(-1px);
-}
-
-.mds-btn-primary:active {
-  transform: translateY(0);
 }
 
 .mds-btn-secondary {

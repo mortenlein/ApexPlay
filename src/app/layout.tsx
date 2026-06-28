@@ -1,21 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Outfit } from "next/font/google";
+import { JetBrains_Mono, Martian_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import NavigationWrapper from "@/components/NavigationWrapper";
 
-const inter = Inter({ 
-  subsets: ["latin"], 
-  weight: ["400", "500", "600"], 
-  variable: "--font-inter",
-  display: "swap"
+// Subtick design system: JetBrains Mono for all UI/data, Martian Mono for display headings.
+const jetMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-jet",
+  display: "swap",
 });
 
-const outfit = Outfit({ 
-  subsets: ["latin"], 
-  weight: ["600", "700"], 
-  variable: "--font-outfit",
-  display: "swap"
+const martianMono = Martian_Mono({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-martian",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -37,9 +38,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body 
-        className={`${inter.variable} ${outfit.variable} font-sans antialiased text-[var(--mds-text-primary)]`}
-        style={{ fontFeatureSettings: '"kern" 1' }}
+      <body
+        className={`${jetMono.variable} ${martianMono.variable} antialiased text-[var(--mds-text-primary)]`}
         suppressHydrationWarning
       >
         <Providers>

@@ -38,8 +38,10 @@ const config: Config = {
                 "fg-subtle": "var(--mds-text-subtle)",
             },
             fontFamily: {
-                sans: ["var(--font-inter)", "system-ui", "sans-serif"],
-                brand: ["var(--font-outfit)", "system-ui", "sans-serif"],
+                // Subtick: JetBrains Mono everywhere, Martian Mono for display/brand headings.
+                sans: ["var(--font-jet)", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+                mono: ["var(--font-jet)", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+                brand: ["var(--font-martian)", "var(--font-jet)", "ui-monospace", "monospace"],
             },
             borderRadius: {
                 sm: "var(--mds-radius-small)",
