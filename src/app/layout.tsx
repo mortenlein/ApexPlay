@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
@@ -21,6 +21,13 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "ApexPlay | Tournament Control",
   description: "Tournament management for teams, brackets, match flow, and live overlays.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Allow zoom for accessibility; cap to avoid layout-breaking pinch on the bracket canvas.
+  maximumScale: 5,
 };
 
 export default function RootLayout({

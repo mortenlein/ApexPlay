@@ -25,6 +25,20 @@ test('player surface nav reaches profile', async ({ page }) => {
   await expect(page).toHaveURL(/\/profile$/);
 });
 
+test('mobile drawer nav works on small screens', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await loginAs(page, 'leo');
+  await page.goto('/dashboard');
+  await expect(page).toHaveURL(/\/dashboard$/);
+
+  // The desktop nav is hidden below md; the hamburger drawer carries navigation + sign-out.
+  await page.getByTestId('mobile-nav-toggle').click();
+  const panel = page.getByTestId('mobile-nav-panel');
+  await expect(panel).toBeVisible();
+  await panel.getByRole('link', { name: 'Tournaments' }).click();
+  await expect(page).toHaveURL(/\/tournaments$/);
+});
+
 test('global command palette opens and executes navigation', async ({ page }) => {
   await page.goto('/dashboard');
   await page.keyboard.press('Control+k');
