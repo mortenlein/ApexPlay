@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { seedEmptyTournament, seedLanScenario } from './helpers/seed';
+import { loginAs } from './helpers/auth';
 
 test.describe.configure({ mode: 'serial' });
 
 async function loginAsAdmin(page: import('@playwright/test').Page) {
-  // "marcus" mock persona's steamid is in ADMIN_STEAMIDS (see playwright.config.ts).
-  await page.goto('/login?callbackUrl=/admin');
-  await page.getByTestId('mock-persona-marcus').click();
+  await loginAs(page, 'marcus');
+  await page.goto('/admin');
   await expect(page).toHaveURL(/\/admin$/);
 }
 
@@ -40,8 +40,8 @@ test('Marcus can start a match and Uncle Dave sees seats plus notifications', as
 test('Leo sees a one-click join link without a trailing slash when no password exists', async ({ page }) => {
   const { matchId } = await seedLanScenario();
 
+  await loginAs(page, 'leo');
   await page.goto('/dashboard');
-  await page.getByTestId('mock-persona-leo').click();
   await expect(page).toHaveURL(/\/dashboard$/);
 
   const joinLink = page.getByTestId(`join-match-${matchId}`);
@@ -79,7 +79,8 @@ test('Roster lock disables team edits until an admin unlocks the tournament', as
 
   await page.goto(`/admin/tournaments/${tournamentId}?tab=settings`);
   await page.getByLabel('Toggle roster lock').click();
-  await expect(page.getByText('Locked')).toBeVisible();
+  // Exact match: the non-editable Game field also reads "CS2 | Locked".
+  await expect(page.getByText('Locked', { exact: true })).toBeVisible();
 
   await page.goto(`/admin/tournaments/${tournamentId}?tab=participants`);
   await expect(page.getByRole('button', { name: /Add Team/i })).toBeDisabled();

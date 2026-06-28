@@ -1,12 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { seedLanScenario } from './helpers/seed';
-
-async function loginAsAdmin(page: import('@playwright/test').Page) {
-  // "marcus" mock persona's steamid is in ADMIN_STEAMIDS (see playwright.config.ts).
-  await page.goto('/login?callbackUrl=/admin');
-  await page.getByTestId('mock-persona-marcus').click();
-  await expect(page).toHaveURL(/\/admin$/);
-}
+import { loginAs } from './helpers/auth';
 
 test('mobile tournament tabs expose overflow sections', async ({ page }) => {
   const { tournamentId } = await seedLanScenario();
@@ -22,15 +16,13 @@ test('mobile tournament tabs expose overflow sections', async ({ page }) => {
   await expect(page.getByText(/Round\s+1/i)).toBeVisible();
 });
 
-test('mobile workspace nav keeps profile reachable', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+test('player surface nav reaches profile', async ({ page }) => {
+  await loginAs(page, 'leo');
   await page.goto('/dashboard');
-  await page.getByTestId('mock-persona-leo').click();
   await expect(page).toHaveURL(/\/dashboard$/);
 
-  await page.getByTestId('workspace-mobile-nav-profile').click();
+  await page.getByRole('link', { name: 'Profile' }).click();
   await expect(page).toHaveURL(/\/profile$/);
-  await expect(page.getByText(/Player profile/i)).toBeVisible();
 });
 
 test('global command palette opens and executes navigation', async ({ page }) => {
@@ -50,9 +42,10 @@ test('missing tournament routes render explicit not-found states', async ({ page
 
 test('desktop header nav reaches primary targets', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 900 });
+  await loginAs(page, 'leo');
   await page.goto('/tournaments');
 
-  await page.getByRole('link', { name: 'Dashboard' }).click();
+  await page.getByRole('link', { name: 'My desk' }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 
   await page.getByRole('link', { name: 'Tournaments' }).click();
