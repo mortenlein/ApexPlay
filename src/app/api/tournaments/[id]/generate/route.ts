@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { generateSingleElimination, generateDoubleElimination } from '@/lib/bracket-utils';
-import { announceMatch } from '@/lib/discord';
+import { announceTournamentUpdate } from '@/lib/discord';
 import { requireAdminApi } from '@/lib/route-auth';
 import { buildActorLabel, recordAudit } from '@/lib/audit';
 import { lockedResponse } from '@/lib/mutation-guards';
@@ -145,26 +145,14 @@ export async function POST(request: Request, { params }: { params: { id: string 
             })
         );
 
-        // 6. Announce initial matches that are already fixed (have both teams)
-        const fixedMatches = await prisma.match.findMany({
-            where: { 
-                tournamentId,
-                homeTeamId: { not: null },
-                awayTeamId: { not: null }
-            },
-            include: { homeTeam: true, awayTeam: true, tournament: true }
+        // 6. One summary announcement (per-match "ready" pings happen later when matches start).
+        //    Announcing every first-round match here was 64+ sequential Discord calls at scale.
+        await announceTournamentUpdate({
+            title: 'Bracket is live',
+            description: `**${tournament.name}** — ${createdMatches.length} matches generated for ${teams.length} teams.`,
+            tournamentId,
+            url: `${process.env.NEXTAUTH_URL}/tournaments/${tournamentId}`,
         });
-
-        for (const m of fixedMatches) {
-            await announceMatch({
-                homeTeam: m.homeTeam!.name,
-                awayTeam: m.awayTeam!.name,
-                round: m.round,
-                tournamentName: m.tournament.name,
-                tournamentId,
-                matchUrl: `${process.env.NEXTAUTH_URL}/tournaments/${tournamentId}`
-            });
-        }
 
         await prisma.tournament.update({
             where: { id: tournamentId },

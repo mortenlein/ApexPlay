@@ -27,28 +27,38 @@ class DiscordClient {
     }
   }
 
-  private async executeRealDelivery(embed: APIEmbed) {
+  private async executeRealDelivery(embed: TournamentEmbed) {
+    // Strip our internal `tournamentId` — Discord rejects the whole embed (HTTP 400
+    // "Invalid Form Body") if it carries any field outside the embed schema.
+    const { tournamentId: _ignored, ...discordEmbed } = embed;
+
     if (this.webhookUrl) {
       try {
-        await fetch(this.webhookUrl, {
+        const res = await fetch(this.webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ embeds: [embed] }),
+          body: JSON.stringify({ embeds: [discordEmbed] }),
         });
+        if (!res.ok) {
+          console.error(`Discord webhook rejected (${res.status}): ${await res.text().catch(() => '')}`);
+          return false;
+        }
         return true;
       } catch (error) {
-        console.error('Discord Webhook error:', error);
+        console.error('Discord webhook error:', error);
+        return false;
       }
     }
 
     if (this.rest && this.channelId) {
       try {
         await this.rest.post(Routes.channelMessages(this.channelId), {
-          body: { embeds: [embed] },
+          body: { embeds: [discordEmbed] },
         });
         return true;
       } catch (error) {
         console.error('Discord REST error:', error);
+        return false;
       }
     }
 
@@ -114,7 +124,6 @@ class DiscordClient {
       url: data.matchUrl,
       footer: { text: 'ApexPlay live operations' },
       timestamp: new Date().toISOString(),
-      thumbnail: { url: 'https://i.imgur.com/8Q9Z8ZQ.png' },
       tournamentId: data.tournamentId,
     };
 
@@ -145,11 +154,29 @@ class DiscordClient {
       url: data.matchUrl,
       footer: { text: 'ApexPlay live operations' },
       timestamp: new Date().toISOString(),
-      thumbnail: { url: 'https://i.imgur.com/8Q9Z8ZQ.png' },
       tournamentId: data.tournamentId,
     };
 
     await this.send(embed, 'RESULT');
+  }
+
+  /** A single tournament-level announcement (e.g. "bracket is live"), not per-match. */
+  async announceTournamentUpdate(data: {
+    title: string;
+    description: string;
+    tournamentId?: string;
+    url?: string;
+  }) {
+    const embed: TournamentEmbed = {
+      title: data.title,
+      description: data.description,
+      color: 0x0070f3,
+      url: data.url,
+      footer: { text: 'ApexPlay' },
+      timestamp: new Date().toISOString(),
+      tournamentId: data.tournamentId,
+    };
+    await this.send(embed, 'MATCH');
   }
 
   async announceSignup(data: {
@@ -182,6 +209,7 @@ const discordClient = new DiscordClient();
 
 export const announceMatch = (data: any) => discordClient.announceMatch(data);
 export const announceResult = (data: any) => discordClient.announceResult(data);
+export const announceTournamentUpdate = (data: any) => discordClient.announceTournamentUpdate(data);
 export const announceSignup = (data: any) => discordClient.announceSignup(data);
 
 export default discordClient;
