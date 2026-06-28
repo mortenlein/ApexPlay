@@ -1,0 +1,25 @@
+# ApexPlay — production deploy on `ash` behind the cloudflared `homeassistant` tunnel.
+# Loopback-only bind (127.0.0.1:8089 → container :4001); the tunnel ingress maps
+# apexplay.mortenlab.xyz → http://127.0.0.1:8089. ApexPlay is multi-user (players log in
+# via Steam), so it is PUBLIC with its own auth — NOT behind Cloudflare Access.
+#
+#   cp .env.example .env   # then set STEAM_API_KEY + ADMIN_STEAMIDS (others pre-generated)
+#   docker compose -f docker-compose.prod.yml up -d --build
+services:
+  apexplay:
+    build: .
+    container_name: apexplay
+    # Run as the host `mole` uid (== the image's `node` user) so SQLite/uploads can write
+    # the bind-mounted ./data and ./uploads (which the host owns as 1000:1000).
+    user: "1000:1000"
+    ports:
+      - "127.0.0.1:8089:4001"
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/public/uploads
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: file:/app/data/prod.db
+      NEXTAUTH_URL: https://apexplay.mortenlab.xyz
+    restart: unless-stopped

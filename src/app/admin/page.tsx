@@ -5,6 +5,9 @@ import AdminDashboardClient from "@/components/AdminDashboardClient";
 import prisma from "@/lib/prisma";
 import { requireAdminPage } from "@/lib/route-auth";
 
+// Auth + DB per request; never prerender at build time.
+export const dynamic = "force-dynamic";
+
 export default async function AdminPage() {
   await requireAdminPage("/admin");
 

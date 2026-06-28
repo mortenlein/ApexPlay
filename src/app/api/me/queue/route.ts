@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireSignedInUser } from '@/lib/route-auth';
 
+// Auth + DB per request; never prerender at build time.
+export const dynamic = 'force-dynamic';
+
 const DONE_STATUSES = new Set(['COMPLETED', 'FINISHED']);
 
 /**

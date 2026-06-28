@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAdminApi } from '@/lib/route-auth';
 
+// Auth + DB per request; never prerender at build time.
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   const unauthorized = await requireAdminApi();
   if (unauthorized) return unauthorized;
