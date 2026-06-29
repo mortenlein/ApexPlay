@@ -186,20 +186,7 @@ export default function TournamentView({ id }: TournamentViewProps) {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[var(--mds-page)] font-sans antialiased text-[var(--mds-text-primary)]">
-      <TopNav
-        links={[{ href: "/tournaments", label: "Tournaments" }]}
-        right={
-          <Link
-            href="/dashboard"
-            className="hidden items-center gap-1.5 text-xs font-semibold text-fg-muted transition-colors hover:text-fg sm:flex"
-          >
-            <LayoutDashboard size={14} />
-            My desk
-          </Link>
-        }
-      />
-
+    <div className="flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden bg-[var(--mds-page)] font-sans antialiased text-[var(--mds-text-primary)]">
       <div className="flex flex-1 overflow-hidden">
         {/* SIDEBAR (DESKTOP) */}
         <aside className="hidden w-72 flex-col border-r border-[var(--mds-border)] bg-[var(--mds-card)] lg:flex shrink-0">

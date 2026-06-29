@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { LogOut, Menu, X } from 'lucide-react';
@@ -13,23 +14,28 @@ export interface NavLink {
 }
 
 /**
- * Shared top chrome for the redesigned surfaces (Public / Player / Control). Renders the
- * brand, surface nav, an optional `right` slot, and the always-present sign-out + theme
- * controls. Each surface supplies its own links so there's exactly one header per surface.
- *
- * Below `md` the nav collapses into a hamburger drawer (nav links + sign-out) so every
- * surface is fully navigable on mobile.
+ * The single, persistent top chrome for the whole app. Rendered once by NavigationWrapper
+ * (never per-page) so it doesn't remount/restyle on navigation. Its nav is derived from the
+ * signed-in user's role, so it's identical on every surface — only the active item changes.
  */
-export function TopNav({ links, right }: { links: NavLink[]; right?: React.ReactNode }) {
+export function TopNav() {
   const pathname = usePathname();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const signedIn = status === 'authenticated';
+  const user = session?.user as { name?: string; image?: string; role?: string } | undefined;
+  const role = user?.role;
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Close the drawer whenever the route changes (e.g. after tapping a link).
+  // Close the drawer on navigation.
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
+
+  const links: NavLink[] = [{ href: '/tournaments', label: 'Tournaments' }];
+  if (signedIn) links.push({ href: '/dashboard', label: 'My desk' });
+  if (role === 'admin') links.push({ href: '/admin', label: 'Admin' });
+  if (role === 'admin' || role === 'marshal') links.push({ href: '/marshal/dashboard', label: 'Marshal' });
+  if (signedIn) links.push({ href: '/profile', label: 'Profile' });
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
@@ -64,30 +70,48 @@ export function TopNav({ links, right }: { links: NavLink[]; right?: React.React
           </nav>
         </div>
         <div className="flex items-center gap-3">
-          {right}
-          {signedIn && (
-            <button
-              type="button"
-              onClick={() => void handleSignOut()}
-              className="hidden items-center gap-1.5 text-xs font-semibold text-fg-muted transition-colors hover:text-fg lg:flex"
+          {signedIn ? (
+            <>
+              <div className="hidden items-center gap-2 sm:flex">
+                {user?.image ? (
+                  <Image
+                    src={user.image}
+                    alt=""
+                    width={26}
+                    height={26}
+                    className="h-6 w-6 rounded-full border border-line"
+                  />
+                ) : null}
+                <span className="hidden text-xs font-semibold text-fg-muted lg:block">{user?.name}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => void handleSignOut()}
+                className="hidden items-center gap-1.5 text-xs font-semibold text-fg-muted transition-colors hover:text-fg lg:flex"
+              >
+                <LogOut size={14} />
+                Sign out
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className="hidden text-xs font-semibold text-fg-muted transition-colors hover:text-fg sm:block"
             >
-              <LogOut size={14} />
-              Sign out
-            </button>
+              Sign in
+            </Link>
           )}
           <ThemeToggle />
-          {(links.length > 0 || signedIn) && (
-            <button
-              type="button"
-              aria-label="Toggle menu"
-              aria-expanded={menuOpen}
-              data-testid="mobile-nav-toggle"
-              onClick={() => setMenuOpen((v) => !v)}
-              className="flex items-center justify-center rounded-sm p-1.5 text-fg-muted transition-colors hover:text-fg md:hidden"
-            >
-              {menuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-          )}
+          <button
+            type="button"
+            aria-label="Toggle menu"
+            aria-expanded={menuOpen}
+            data-testid="mobile-nav-toggle"
+            onClick={() => setMenuOpen((v) => !v)}
+            className="flex items-center justify-center rounded-sm p-1.5 text-fg-muted transition-colors hover:text-fg md:hidden"
+          >
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
       </div>
 
@@ -108,7 +132,7 @@ export function TopNav({ links, right }: { links: NavLink[]; right?: React.React
                 {l.label}
               </Link>
             ))}
-            {signedIn && (
+            {signedIn ? (
               <button
                 type="button"
                 onClick={() => void handleSignOut()}
@@ -117,6 +141,14 @@ export function TopNav({ links, right }: { links: NavLink[]; right?: React.React
                 <LogOut size={15} />
                 Sign out
               </button>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-sm px-3 py-2.5 text-sm font-semibold text-fg-muted transition-colors hover:bg-white/5 hover:text-fg"
+              >
+                Sign in
+              </Link>
             )}
           </div>
         </nav>

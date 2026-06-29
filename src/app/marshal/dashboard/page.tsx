@@ -166,7 +166,6 @@ export default function MarshalDashboard() {
 
   return (
     <div className="min-h-screen bg-page text-fg">
-      <TopNav links={CONTROL_NAV} />
       <main className="mds-container space-y-6 py-8">
         <div className="flex items-end justify-between gap-4">
           <div>

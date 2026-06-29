@@ -158,29 +158,22 @@ export default function AdminDashboardClient() {
 
   return (
     <div className="min-h-screen bg-page text-fg">
-      <TopNav
-        links={[
-          { href: '/admin', label: 'Overview' },
-          { href: '/marshal/dashboard', label: 'Marshal' },
-          { href: '/tournaments', label: 'Public site' },
-        ]}
-        right={
+      <main className="mds-container space-y-8 py-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="mds-uppercase-label text-brand">Admin</p>
+            <h1 className="mt-1 font-brand text-3xl font-bold tracking-tight">Tournament control center</h1>
+            <p className="mt-2 max-w-2xl text-fg-muted">
+              Create events, monitor readiness, and jump straight into bracket, marshal, or overlay views.
+            </p>
+          </div>
           <button
             onClick={() => setIsCreating(true)}
-            className="mds-btn-primary h-9 gap-2 px-4 text-xs font-bold uppercase tracking-wide"
+            className="mds-btn-primary h-10 shrink-0 gap-2 px-4 text-xs font-bold uppercase tracking-wide"
           >
             <Plus size={15} />
             Create
           </button>
-        }
-      />
-      <main className="mds-container space-y-8 py-8">
-        <div>
-          <p className="mds-uppercase-label text-brand">Admin</p>
-          <h1 className="mt-1 font-brand text-3xl font-bold tracking-tight">Tournament control center</h1>
-          <p className="mt-2 max-w-2xl text-fg-muted">
-            Create events, monitor readiness, and jump straight into bracket, marshal, or overlay views.
-          </p>
         </div>
       <div className="space-y-8">
         <FirstRunCoach

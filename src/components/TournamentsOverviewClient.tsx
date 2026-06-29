@@ -41,19 +41,6 @@ export default function TournamentsOverviewClient() {
 
   return (
     <div className="min-h-screen bg-page text-fg">
-      <TopNav
-        links={PUBLIC_NAV}
-        right={
-          <Link
-            href="/dashboard"
-            className="hidden items-center gap-1.5 text-xs font-semibold text-fg-muted transition-colors hover:text-fg sm:flex"
-          >
-            <LayoutDashboard size={14} />
-            My desk
-          </Link>
-        }
-      />
-
       <main className="mds-container space-y-8 py-10">
         {/* Header */}
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">

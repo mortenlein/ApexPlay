@@ -35,30 +35,18 @@ export function PlayerHome({ user, profile }: { user: any; profile: any }) {
 
   return (
     <div className="min-h-screen bg-page text-fg">
-      <TopNav
-        links={PLAYER_NAV}
-        right={
-          <>
-            <EnableAlertsButton />
-            <div className="flex items-center gap-2">
-              {user?.image ? (
-                <Image src={user.image} alt="" width={28} height={28} className="h-7 w-7 rounded-full border border-line" />
-              ) : (
-                <div className="h-7 w-7 rounded-full bg-card border border-line" />
-              )}
-              <span className="hidden text-sm font-semibold text-fg-muted sm:block">{user?.name}</span>
-            </div>
-          </>
-        }
-      />
-
       <main className="mds-container space-y-8 py-8">
         {/* Hero: next match */}
         <section>
-          <p className="mds-uppercase-label text-fg-subtle">Player desk</p>
-          <h1 className="mt-1 font-brand text-3xl font-bold tracking-tight">
-            Welcome back{user?.name ? `, ${user.name}` : ''}
-          </h1>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="mds-uppercase-label text-fg-subtle">Player desk</p>
+              <h1 className="mt-1 font-brand text-3xl font-bold tracking-tight">
+                Welcome back{user?.name ? `, ${user.name}` : ''}
+              </h1>
+            </div>
+            <EnableAlertsButton />
+          </div>
 
           <div className="mt-5">
             {nextMatch ? (

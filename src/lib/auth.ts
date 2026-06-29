@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
 import { type NextAuthOptions } from "next-auth";
 import { type NextRequest } from "next/server";
+import { getRoleForSteamId } from "@/lib/admin-config";
 
 export const getAuthOptions = (req: NextRequest | undefined): NextAuthOptions => ({
   session: {
@@ -171,6 +172,8 @@ export const getAuthOptions = (req: NextRequest | undefined): NextAuthOptions =>
         (session.user as any).id = token.dbId;
         (session.user as any).steamId = token.steamId;
         (session.user as any).discordId = token.discordId;
+        // Role drives the shared header's nav (Admin/Marshal links) on the client.
+        (session.user as any).role = getRoleForSteamId(token.steamId);
       }
       return session;
     },

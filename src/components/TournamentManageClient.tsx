@@ -6,13 +6,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Menu } from 'lucide-react';
 import { getGameMetadata } from '@/lib/games';
 import { useMatchStream } from '@/hooks/useMatchStream';
-import { TopNav } from '@/components/ui';
-
-const CONTROL_NAV = [
-  { href: '/admin', label: 'Overview' },
-  { href: '/marshal/dashboard', label: 'Marshal' },
-  { href: '/tournaments', label: 'Public site' },
-];
 import { ApiError, apiRequest, clientApi } from '@/lib/client-api';
 import { useToast } from '@/components/ToastProvider';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -426,9 +419,7 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
     const gameMeta = getGameMetadata(tournament.game);
 
     return (
-        <div className="flex flex-col h-screen bg-[var(--mds-page)] font-sans antialiased text-[var(--mds-text-primary)] overflow-hidden">
-            <TopNav links={CONTROL_NAV} />
-
+        <div className="flex flex-col h-[calc(100vh-3.5rem)] bg-[var(--mds-page)] font-sans antialiased text-[var(--mds-text-primary)] overflow-hidden">
             <div className="flex flex-1 overflow-hidden">
                 <ManageSidebar 
                     tournamentId={tournamentId} 
