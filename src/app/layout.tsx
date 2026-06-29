@@ -37,9 +37,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${jetMono.variable} ${martianMono.variable}`}
+      suppressHydrationWarning
+    >
       <body
-        className={`${jetMono.variable} ${martianMono.variable} antialiased text-[var(--mds-text-primary)]`}
+        className="antialiased text-[var(--mds-text-primary)]"
         suppressHydrationWarning
       >
         <Providers>
