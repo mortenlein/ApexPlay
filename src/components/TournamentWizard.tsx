@@ -169,7 +169,7 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                             <button 
                                                 key={f.id} 
                                                 onClick={() => setFormData({ ...formData, format: f.id })}
-                                                className={`w-full p-6 mds-card border-2 text-left transition-all ${formData.format === f.id ? 'border-[var(--mds-action)] bg-[var(--mds-action)]/5' : 'border-[var(--mds-border)] bg-[var(--mds-input)]/20 hover:border-[var(--mds-action)]/30'}`}
+                                                className={`w-full rounded-lg border-2 p-6 text-left transition-all ${formData.format === f.id ? 'border-[var(--mds-action)] bg-[var(--mds-action)]/10 shadow-[0_0_0_1px_var(--mds-action)]' : 'border-[var(--mds-border)] bg-[var(--mds-input)]/20 hover:border-[var(--mds-action)]/40'}`}
                                             >
                                                 <div className="font-bold uppercase tracking-tight text-[var(--mds-text-primary)]">{f.name}</div>
                                                 <div className="text-[10px] mds-uppercase-label opacity-40 mt-1">{f.desc}</div>
@@ -185,7 +185,7 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                             <button 
                                                 key={size} 
                                                 onClick={() => setFormData({ ...formData, teamSize: String(size) })}
-                                                className={`p-5 mds-card border-2 text-center transition-all ${formData.teamSize === String(size) ? 'border-[var(--mds-action)] bg-[var(--mds-action)]/5' : 'border-[var(--mds-border)] bg-[var(--mds-input)]/20 hover:border-[var(--mds-action)]/30'}`}
+                                                className={`rounded-lg border-2 p-5 text-center transition-all ${formData.teamSize === String(size) ? 'border-[var(--mds-action)] bg-[var(--mds-action)]/10 shadow-[0_0_0_1px_var(--mds-action)]' : 'border-[var(--mds-border)] bg-[var(--mds-input)]/20 hover:border-[var(--mds-action)]/40'}`}
                                             >
                                                 <div className="font-bold text-lg uppercase tracking-tighter">{selectedGame.teamSizeLabels?.[size] || `${size}v${size}`}</div>
                                             </button>
