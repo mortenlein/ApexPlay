@@ -23,7 +23,7 @@ ApexPlay lets you create and manage single-elimination brackets, track live matc
 
 ### Local Development
 
-**Prerequisites:** Node.js 20+
+**Prerequisites:** Node.js 22+ (the Docker image is `node:22-alpine`)
 
 ```bash
 npm install
@@ -31,26 +31,41 @@ npm run db:prepare
 npm run dev
 ```
 
-Open [http://localhost:4001](http://localhost:4001) — it auto-redirects to the dashboard.
+Open [http://localhost:4001](http://localhost:4001) — the landing page lists the tournaments and
+links to your dashboard (or Steam sign-in).
 
 ### Docker
 
+Copy `.env.example` to `.env` and fill in the required values first — Compose fails fast if
+`NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `ADMIN_STEAMIDS` or `STEAM_API_KEY` are unset.
+
 ```bash
-docker compose up --build
+cp .env.example .env
+docker compose up -d --build
 ```
 
 The app will be available at [http://localhost:4001](http://localhost:4001).
 
-The SQLite database is persisted to a named Docker volume (`apexplay_data`) so your data survives container restarts.
+The SQLite database and the uploads directory are **bind-mounted** from the repo (`./data` →
+`/app/data`, `./uploads` → `/app/public/uploads`), so your data survives container rebuilds and
+stays readable on the host. `DATABASE_URL` is set by Compose to `file:/app/data/prod.db`.
 
 To stop:
 ```bash
 docker compose down
 ```
 
-To wipe data completely:
+To wipe data completely, remove the bind-mounted files (there is no named volume to prune):
 ```bash
-docker compose down -v
+docker compose down
+rm -rf data/prod.db* uploads
+```
+
+For the production deploy on `ash` (loopback bind on `127.0.0.1:8089` behind the Cloudflare
+tunnel at `apexplay.mortenlab.xyz`) use the prod overlay instead:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 ### Backups
