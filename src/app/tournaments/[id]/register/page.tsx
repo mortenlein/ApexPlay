@@ -497,6 +497,16 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                                 <p className="text-[11px] text-[var(--mds-text-subtle)]">{SEAT_HELPER_TEXT}</p>
                             </div>
 
+                            {error && (
+                                <div
+                                    role="alert"
+                                    className="bg-[var(--mds-red)]/10 border border-[var(--mds-red)]/20 p-6 rounded-xl flex items-center gap-4 text-[var(--mds-red)] text-left"
+                                >
+                                    <AlertCircle size={20} />
+                                    <span className="text-[11px] font-black uppercase tracking-widest">{error}</span>
+                                </div>
+                            )}
+
                             <button
                                 onClick={handleJoinTeam}
                                 disabled={submitting}

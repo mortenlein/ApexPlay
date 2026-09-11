@@ -20,6 +20,11 @@ export async function middleware(request: NextRequest) {
     const allowed = isMarshalArea ? isStaffSteamId(steamId) : isAdminSteamId(steamId);
 
     if (!allowed) {
+      // Signed in but not staff/admin: send them home. Bouncing them to /login would just loop
+      // (login → callback → here → login …) with nothing telling them they aren't an organizer.
+      if (token) {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);

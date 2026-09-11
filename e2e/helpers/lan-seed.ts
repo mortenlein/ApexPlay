@@ -414,3 +414,47 @@ export async function readNotifications(tournamentId: string) {
 export async function readAuditRows(tournamentId: string) {
   return prisma.auditLog.findMany({ where: { tournamentId }, orderBy: { createdAt: 'asc' } });
 }
+
+/**
+ * Hands an existing seeded team to a real persona: every player row on it becomes that user's.
+ * Used after `generate`, so a spec can pick the team in a *known* bracket slot (round-1 match 3,
+ * say) and only then decide which persona is sitting in it.
+ */
+export async function attachUserToTeam(teamId: string, userId: string) {
+  await prisma.player.updateMany({ where: { teamId }, data: { userId } });
+  return prisma.team.findUnique({ where: { id: teamId }, include: { players: true } });
+}
+
+/**
+ * Writes a match status straight to the database, bypassing the routes.
+ *
+ * Only for states the API deliberately refuses to create: `POST /api/matches/{id}/load` will not
+ * call a match with an empty team slot, but GET /api/me/queue promises to count such a match as
+ * "ahead of you" once it is called/live, and that promise needs a fixture.
+ */
+export async function setMatchStatus(matchId: string, status: string) {
+  return prisma.match.update({ where: { id: matchId }, data: { status } });
+}
+
+/** Every push subscription belonging to a user (newest first). */
+export async function readPushSubscriptions(userId: string) {
+  return prisma.pushSubscription.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } });
+}
+
+/** Drops a user's push subscriptions, so a spec starts from "alerts off". */
+export async function clearPushSubscriptions(userId: string) {
+  await prisma.pushSubscription.deleteMany({ where: { userId } });
+}
+
+/**
+ * Un-registers a user everywhere: every Player row of theirs is deleted, so the next test
+ * starts from "this player is in nothing".
+ *
+ * Only Player rows go — `User` survives, which is what keeps already-minted session tokens
+ * valid (see the note at the top of this file). Use it in specs that assert an *absence* on the
+ * player desk ("no match assigned", no queue section), since those are otherwise at the mercy
+ * of tournaments an earlier test signed the same persona up for.
+ */
+export async function clearRegistrations(userId: string) {
+  await prisma.player.deleteMany({ where: { userId } });
+}
