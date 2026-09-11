@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, MapPin, Crown, Users, Swords, Trophy, GitBranch } from 'lucide-react';
 import PublicBracket from '@/components/PublicBracket';
 import { Card, Badge, StatusBadge } from '@/components/ui';
+import { isActive, isDone } from '@/lib/match-status';
 import { EonBridgePanel } from './EonBridgePanel';
 
 interface ManageControlProps {
@@ -13,8 +14,6 @@ interface ManageControlProps {
   onOpenMatchModal: (match: any) => void;
 }
 
-const LIVE = ['LIVE', 'IN_PROGRESS'];
-const DONE = ['COMPLETED', 'FINISHED'];
 const byOrder = (a: any, b: any) => a.round - b.round || a.matchOrder - b.matchOrder;
 
 function stageLabel(match: any, totalRounds: number) {
@@ -143,18 +142,25 @@ function TeamRosterCard({ team }: { team: any }) {
 /**
  * Single organizer control view: all teams + rosters (left), the interactive bracket
  * (center — drag to pan, scroll to zoom, click a match to edit/update), and the
- * previous/live/next games as a list (right). One screen to run the event.
+ * now/next/completed games as a list (right). One screen to run the event.
  */
 export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: ManageControlProps) {
   const winners = matches.filter((m) => m.bracketType === 'WINNERS');
   const totalRounds = winners.length ? Math.max(...winners.map((m) => m.round)) : 0;
 
-  const live = matches.filter((m) => LIVE.includes(m.status)).sort(byOrder);
+  // Three groups the organizer actually runs the floor from:
+  //   Now  — called (players sent to their stations) or live. A called match belongs here, not
+  //          buried in "up next"; it's the one thing needing attention right now.
+  //   Next — still pending but playable, i.e. both teams are known.
+  //   Done — finished (including legacy FINISHED rows).
+  // Pending matches whose teams aren't decided yet are deliberately not listed; they're
+  // visible in the bracket panel and would otherwise swamp the queue.
+  const now = matches.filter((m) => isActive(m.status)).sort(byOrder);
   const upNext = matches
-    .filter((m) => !LIVE.includes(m.status) && !DONE.includes(m.status))
+    .filter((m) => !isActive(m.status) && !isDone(m.status) && m.homeTeamId && m.awayTeamId)
     .sort(byOrder);
   const previous = matches
-    .filter((m) => DONE.includes(m.status))
+    .filter((m) => isDone(m.status))
     .sort((a, b) => b.round - a.round || b.matchOrder - a.matchOrder);
 
   return (
@@ -216,12 +222,12 @@ export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: 
           <h2 className="mds-uppercase-label text-fg-subtle">Games</h2>
         </div>
         <GamesSection
-          title="Live now"
+          title="Now"
           icon={<span className="h-2 w-2 rounded-full bg-danger" />}
-          matches={live}
+          matches={now}
           totalRounds={totalRounds}
           onOpen={onOpenMatchModal}
-          empty="No live matches."
+          empty="Nothing called or live."
         />
         <GamesSection
           title="Up next"
@@ -229,7 +235,7 @@ export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: 
           matches={upNext}
           totalRounds={totalRounds}
           onOpen={onOpenMatchModal}
-          empty="Nothing queued."
+          empty="Nothing queued — later rounds appear once both teams are known."
         />
         <GamesSection
           title="Completed"
