@@ -3,14 +3,12 @@
 import React from "react";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
-import { Users, ArrowRight, Loader2, Search, Gamepad2, LayoutDashboard } from "lucide-react";
+import { Users, ArrowRight, Loader2, Search, Gamepad2 } from "lucide-react";
 import Link from "next/link";
 import { getGameMetadata } from "@/lib/games";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { clientApi } from "@/lib/client-api";
-import { Card, Badge, EmptyState, TopNav } from "@/components/ui";
-
-const PUBLIC_NAV = [{ href: "/tournaments", label: "Tournaments" }];
+import { Card, Badge, EmptyState } from "@/components/ui";
 
 export default function TournamentsOverviewClient() {
   const searchParams = useSearchParams();

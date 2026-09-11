@@ -6,8 +6,7 @@ import { isAdminSteamId, isStaffSteamId } from '@/lib/admin-config';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isAdminArea =
-    pathname.startsWith('/admin') || pathname.startsWith('/dashboard/tournaments');
+  const isAdminArea = pathname.startsWith('/admin');
   const isMarshalArea = pathname.startsWith('/marshal');
 
   if (isAdminArea || isMarshalArea) {
@@ -31,5 +30,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/dashboard/tournaments/:path*', '/marshal/:path*'],
+  matcher: ['/admin/:path*', '/marshal/:path*'],
 };
