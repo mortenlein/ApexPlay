@@ -40,13 +40,30 @@ test('mobile drawer nav works on small screens', async ({ page }) => {
 });
 
 test('global command palette opens and executes navigation', async ({ page }) => {
+  await loginAs(page, 'leo');
+  await page.goto('/dashboard');
+  await page.keyboard.press('Control+k');
+  await expect(page.getByTestId('command-palette')).toBeVisible();
+
+  // A plain player is never offered the staff boards — middleware would just bounce them.
+  await page.getByTestId('command-palette-input').fill('marshal board');
+  await expect(page.getByTestId('command-palette-item-go-marshal')).toHaveCount(0);
+  await expect(page.getByText('No matching command.')).toBeVisible();
+
+  await page.getByTestId('command-palette-input').fill('tournaments');
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/tournaments$/);
+});
+
+test('command palette offers the marshal board to staff', async ({ page }) => {
+  await loginAs(page, 'marcus');
   await page.goto('/dashboard');
   await page.keyboard.press('Control+k');
   await expect(page.getByTestId('command-palette')).toBeVisible();
 
   await page.getByTestId('command-palette-input').fill('marshal board');
-  await page.keyboard.press('Enter');
-  await expect(page).toHaveURL(/\/login\?callbackUrl=%2Fmarshal%2Fdashboard/);
+  await page.getByTestId('command-palette-item-go-marshal').click();
+  await expect(page).toHaveURL(/\/marshal\/dashboard$/);
 });
 
 test('missing tournament routes render explicit not-found states', async ({ page }) => {

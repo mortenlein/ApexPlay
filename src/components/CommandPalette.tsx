@@ -28,7 +28,7 @@ export function openCommandPalette() {
 export default function CommandPalette() {
   const router = useRouter();
   const pathname = usePathname();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const [selectedIndex, setSelectedIndex] = React.useState(0);
@@ -68,6 +68,12 @@ export default function CommandPalette() {
 
   const context = deriveNavContext(pathname, status === "authenticated");
 
+  // Staff-only destinations are gated on the session role, not just the surface: middleware
+  // bounces a plain player out of /admin and /marshal, so offering them here is a dead end.
+  const role = (session?.user as { role?: string } | undefined)?.role;
+  const isAdmin = role === "admin";
+  const isStaff = isAdmin || role === "marshal";
+
   const tournamentId = React.useMemo(() => {
     const publicMatch = pathname.match(/^\/tournaments\/([^/]+)/);
     if (publicMatch) {
@@ -101,21 +107,27 @@ export default function CommandPalette() {
         contexts: ["public", "player", "admin", "marshal"],
         run: () => router.push("/profile"),
       },
-      {
+    ];
+
+    if (isAdmin) {
+      base.push({
         id: "go-admin",
         label: context === "admin" ? "Admin Overview" : "Open Admin Workspace",
         keywords: ["control", "workspace", "manage"],
         contexts: ["admin", "marshal", "player", "public"],
-        run: () => router.push(context === "admin" ? "/admin" : "/login?callbackUrl=/admin"),
-      },
-      {
+        run: () => router.push("/admin"),
+      });
+    }
+
+    if (isStaff) {
+      base.push({
         id: "go-marshal",
         label: "Open Marshal Board",
         keywords: ["seats", "floor", "readiness"],
         contexts: ["admin", "marshal", "player"],
         run: () => router.push("/marshal/dashboard"),
-      },
-    ];
+      });
+    }
 
     if (tournamentId && pathname.startsWith("/tournaments/")) {
       base.push({
@@ -171,7 +183,7 @@ export default function CommandPalette() {
     }
 
     return base;
-  }, [context, pathname, router, tournamentId]);
+  }, [context, isAdmin, isStaff, pathname, router, tournamentId]);
 
   const filtered = React.useMemo(() => {
     const visible = commands.filter((command) => command.contexts.includes(context));
