@@ -160,3 +160,39 @@ export async function createCallableMatch(options: { homeUserId?: string; awayUs
 
   return { tournament, home, away, match };
 }
+
+// --- Organizer-UI helpers (appended for the e2e/organizer-*.spec.ts suites) -------------------
+// Those specs drive the organizer's browser and then read the stored truth back, so what they
+// need here are plain row readers rather than more fixtures.
+
+/** The stored tournament row — the truth the settings UI claims it saved. */
+export async function readTournament(id: string) {
+  const tournament = await prisma.tournament.findUnique({ where: { id } });
+  if (!tournament) throw new Error(`readTournament(${id}): no such tournament`);
+  return tournament;
+}
+
+/** A tournament created through the UI, looked up by the name the test typed (null until saved). */
+export async function findTournamentByName(name: string) {
+  return prisma.tournament.findFirst({ where: { name } });
+}
+
+/**
+ * Every team of a tournament with its roster attached, teams in seed order and players by name
+ * (`Player` has no creation stamp, so name is the only stable ordering to assert against).
+ */
+export async function readTeams(tournamentId: string) {
+  return prisma.team.findMany({
+    where: { tournamentId },
+    orderBy: { seed: 'asc' },
+    include: { players: { orderBy: { name: 'asc' } } },
+  });
+}
+
+/** One team with its roster (players by name), or null once the organizer has removed it. */
+export async function readTeam(teamId: string) {
+  return prisma.team.findUnique({
+    where: { id: teamId },
+    include: { players: { orderBy: { name: 'asc' } } },
+  });
+}
