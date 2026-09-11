@@ -3,6 +3,19 @@
 import { useEffect, useRef, useCallback } from 'react';
 
 /**
+ * One frame off the tournament channel. Match mutations carry { matchId, match }; other events
+ * forwarded on the same channel (e.g. { type: 'player:checkin', playerId, checkedInAt }) carry a
+ * `type` instead, so consumers must narrow before using a field.
+ */
+export interface MatchStreamEvent {
+    matchId?: string;
+    tournamentId?: string;
+    match?: any;
+    type?: string;
+    [key: string]: any;
+}
+
+/**
  * React hook for subscribing to real-time match updates via SSE.
  * 
  * @param tournamentId - The tournament ID to subscribe to
@@ -16,7 +29,7 @@ import { useEffect, useRef, useCallback } from 'react';
  */
 export function useMatchStream(
     tournamentId: string | null,
-    onMatchUpdate: (data: { matchId: string; tournamentId: string; match: any }) => void
+    onMatchUpdate: (data: MatchStreamEvent) => void
 ) {
     const callbackRef = useRef(onMatchUpdate);
     callbackRef.current = onMatchUpdate;

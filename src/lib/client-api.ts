@@ -59,4 +59,21 @@ export const clientApi = {
     apiRequest<{ success: boolean }>("/api/auth/logout", {
       method: "POST",
     }),
+  /** Floor staff confirm (or un-confirm) that a player is physically at their seat. */
+  setPlayerCheckin: (playerId: string, checkedIn: boolean) =>
+    apiRequest<{ success: boolean; player: any }>(`/api/players/${playerId}/checkin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ checkedIn }),
+    }),
+  /** "Call match": status READY + push/Discord/in-app notification for both rosters. */
+  callMatch: (matchId: string) =>
+    apiRequest<any>(`/api/matches/${matchId}/load`, { method: "POST" }),
+  /** Status-only match update (the marshal board uses it for "Mark live"). */
+  setMatchStatus: (matchId: string, status: string) =>
+    apiRequest<any>(`/api/matches/${matchId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    }),
 };

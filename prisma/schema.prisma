@@ -59,6 +59,8 @@ model Player {
   steamId     String?
   isOnline    Boolean @default(false)
   isLeader    Boolean @default(false)
+  /// Set when floor staff confirm the player is physically at their seat (marshal board).
+  checkedInAt DateTime?
   teamId      String
   tournamentId String
   userId      String?

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, MapPin, Crown, Users, Swords, Trophy, GitBranch } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Check, ChevronDown, ChevronRight, MapPin, Crown, Users, Swords, Trophy, GitBranch } from 'lucide-react';
 import PublicBracket from '@/components/PublicBracket';
 import { Card, Badge, StatusBadge } from '@/components/ui';
 import { isActive, isDone } from '@/lib/match-status';
@@ -90,7 +90,24 @@ function GamesSection({
   );
 }
 
-function TeamRosterCard({ team }: { team: any }) {
+/**
+ * Which players floor staff have confirmed at their seat, read off the matches payload (the
+ * teams payload doesn't carry `checkedInAt`). Only rosters already placed in a bracket slot are
+ * covered — that's exactly the set the organizer is chasing.
+ */
+function checkinsFromMatches(matches: any[]): Record<string, boolean> {
+  const map: Record<string, boolean> = {};
+  for (const match of matches) {
+    for (const side of ['homeTeam', 'awayTeam'] as const) {
+      for (const player of match?.[side]?.players || []) {
+        if (player?.id) map[player.id] = Boolean(player.checkedInAt);
+      }
+    }
+  }
+  return map;
+}
+
+function TeamRosterCard({ team, checkins }: { team: any; checkins: Record<string, boolean> }) {
   const [open, setOpen] = useState(true);
   const players = team.players || [];
   return (
@@ -122,6 +139,14 @@ function TeamRosterCard({ team }: { team: any }) {
                 {p.countryCode && (
                   <span className="text-[10px] font-semibold uppercase text-fg-subtle">{p.countryCode}</span>
                 )}
+                {checkins[p.id] && (
+                  <span
+                    title="Checked in at seat by floor staff"
+                    className="inline-flex items-center rounded-sm bg-success/15 px-1 py-0.5 text-success"
+                  >
+                    <Check size={11} />
+                  </span>
+                )}
                 <span
                   className={`inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 font-mono text-[11px] font-bold ${
                     p.seating ? 'bg-brand-soft text-brand' : 'bg-white/5 text-fg-subtle'
@@ -147,6 +172,7 @@ function TeamRosterCard({ team }: { team: any }) {
 export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: ManageControlProps) {
   const winners = matches.filter((m) => m.bracketType === 'WINNERS');
   const totalRounds = winners.length ? Math.max(...winners.map((m) => m.round)) : 0;
+  const checkins = useMemo(() => checkinsFromMatches(matches), [matches]);
 
   // Three groups the organizer actually runs the floor from:
   //   Now  — called (players sent to their stations) or live. A called match belongs here, not
@@ -178,7 +204,7 @@ export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: 
               No teams registered yet.
             </p>
           ) : (
-            teams.map((t: any) => <TeamRosterCard key={t.id} team={t} />)
+            teams.map((t: any) => <TeamRosterCard key={t.id} team={t} checkins={checkins} />)
           )}
         </div>
       </aside>
