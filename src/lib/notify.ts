@@ -5,7 +5,7 @@ import { announceMatch } from "@/lib/discord";
 /**
  * Notify both teams in a match that it's ready / live across every channel:
  *  - web push to each registered player ("you're up — get to your station"),
- *  - an in-app NotificationLog entry (surfaced on the marshal board),
+ *  - an in-app NotificationLog entry (written by the Discord announce path, surfaced on the marshal board),
  *  - a Discord post via the existing announce path (real delivery when configured).
  *
  * Safe to call best-effort; never throws into the request path.
@@ -39,16 +39,8 @@ export async function notifyMatchReady(matchId: string, status: string) {
       tag: `match-${match.id}`,
     });
 
-    await prisma.notificationLog
-      .create({
-        data: {
-          type: "MATCH_READY",
-          title,
-          description: body,
-          tournamentId: match.tournamentId,
-        },
-      })
-      .catch(() => {});
+    // The in-app NotificationLog row is written by announceMatch() (discord.ts logs on both the
+    // real and mock delivery paths), so nothing is logged here — that would double the feed.
 
     await announceMatch({
       homeTeam: match.homeTeam.name,
