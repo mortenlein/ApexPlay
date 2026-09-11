@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
-import { requireAdminApi } from '@/lib/route-auth';
+import { requireAdminApi, isAdminAuthenticated } from '@/lib/route-auth';
 import { buildActorLabel, recordAudit } from '@/lib/audit';
 import { conflictResponse, hasTimestampConflict, normalizeExpectedUpdatedAt } from '@/lib/mutation-guards';
 import {
@@ -27,6 +27,12 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
 
         if (!tournament) {
             return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
+        }
+
+        // The EON bridge token is a webhook bearer credential — admins only.
+        if (!(await isAdminAuthenticated())) {
+            const { eonBridgeToken: _token, ...publicTournament } = tournament;
+            return NextResponse.json(publicTournament);
         }
 
         return NextResponse.json(tournament);

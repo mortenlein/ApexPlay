@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { requireAdminApi } from '@/lib/route-auth';
+import { requireAdminApi, isStaffAuthenticated } from '@/lib/route-auth';
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
@@ -10,7 +10,13 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
             include: { team: true },
             orderBy: { points: 'desc' }
         });
-        return NextResponse.json(scoreboard);
+        if (await isStaffAuthenticated()) {
+            return NextResponse.json(scoreboard);
+        }
+        // Team invite codes are join credentials — never public.
+        return NextResponse.json(
+            scoreboard.map(({ team, ...entry }) => ({ ...entry, team: team && { ...team, inviteCode: undefined } }))
+        );
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

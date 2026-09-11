@@ -29,6 +29,7 @@ function findTeams(tournamentId: string) {
                     seating: true,
                     steamId: true,
                     isLeader: true,
+                    isOnline: true,
                     userId: true,
                     user: {
                         select: {
@@ -61,6 +62,7 @@ function toPublicTeam(team: TeamRow, viewerUserId?: string) {
         countryCode: player.countryCode,
         seating: player.seating,
         isLeader: player.isLeader,
+        isOnline: player.isOnline,
         isMe: Boolean(viewerUserId && player.userId === viewerUserId),
     }));
 

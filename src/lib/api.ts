@@ -81,6 +81,7 @@ const teamSelect = {
       seating: true,
       steamId: true,
       isLeader: true,
+      isOnline: true,
       userId: true,
       user: {
         select: {
@@ -109,6 +110,7 @@ type TeamRow = {
     countryCode: string | null;
     seating: string | null;
     isLeader: boolean;
+    isOnline: boolean;
     userId: string | null;
   }[];
 };
@@ -126,6 +128,7 @@ function toPublicTeam(team: TeamRow, viewerUserId?: string) {
     countryCode: player.countryCode,
     seating: player.seating,
     isLeader: player.isLeader,
+    isOnline: player.isOnline,
     isMe: Boolean(viewerUserId && player.userId === viewerUserId),
   }));
 
