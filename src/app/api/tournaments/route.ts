@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { SUPPORTED_GAMES } from '@/lib/games';
+import { SUPPORTED_GAMES, coerceLastRounds, isTournamentFormat } from '@/lib/games';
 import { requireAdminApi } from '@/lib/route-auth';
 import { buildActorLabel, recordAudit } from '@/lib/audit';
 
@@ -53,15 +53,23 @@ export async function POST(request: Request) {
         }
 
         const game = typeof data.game === 'string' ? data.game : 'CS2';
-        const format = typeof data.format === 'string' ? data.format : 'SINGLE_ELIMINATION';
+        const format = data.format === undefined ? 'SINGLE_ELIMINATION' : data.format;
         const teamSize = Number.parseInt(String(data.teamSize ?? '5'), 10);
-        const bo3LastRounds = data.bo3LastRounds ? Number.parseInt(String(data.bo3LastRounds), 10) : null;
-        const bo5LastRounds = data.bo5LastRounds ? Number.parseInt(String(data.bo5LastRounds), 10) : null;
+        // The wizard sends strings, and '0' means "off" — parse first, then treat 0/NaN as null.
+        const bo3LastRounds = coerceLastRounds(data.bo3LastRounds);
+        const bo5LastRounds = coerceLastRounds(data.bo5LastRounds);
         const hasThirdPlace = Boolean(data.hasThirdPlace);
         const gameMeta = SUPPORTED_GAMES.find(g => g.id === game);
 
         if (!gameMeta) {
             return NextResponse.json({ error: 'Unsupported game' }, { status: 400 });
+        }
+
+        if (!isTournamentFormat(format)) {
+            return NextResponse.json(
+                { error: 'Format must be SINGLE_ELIMINATION or DOUBLE_ELIMINATION' },
+                { status: 400 }
+            );
         }
 
         if (!gameMeta.teamSize.includes(teamSize)) {
@@ -75,7 +83,7 @@ export async function POST(request: Request) {
                 name,
                 game,
                 category,
-                type: data.type || format,
+                type: typeof data.type === 'string' && data.type.trim() ? data.type.trim() : format,
                 format,
                 teamSize,
                 bo3LastRounds,

@@ -101,3 +101,64 @@ export function getMapPool(teamSize: number) {
     if (teamSize === 2) return CS2_MAP_POOLS['2v2'];
     return CS2_MAP_POOLS['5v5'];
 }
+
+/** Default team size for a game (the last, i.e. largest, supported entry). */
+export function defaultTeamSize(game: GameMetadata): number {
+    return game.teamSize[game.teamSize.length - 1];
+}
+
+export function teamSizeLabel(game: GameMetadata | undefined, size: number): string {
+    return game?.teamSizeLabels?.[size] || `${size}v${size}`;
+}
+
+// --- Bracket format / series helpers (shared by the wizard, manage settings and the API) ---
+
+export const TOURNAMENT_FORMATS = ['SINGLE_ELIMINATION', 'DOUBLE_ELIMINATION'] as const;
+export type TournamentFormat = (typeof TOURNAMENT_FORMATS)[number];
+
+export const FORMAT_OPTIONS: { id: TournamentFormat; name: string; desc: string }[] = [
+    { id: 'SINGLE_ELIMINATION', name: 'Single Elimination', desc: 'Direct bracket exit on loss' },
+    { id: 'DOUBLE_ELIMINATION', name: 'Double Elimination', desc: 'Lower bracket second chance' },
+];
+
+export function isTournamentFormat(value: unknown): value is TournamentFormat {
+    return typeof value === 'string' && (TOURNAMENT_FORMATS as readonly string[]).includes(value);
+}
+
+/**
+ * Best-of stage options. The stored value is "last N rounds counted back from the final",
+ * so it works for any bracket size: 0 = off, 1 = grand final only, 2 = semi-finals onward, etc.
+ */
+export const LAST_ROUNDS_MAX = 4;
+
+export const STAGE_LABELS: Record<number, string> = {
+    0: 'None (BO1)',
+    1: 'Grand Final',
+    2: 'Semi-Finals',
+    3: 'Quarter-Finals',
+    4: 'Round of 16',
+};
+
+export const BO3_STAGES = [0, 1, 2, 3, 4];
+export const BO5_STAGES = [0, 1, 2, 3];
+
+export function stageLabel(value: number | null | undefined): string {
+    return STAGE_LABELS[value ?? 0] ?? STAGE_LABELS[0];
+}
+
+/**
+ * Lenient parse for untrusted input (the wizard sends strings, including the string '0' for "off").
+ * NaN / missing / <= 0 all mean "off" (null); anything larger is clamped to LAST_ROUNDS_MAX.
+ */
+export function coerceLastRounds(value: unknown): number | null {
+    if (value === null || value === undefined || value === '') return null;
+    const parsed = Number.parseInt(String(value), 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) return null;
+    return Math.min(parsed, LAST_ROUNDS_MAX);
+}
+
+/** Strict check used by PATCH: an integer 0..LAST_ROUNDS_MAX, or null for "off". */
+export function isValidLastRounds(value: unknown): value is number | null {
+    if (value === null) return true;
+    return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= LAST_ROUNDS_MAX;
+}

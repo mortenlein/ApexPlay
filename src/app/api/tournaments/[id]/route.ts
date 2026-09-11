@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { requireAdminApi } from '@/lib/route-auth';
 import { buildActorLabel, recordAudit } from '@/lib/audit';
 import { conflictResponse, hasTimestampConflict, normalizeExpectedUpdatedAt } from '@/lib/mutation-guards';
+import {
+    LAST_ROUNDS_MAX,
+    getGameMetadata,
+    isTournamentFormat,
+    isValidLastRounds,
+} from '@/lib/games';
+
+const badRequest = (error: string) => NextResponse.json({ error }, { status: 400 });
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
     try {
@@ -45,21 +54,53 @@ export async function PATCH(request: Request, { params }: { params: { id: string
             return conflictResponse();
         }
 
-        const data = {
-            ...(typeof body.name === 'string' ? { name: body.name.trim() } : {}),
-            ...(typeof body.bo3LastRounds === 'number' || body.bo3LastRounds === null
-                ? { bo3LastRounds: body.bo3LastRounds }
-                : {}),
-            ...(typeof body.bo5LastRounds === 'number' || body.bo5LastRounds === null
-                ? { bo5LastRounds: body.bo5LastRounds }
-                : {}),
+        const data: Prisma.TournamentUpdateInput = {
             ...(typeof body.hasThirdPlace === 'boolean' ? { hasThirdPlace: body.hasThirdPlace } : {}),
             ...(typeof body.steamSignupEnabled === 'boolean' ? { steamSignupEnabled: body.steamSignupEnabled } : {}),
             ...(typeof body.rosterLocked === 'boolean' ? { rosterLocked: body.rosterLocked } : {}),
-            ...(typeof body.teamSize === 'number' ? { teamSize: body.teamSize } : {}),
-            ...(typeof body.format === 'string' ? { format: body.format } : {}),
             ...(typeof body.type === 'string' ? { type: body.type } : {}),
         };
+
+        if (body.name !== undefined) {
+            if (typeof body.name !== 'string' || !body.name.trim()) {
+                return badRequest('Tournament name is required');
+            }
+            data.name = body.name.trim();
+        }
+
+        if (body.format !== undefined) {
+            if (!isTournamentFormat(body.format)) {
+                return badRequest('Format must be SINGLE_ELIMINATION or DOUBLE_ELIMINATION');
+            }
+            data.format = body.format;
+            // `type` mirrors `format` (the create route stores `type: data.type || format`),
+            // so keep them in sync unless the caller supplied an explicit type.
+            if (typeof body.type !== 'string') {
+                data.type = body.format;
+            }
+        }
+
+        if (body.teamSize !== undefined) {
+            const gameMeta = getGameMetadata(currentTournament.game);
+            if (!gameMeta) {
+                return badRequest('Unsupported game');
+            }
+            if (typeof body.teamSize !== 'number' || !Number.isInteger(body.teamSize) || !gameMeta.teamSize.includes(body.teamSize)) {
+                return badRequest(
+                    `Team size must be one of ${gameMeta.teamSize.join(', ')} for ${gameMeta.name}`
+                );
+            }
+            data.teamSize = body.teamSize;
+        }
+
+        for (const field of ['bo3LastRounds', 'bo5LastRounds'] as const) {
+            if (body[field] === undefined) continue;
+            if (!isValidLastRounds(body[field])) {
+                return badRequest(`${field} must be an integer between 0 and ${LAST_ROUNDS_MAX}, or null`);
+            }
+            // 0 means "off" and is stored as null.
+            data[field] = body[field] === 0 ? null : body[field];
+        }
 
         if (Object.keys(data).length === 0) {
             return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
