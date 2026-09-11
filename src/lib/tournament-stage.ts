@@ -1,8 +1,8 @@
+import { isDone } from "@/lib/match-status";
+
 export type TournamentStage = "DRAFT" | "REGISTRATION" | "LIVE" | "COMPLETE";
 
 export const STAGE_ORDER: TournamentStage[] = ["DRAFT", "REGISTRATION", "LIVE", "COMPLETE"];
-
-const DONE = new Set(["COMPLETED", "FINISHED"]);
 
 /**
  * Derive a tournament's lifecycle stage from its data (no DB field needed):
@@ -15,7 +15,7 @@ export function getTournamentStage(teams: any[] = [], matches: any[] = []): Tour
   if (!matches || matches.length === 0) {
     return (teams?.length || 0) >= 2 ? "REGISTRATION" : "DRAFT";
   }
-  const allDone = matches.every((m) => DONE.has(String(m.status || "").toUpperCase()));
+  const allDone = matches.every((m) => isDone(String(m.status || "").toUpperCase()));
   return allDone ? "COMPLETE" : "LIVE";
 }
 

@@ -12,6 +12,14 @@ export interface MockNotification {
 type AnnouncementType = 'MATCH' | 'RESULT' | 'SIGNUP';
 type TournamentEmbed = APIEmbed & { tournamentId?: string };
 
+/**
+ * Two announcements with the same (type, title, tournamentId) inside this window are the same
+ * call, so only the first one is logged. Retries, double-clicks on "call match", and callers
+ * that both log and announce (notify.ts) therefore can't stack up duplicate rows in the
+ * marshal feed.
+ */
+const LOG_DEDUPE_WINDOW_MS = 10_000;
+
 class DiscordClient {
   private rest: REST | null = null;
   private channelId: string | null = null;
@@ -65,26 +73,50 @@ class DiscordClient {
     return false;
   }
 
-  private async executeMockDelivery(embed: TournamentEmbed, type: AnnouncementType) {
-    await prisma.notificationLog.create({
-      data: {
-        type,
-        title: String(embed.title || 'Notification'),
-        description: String(embed.description || ''),
-        tournamentId: embed.tournamentId || null,
-      },
-    });
+  /**
+   * Record the announcement in NotificationLog. This is what feeds the marshal board's
+   * "Match calls" list and the admin timeline, so it has to happen whether or not a real
+   * Discord webhook is configured — it used to only run in mock mode, which left both
+   * surfaces empty in production. Never throws: a failed log must not fail the delivery.
+   */
+  private async writeLog(embed: TournamentEmbed, type: AnnouncementType) {
+    const title = String(embed.title || 'Notification');
+    const tournamentId = embed.tournamentId || null;
+    try {
+      const duplicate = await prisma.notificationLog.findFirst({
+        where: {
+          type,
+          title,
+          tournamentId,
+          createdAt: { gte: new Date(Date.now() - LOG_DEDUPE_WINDOW_MS) },
+        },
+        select: { id: true },
+      });
+      if (duplicate) return;
 
-    console.log(`[STRATEGY 3 MOCK] ${type} notification intercepted:`, embed.title);
-    return true;
+      await prisma.notificationLog.create({
+        data: {
+          type,
+          title,
+          description: String(embed.description || ''),
+          tournamentId,
+        },
+      });
+    } catch (error) {
+      console.warn('[Discord] NotificationLog write failed:', error);
+    }
   }
 
   private async send(embed: TournamentEmbed, type: AnnouncementType) {
     const isProdReady = Boolean(this.webhookUrl || (this.rest && this.channelId));
     const isMockMode = process.env.NEXT_PUBLIC_STRATEGY_3_MOCK === 'true';
 
+    // Log first, always — the in-app feeds are the primary channel; Discord is the extra one.
+    await this.writeLog(embed, type);
+
     if (isMockMode || !isProdReady) {
-      return this.executeMockDelivery(embed, type);
+      console.log(`[STRATEGY 3 MOCK] ${type} notification intercepted:`, embed.title);
+      return true;
     }
 
     return this.executeRealDelivery(embed);

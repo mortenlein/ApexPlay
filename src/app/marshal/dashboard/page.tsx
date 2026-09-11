@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Users, MapPin, Bell, Check, RefreshCw, Loader2 } from "lucide-react";
 import { clientApi } from "@/lib/client-api";
 import { Card, Badge, StatusBadge, Button, EmptyState, TopNav } from "@/components/ui";
+import { isCalled, isDone, isLive } from "@/lib/match-status";
 
 const CONTROL_NAV = [
   { href: "/admin", label: "Overview" },
@@ -11,14 +12,13 @@ const CONTROL_NAV = [
   { href: "/tournaments", label: "Public site" },
 ];
 
-// Matches that need a marshal on the floor, most urgent first.
-const STATUS_PRIORITY: Record<string, number> = {
-  WAITING_FOR_PLAYERS: 0,
-  READY: 1,
-  LIVE: 2,
-  IN_PROGRESS: 2,
-  PENDING: 3,
-};
+/**
+ * Matches that need a marshal on the floor, most urgent first. Called first (those are the
+ * players who have to be found and walked to a station), then live, then everything still
+ * pending. Derived from the shared status sets so a new status can't silently sort last.
+ */
+const urgency = (status: string | null | undefined) =>
+  isCalled(status) ? 0 : isLive(status) ? 1 : 2;
 
 function PlayerSeatRow({
   player,
@@ -129,11 +129,8 @@ export default function MarshalDashboard() {
           ]);
           if (!cancelled) {
             const open = matchData
-              .filter((m: any) => m.status !== "COMPLETED" && m.status !== "FINISHED")
-              .sort(
-                (a: any, b: any) =>
-                  (STATUS_PRIORITY[a.status] ?? 9) - (STATUS_PRIORITY[b.status] ?? 9)
-              );
+              .filter((m: any) => !isDone(m.status))
+              .sort((a: any, b: any) => urgency(a.status) - urgency(b.status));
             setMatches(open);
             setNotifications(notificationResponse.notifications || []);
           }

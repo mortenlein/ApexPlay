@@ -6,6 +6,7 @@ import {
   generateSingleElimination,
   generateDoubleElimination,
   bestOfForRound,
+  slotField,
   BracketMatch,
 } from "../src/lib/bracket-utils";
 
@@ -90,6 +91,94 @@ console.log("Single elimination (8 teams):");
   verifyLinking("SE8", m, 8);
 }
 
+console.log("\nSingle elimination with third-place match (8 teams):");
+{
+  const m = generateSingleElimination(makeTeams(8), { hasThirdPlace: true });
+  const third = m.filter((x) => x.bracketType === "THIRD_PLACE");
+  check("exactly one third-place match", third.length === 1, `got ${third.length}`);
+
+  // rounds = 3, so the semi-finals are round 2 (two matches).
+  const semis = m
+    .filter((x) => x.bracketType === "WINNERS" && x.round === 2)
+    .sort((a, b) => a.matchOrder - b.matchOrder);
+  check("two semi-finals", semis.length === 2, `got ${semis.length}`);
+  check(
+    "both semis route their loser to the third-place match",
+    semis.every(
+      (x) =>
+        x.loserNextMatchBracketType === "THIRD_PLACE" &&
+        x.loserNextMatchRound === 3 &&
+        x.loserNextMatchOrder === third[0].matchOrder
+    )
+  );
+  // The bug: the slots were left undefined and only worked by matchOrder-parity coincidence.
+  check(
+    "both semis carry an explicit loser slot",
+    semis.every((x) => x.loserNextMatchSlot === "HOME" || x.loserNextMatchSlot === "AWAY"),
+    JSON.stringify(semis.map((x) => x.loserNextMatchSlot))
+  );
+  check(
+    "semi loser slots are distinct (HOME then AWAY)",
+    semis[0].loserNextMatchSlot === "HOME" && semis[1].loserNextMatchSlot === "AWAY",
+    `${semis[0].loserNextMatchSlot} / ${semis[1].loserNextMatchSlot}`
+  );
+
+  verifyLinking("SE8+3rd", m, 8);
+}
+
+console.log("\nSingle elimination with byes (6 teams):");
+{
+  const m = generateSingleElimination(makeTeams(6));
+  const r1 = m
+    .filter((x) => x.bracketType === "WINNERS" && x.round === 1)
+    .sort((a, b) => a.matchOrder - b.matchOrder);
+  check("8-slot bracket -> 4 round-1 matches", r1.length === 4, `got ${r1.length}`);
+
+  // A bye is a round-1 match with exactly one team; its winner is pushed forward at generation
+  // time, so it must name the slot it lands in rather than leaving it to be guessed.
+  const byes = r1.filter((x) => Boolean(x.homeTeamId) !== Boolean(x.awayTeamId));
+  check("6 teams in an 8-slot bracket -> 2 byes", byes.length === 2, `got ${byes.length}`);
+  check(
+    "every bye names its winner slot",
+    byes.every((x) => x.nextMatchSlot === "HOME" || x.nextMatchSlot === "AWAY"),
+    JSON.stringify(byes.map((x) => x.nextMatchSlot))
+  );
+
+  // Every non-final match names a slot, so bye propagation never falls back to parity.
+  const nonFinal = m.filter((x) => x.nextMatchRound !== null);
+  check(
+    "every match with a next match names a winner slot",
+    nonFinal.every((x) => x.nextMatchSlot === "HOME" || x.nextMatchSlot === "AWAY")
+  );
+
+  // The bye winner lands in the column named by nextMatchSlot, in the match it points at.
+  const destOf = (x: BracketMatch) =>
+    m.find(
+      (d) =>
+        d.bracketType === (x.nextMatchBracketType ?? "WINNERS") &&
+        d.round === x.nextMatchRound &&
+        d.matchOrder === x.nextMatchOrder
+    );
+  check("both byes point at a real next match", byes.every((x) => Boolean(destOf(x))));
+  const landings = byes.map((x) => `${destOf(x)!.matchOrder}:${slotField(x.nextMatchSlot, x.matchOrder)}`);
+  check(
+    "bye winners land in distinct (match, slot) destinations",
+    new Set(landings).size === byes.length,
+    landings.join(", ")
+  );
+
+  verifyLinking("SE6", m, 8);
+}
+
+console.log("\nslotField (advancement slot rule):");
+{
+  check("explicit HOME wins over parity", slotField("HOME", 1) === "homeTeamId");
+  check("explicit AWAY wins over parity", slotField("AWAY", 0) === "awayTeamId");
+  check("no slot -> even matchOrder is HOME", slotField(null, 4) === "homeTeamId");
+  check("no slot -> odd matchOrder is AWAY", slotField(undefined, 5) === "awayTeamId");
+  check("empty slot string falls back to parity", slotField("", 3) === "awayTeamId");
+}
+
 for (const n of [4, 8, 16, 32]) {
   console.log(`\nDouble elimination (${n} teams):`);
   const m = generateDoubleElimination(makeTeams(n));
@@ -152,6 +241,15 @@ console.log("\nBest-of (stage-relative, last-N-rounds):");
   const de = generateDoubleElimination(makeTeams(8), { bo5LastRounds: 1 });
   check("DE8: grand final bestOf 5", de.find((m) => m.bracketType === "GRAND_FINAL")?.bestOf === 5);
   check("DE8: losers bracket stays BO1", de.filter((m) => m.bracketType === "LOSERS").every((m) => m.bestOf === 1));
+
+  // scoreLimit must always be the win condition for its own bestOf (first to floor(n/2)+1).
+  const limitOk = (m: BracketMatch) => m.scoreLimit === Math.floor(m.bestOf / 2) + 1;
+  check("SE8: every match's scoreLimit matches its bestOf", se.every(limitOk));
+  check("DE8: every match's scoreLimit matches its bestOf", de.every(limitOk));
+  check(
+    "SE with third place: scoreLimit matches bestOf",
+    generateSingleElimination(makeTeams(8), { hasThirdPlace: true, bo3LastRounds: 2 }).every(limitOk)
+  );
 }
 
 console.log("\nValidation:");

@@ -1,19 +1,26 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireSignedInUser } from '@/lib/route-auth';
+import { isActive, isDone } from '@/lib/match-status';
 
 // Auth + DB per request; never prerender at build time.
 export const dynamic = 'force-dynamic';
-
-const DONE_STATUSES = new Set(['COMPLETED', 'FINISHED']);
 
 /**
  * GET /api/me/queue
  *
  * For the signed-in player: per tournament they're registered in, their next match and how
- * many matches are scheduled ahead of it. "matchesAhead" = the count of not-yet-finished
- * matches that come before yours in schedule order (round, then matchOrder) — i.e. your place
- * in the queue. 0 + LIVE = you're on now; 0 + not live = you're up next.
+ * many matches are scheduled ahead of it.
+ *
+ * "matchesAhead" = your place in the queue. A match counts as ahead of you only if it is
+ *   (a) not done,
+ *   (b) ordered before your next match in play order (round, then matchOrder), and
+ *   (c) actually playable — both teams assigned — or already called/live.
+ * (c) is what keeps the number honest: a freshly generated bracket is full of later-round
+ * slots with no teams in them yet, and counting those made a round-1 player look like they
+ * had a dozen matches to wait through.
+ *
+ * 0 + called/live = you're on now; 0 + pending = you're up next.
  */
 export async function GET() {
   const session = await requireSignedInUser();
@@ -66,7 +73,7 @@ export async function GET() {
         return { ...base, state: 'NO_BRACKET' as const, nextMatch: null, matchesAhead: null, totalPending: 0 };
       }
 
-      const pending = matches.filter((m) => !DONE_STATUSES.has((m.status || '').toUpperCase()));
+      const pending = matches.filter((m) => !isDone((m.status || '').toUpperCase()));
       const idx = pending.findIndex((m) => m.homeTeamId === teamId || m.awayTeamId === teamId);
 
       if (idx === -1) {
@@ -83,10 +90,17 @@ export async function GET() {
       const m = pending[idx];
       const opponent = m.homeTeamId === teamId ? m.awayTeam?.name : m.homeTeam?.name;
       const youAreHome = m.homeTeamId === teamId;
+      // See the rule in the route doc comment: only real, playable matches ordered before
+      // yours count — plus anything already called/live even if a team slot is still empty.
+      const matchesAhead = pending
+        .slice(0, idx)
+        .filter(
+          (q) => (Boolean(q.homeTeamId) && Boolean(q.awayTeamId)) || isActive((q.status || '').toUpperCase())
+        ).length;
       return {
         ...base,
         state: 'SCHEDULED' as const,
-        matchesAhead: idx,
+        matchesAhead,
         totalPending: pending.length,
         nextMatch: {
           id: m.id,
