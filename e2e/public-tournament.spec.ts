@@ -167,7 +167,8 @@ test('a missing tournament id renders the not-found state with a way back', asyn
 // Consequence: crawlers, link unfurlers and uptime monitors treat a dead tournament link as a
 // healthy page, and `/dashboard/tournaments/anything` (a plain routing 404) does answer 404 —
 // so the two not-found paths disagree.
-test.fixme('a missing tournament answers 404, not 200', async ({ page }) => {
+test('a missing tournament answers 404, not 200', async ({ page }) => {
+  // Regression: a loading.tsx boundary on this segment flushed a 200 shell before notFound() ran.
   const response = await page.goto('/tournaments/no-such-tournament-id');
   expect(response?.status()).toBe(404);
 });
