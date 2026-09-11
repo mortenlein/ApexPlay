@@ -18,7 +18,7 @@ import {
 import { clientApi } from "@/lib/client-api";
 import { Card, Badge, StatusBadge, Button, EmptyState } from "@/components/ui";
 import { useMatchStream } from "@/hooks/useMatchStream";
-import { isCalled, isDone, isLive } from "@/lib/match-status";
+import { byPlayOrder, isCalled, isDone, isLive } from "@/lib/match-status";
 
 /**
  * Marshal board — the floor tool.
@@ -65,8 +65,7 @@ const bySeat = (a: any, b: any) => {
 /** Oldest call first: the team that has waited longest is the one to fetch next. */
 const byCalledAt = (a: any, b: any) =>
   new Date(a.updatedAt || 0).getTime() - new Date(b.updatedAt || 0).getTime();
-const byBracketOrder = (a: any, b: any) =>
-  (a.round ?? 0) - (b.round ?? 0) || (a.matchOrder ?? 0) - (b.matchOrder ?? 0);
+const byBracketOrder = (a: any, b: any) => byPlayOrder(a, b);
 
 function minutesAgo(iso: string | null | undefined, now: number): number | null {
   if (!iso) return null;

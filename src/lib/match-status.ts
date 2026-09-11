@@ -24,3 +24,42 @@ export const isActive = (status: string | null | undefined) => ACTIVE_STATUSES.i
 
 /** Win condition for a best-of series: first to floor(bestOf / 2) + 1 maps. */
 export const scoreLimitFor = (bestOf: number) => Math.floor(Math.max(1, bestOf) / 2) + 1;
+
+/**
+ * Where a match sits in the tournament's play order, across bracket types. `round` alone is
+ * only unique within a bracket type (a double-elim grand final is stored as round 1, and the
+ * losers bracket counts its own rounds), so anything that orders "what plays next" — the player
+ * queue, the marshal board, the control cockpit — must go through this.
+ *
+ *   WINNERS round r  → stage 2r-1   (WB1=1, WB2=3, WB3=5 …)
+ *   LOSERS  round L  → stage L+1    (LB1 is played after WB1, LB2/LB3 around WB2 …)
+ *   THIRD_PLACE      → after every ordinary round
+ *   GRAND_FINAL      → last
+ */
+export function playStage(match: { bracketType?: string | null; round: number }): number {
+  switch ((match.bracketType || 'WINNERS').toUpperCase()) {
+    case 'GRAND_FINAL':
+      return 1_000_000;
+    case 'THIRD_PLACE':
+      return 999_999;
+    case 'LOSERS':
+      return match.round + 1;
+    default:
+      return 2 * match.round - 1;
+  }
+}
+
+const BRACKET_RANK: Record<string, number> = { WINNERS: 0, LOSERS: 1, THIRD_PLACE: 2, GRAND_FINAL: 3 };
+
+/** Comparator: earlier stage first, winners before losers within a stage, then matchOrder. */
+export function byPlayOrder(
+  a: { bracketType?: string | null; round: number; matchOrder: number },
+  b: { bracketType?: string | null; round: number; matchOrder: number }
+): number {
+  return (
+    playStage(a) - playStage(b) ||
+    (BRACKET_RANK[(a.bracketType || 'WINNERS').toUpperCase()] ?? 0) -
+      (BRACKET_RANK[(b.bracketType || 'WINNERS').toUpperCase()] ?? 0) ||
+    a.matchOrder - b.matchOrder
+  );
+}

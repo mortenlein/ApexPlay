@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Check, ChevronDown, ChevronRight, MapPin, Crown, Users, Swords, Trophy, GitBranch } from 'lucide-react';
 import PublicBracket from '@/components/PublicBracket';
 import { Card, Badge, StatusBadge } from '@/components/ui';
-import { isActive, isDone } from '@/lib/match-status';
+import { byPlayOrder, isActive, isDone } from '@/lib/match-status';
 import { EonBridgePanel } from './EonBridgePanel';
 
 interface ManageControlProps {
@@ -14,7 +14,7 @@ interface ManageControlProps {
   onOpenMatchModal: (match: any) => void;
 }
 
-const byOrder = (a: any, b: any) => a.round - b.round || a.matchOrder - b.matchOrder;
+const byOrder = (a: any, b: any) => byPlayOrder(a, b);
 
 function stageLabel(match: any, totalRounds: number) {
   if (match.bracketType === 'GRAND_FINAL') return 'Grand Final';

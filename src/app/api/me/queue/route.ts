@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireSignedInUser } from '@/lib/route-auth';
-import { isActive, isDone } from '@/lib/match-status';
+import { isActive, isDone, byPlayOrder } from '@/lib/match-status';
 
 // Auth + DB per request; never prerender at build time.
 export const dynamic = 'force-dynamic';
@@ -60,14 +60,16 @@ export async function GET() {
         teamName,
       };
 
-      const matches = await prisma.match.findMany({
-        where: { tournamentId: tid },
-        orderBy: [{ round: 'asc' }, { matchOrder: 'asc' }],
-        include: {
-          homeTeam: { select: { name: true } },
-          awayTeam: { select: { name: true } },
-        },
-      });
+      // Play order across bracket types (a DE grand final is stored as round 1) — see byPlayOrder.
+      const matches = (
+        await prisma.match.findMany({
+          where: { tournamentId: tid },
+          include: {
+            homeTeam: { select: { name: true } },
+            awayTeam: { select: { name: true } },
+          },
+        })
+      ).sort(byPlayOrder);
 
       if (matches.length === 0) {
         return { ...base, state: 'NO_BRACKET' as const, nextMatch: null, matchesAhead: null, totalPending: 0 };

@@ -152,20 +152,12 @@ test("calling a player's match reports the called state, and clearing the one ah
 });
 
 /**
- * BUG (product, not test): `/api/me/queue` orders play by `(round, matchOrder)` alone
- * (src/app/api/me/queue/route.ts:65) and counts "ahead of you" inside that ordering
- * (route.ts:76-99). Those coordinates are only unique *within* a bracket type: a
- * double-elimination bracket numbers its losers rounds 1..2(k-1) and its grand final round 1,
- * so LOSERS#1#0 and GRAND_FINAL#1#0 sort as if they were the same slot in the schedule — and
- * WINNERS#1#0 too.
- *
- * Measured on an 8-team double-elimination bracket with the winners side fully played: the
- * grand finalist is told `matchesAhead: 1` while six losers-bracket matches remain, two of them
- * playable right now. They will be sitting there for most of an hour being shown "you're up
- * next". The fix belongs in the route (order by bracket stage, not raw round), so the
- * expectation below is written the way it should read.
+ * Regression: `/api/me/queue` once ordered play by `(round, matchOrder)` alone, which is only
+ * unique within a bracket type — a double-elim grand final is stored as round 1, so the grand
+ * finalist was told `matchesAhead: 1` while six losers-bracket matches remained. The route now
+ * sorts with `byPlayOrder` (src/lib/match-status.ts), so the grand final is last.
  */
-test.fixme('a grand finalist is not told they are on while the losers bracket is unplayed', async () => {
+test('a grand finalist is not told they are on while the losers bracket is unplayed', async () => {
   const adminApi = await apiAs('marcus');
   const leoApi = await apiAs('leo');
   const { tournamentId, teams } = await seedAndGenerate(adminApi, {
