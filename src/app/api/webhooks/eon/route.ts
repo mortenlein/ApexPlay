@@ -74,16 +74,28 @@ export async function POST(request: Request) {
   // Identify the match: the active one with players from BOTH teams present on the server.
   let best: (typeof matches)[number] | null = null;
   let bestScore = -1;
+  let tied = false;
   for (const m of matches) {
     const homeOnServer = overlap(m.homeTeam?.players || [], serverIds);
     const awayOnServer = overlap(m.awayTeam?.players || [], serverIds);
-    if (homeOnServer > 0 && awayOnServer > 0 && homeOnServer + awayOnServer > bestScore) {
+    if (homeOnServer === 0 || awayOnServer === 0) continue;
+    const score = homeOnServer + awayOnServer;
+    if (score > bestScore) {
       best = m;
-      bestScore = homeOnServer + awayOnServer;
+      bestScore = score;
+      tied = false;
+    } else if (score === bestScore) {
+      tied = true;
     }
   }
   if (!best) {
     return NextResponse.json({ ok: true, skipped: 'no matching loaded match for these players' });
+  }
+  // Two open matches fit these players equally well (duplicated rosters) — never guess which one
+  // to score; the CS2 webhook refuses ambiguity the same way.
+  if (tied) {
+    console.warn('[EON] Ambiguous frame: more than one open match fits the players on the server. Ignoring.');
+    return NextResponse.json({ ok: true, skipped: 'ambiguous: more than one open match fits these players' });
   }
 
   // Which side is the home team currently on?

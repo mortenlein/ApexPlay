@@ -289,6 +289,7 @@ export async function playThrough(
 /** Give an existing team's players a real user, so `/api/me/queue` can find them. */
 export async function assignTeamToUser(teamId: string, userId: string) {
   await prisma.player.updateMany({ where: { teamId }, data: { userId } });
+}
 /* ------------------------------------------------------------------------------------------- *
  * Inbound-integration fixtures (EON bridge, CS2 plugin, Discord mock, audit trail).
  * ------------------------------------------------------------------------------------------- */

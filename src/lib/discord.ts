@@ -81,12 +81,17 @@ class DiscordClient {
    */
   private async writeLog(embed: TournamentEmbed, type: AnnouncementType) {
     const title = String(embed.title || 'Notification');
+    const description = String(embed.description || '');
     const tournamentId = embed.tournamentId || null;
     try {
+      // Same announcement twice inside the window (double-click, notify + announce) → one row.
+      // The description is part of the key: "Match ready for players" is the same title for
+      // every match, so two different matches called back-to-back must both get a row.
       const duplicate = await prisma.notificationLog.findFirst({
         where: {
           type,
           title,
+          description,
           tournamentId,
           createdAt: { gte: new Date(Date.now() - LOG_DEDUPE_WINDOW_MS) },
         },
@@ -98,7 +103,7 @@ class DiscordClient {
         data: {
           type,
           title,
-          description: String(embed.description || ''),
+          description,
           tournamentId,
         },
       });
@@ -150,7 +155,10 @@ class DiscordClient {
 
     const embed: TournamentEmbed = {
       title: 'Match ready for players',
-      description: `**${data.tournamentName}** · Round ${data.round}`,
+      // Teams are in the description on purpose: the in-app feed (marshal board) shows title +
+      // description only, and the 10s log dedupe keys on them — two matches called back-to-back
+      // in the same round must both show up.
+      description: `**${data.homeTeam}** vs **${data.awayTeam}** · ${data.tournamentName} · Round ${data.round}`,
       color: 0xff1744,
       fields,
       url: data.matchUrl,
@@ -175,7 +183,7 @@ class DiscordClient {
     const winner = data.homeScore > data.awayScore ? data.homeTeam : data.awayTeam;
     const embed: TournamentEmbed = {
       title: 'Result posted',
-      description: `**${data.tournamentName}** · Official result`,
+      description: `**${data.homeTeam}** ${data.homeScore}:${data.awayScore} **${data.awayTeam}** · ${data.tournamentName} · Official result`,
       color: 0x00c853,
       fields: [
         { name: 'Match', value: `**${data.homeTeam}** vs **${data.awayTeam}**`, inline: false },

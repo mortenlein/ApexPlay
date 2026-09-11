@@ -326,13 +326,7 @@ test('frames the route cannot place are skipped, not guessed at', async () => {
 });
 
 test('a frame that fits two matches equally is applied to neither', async () => {
-  test.fixme(
-    true,
-    'src/app/api/webhooks/eon/route.ts:75-87 picks the highest-overlap match and breaks ties by ' +
-      'iteration order instead of refusing an ambiguous frame (cf. the CS2 webhook, which returns ' +
-      'null on ambiguity — src/app/api/webhooks/cs2/route.ts:153-160). Two matches whose rosters ' +
-      'share the steamids on the server therefore let a frame rewrite an arbitrary one.'
-  );
+  // Regression: the route once broke ties by iteration order and scored an arbitrary match.
 
   // Same two humans (same steamids) entered in a second match of the same tournament — a
   // duplicated roster, which is exactly the case a steamid-only identification cannot resolve.
