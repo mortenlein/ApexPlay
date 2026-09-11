@@ -138,6 +138,9 @@ model Match {
   bestOf           Int        @default(1)
   scoreLimit       Int        @default(1)
   winnerId         String?
+  // How the match was decided when it was not simply played out: 'FORFEIT' (a team no-showed or
+  // withdrew) or 'WALKOVER'. Null for a normally played match.
+  resultType       String?
   bracketType      String     @default("WINNERS")
   round            Int
   matchOrder       Int

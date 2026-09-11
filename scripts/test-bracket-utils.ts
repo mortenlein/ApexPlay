@@ -8,6 +8,11 @@ import {
   bestOfForRound,
   BracketMatch,
 } from "../src/lib/bracket-utils";
+import {
+  decideMatchResult,
+  downstreamBlocksReset,
+  StoredMatchState,
+} from "../src/lib/match-result";
 
 let failures = 0;
 function check(name: string, cond: boolean, detail = "") {
@@ -163,6 +168,124 @@ console.log("\nValidation:");
     threw = true;
   }
   check("non-power-of-two team count is rejected", threw);
+}
+
+console.log("\nMatch result decisions:");
+{
+  // A winners-bracket match: winner goes to W#1, loser drops to L#1. Even matchOrder -> HOME.
+  const base = (over: Partial<StoredMatchState> = {}): StoredMatchState => ({
+    homeTeamId: "home",
+    awayTeamId: "away",
+    homeScore: 0,
+    awayScore: 0,
+    bestOf: 1,
+    status: "READY",
+    winnerId: null,
+    matchOrder: 0,
+    nextMatchId: "next",
+    nextMatchSlot: null,
+    loserNextMatchId: "losers",
+    loserNextMatchSlot: "AWAY",
+    ...over,
+  });
+  const plan = (m: StoredMatchState, input: any) => {
+    const d = decideMatchResult(m, input);
+    if (!d.ok) throw new Error(`expected a plan, got ${d.status} ${d.error}`);
+    return d.plan;
+  };
+
+  // scoreLimit follows bestOf — the BO1 -> BO3 switch that used to auto-complete after one map.
+  check("BO1 derives scoreLimit 1", plan(base(), { bestOf: 1 }).scoreLimit === 1);
+  check("BO3 derives scoreLimit 2", plan(base(), { bestOf: 3 }).scoreLimit === 2);
+  check("BO5 derives scoreLimit 3", plan(base(), { bestOf: 5 }).scoreLimit === 3);
+  check(
+    "BO1 -> BO3 with 1:0 no longer auto-completes",
+    plan(base({ bestOf: 1 }), { bestOf: 3, homeScore: 1, awayScore: 0 }).status === "READY"
+  );
+  check(
+    "client-sent scoreLimit is ignored",
+    plan(base(), { bestOf: 3, scoreLimit: 1 }).scoreLimit === 2
+  );
+  check(
+    "stored bestOf is used when the body omits it",
+    plan(base({ bestOf: 5 }), { homeScore: 2, awayScore: 0 }).scoreLimit === 3
+  );
+
+  // Reaching the limit still auto-completes and advances.
+  {
+    const p = plan(base({ bestOf: 3 }), { homeScore: 2, awayScore: 1 });
+    check("reaching the BO3 limit completes", p.status === "COMPLETED" && p.winnerId === "home");
+    check("winner advances to next (HOME by parity)", p.advance.some((a) => a.matchId === "next" && a.slot === "HOME" && a.teamId === "home"));
+    check("loser advances to losers bracket (explicit AWAY slot)", p.advance.some((a) => a.matchId === "losers" && a.slot === "AWAY" && a.teamId === "away"));
+    check("nothing to un-advance on a first completion", p.unadvance.length === 0);
+  }
+
+  // Refuse a completed match with no winner.
+  {
+    const tie = decideMatchResult(base(), { status: "COMPLETED", homeScore: 1, awayScore: 1 });
+    check("completed with a tie is refused", tie.ok === false && tie.status === 400 && tie.error === "A completed match needs a winner");
+    const zero = decideMatchResult(base(), { status: "COMPLETED" });
+    check("completed 0:0 is refused", zero.ok === false);
+  }
+
+  // Forfeit: the other team wins by the series limit and advances.
+  {
+    const p = plan(base({ bestOf: 3 }), { forfeit: "HOME" });
+    check("home forfeit picks away as winner", p.winnerId === "away" && p.loserId === "home");
+    check("forfeit completes the match", p.status === "COMPLETED" && p.resultType === "FORFEIT");
+    check("forfeit scores are 0:scoreLimit in the winner's favour", p.homeScore === 0 && p.awayScore === 2);
+    check("forfeit advances the winner", p.advance.some((a) => a.matchId === "next" && a.teamId === "away"));
+    const withScores = plan(base(), { forfeit: "AWAY", homeScore: 1, awayScore: 0 });
+    check("forfeit keeps scores the body carried", withScores.homeScore === 1 && withScores.awayScore === 0 && withScores.winnerId === "home");
+    const missingTeam = decideMatchResult(base({ awayTeamId: null }), { forfeit: "HOME" });
+    check("forfeit needs both teams", missingTeam.ok === false && missingTeam.status === 400);
+    const cleared = plan(base({ status: "COMPLETED", winnerId: "away", homeScore: 0, awayScore: 2, bestOf: 3 }), { status: "COMPLETED", homeScore: 0, awayScore: 2, bestOf: 3 });
+    check("a later non-forfeit save clears resultType", cleared.resultType === null);
+  }
+
+  // Reopening a completed match clears the winner and rolls the advance back.
+  {
+    const completed = base({ status: "COMPLETED", winnerId: "home", homeScore: 1, awayScore: 0 });
+    const p = plan(completed, { status: "LIVE" });
+    check("reopening clears the winner", p.winnerId === null && p.loserId === null);
+    check("reopening keeps the requested status", p.status === "LIVE");
+    check("reopening un-advances the old winner", p.unadvance.some((u) => u.matchId === "next" && u.slot === "HOME" && u.teamId === "home"));
+    check("reopening un-advances the old loser", p.unadvance.some((u) => u.matchId === "losers" && u.slot === "AWAY" && u.teamId === "away"));
+    check("reopening advances nobody", p.advance.length === 0);
+  }
+
+  // Changing the winner un-advances the old pair and advances the new one.
+  {
+    const completed = base({ status: "COMPLETED", winnerId: "home", homeScore: 1, awayScore: 0 });
+    const p = plan(completed, { status: "COMPLETED", homeScore: 0, awayScore: 1 });
+    check("changed winner is the away team", p.winnerId === "away" && p.loserId === "home");
+    check("changed winner un-advances the old winner", p.unadvance.some((u) => u.matchId === "next" && u.teamId === "home"));
+    check("changed winner un-advances the old loser", p.unadvance.some((u) => u.matchId === "losers" && u.teamId === "away"));
+    check("changed winner advances the new winner", p.advance.some((a) => a.matchId === "next" && a.teamId === "away"));
+    check("changed winner advances the new loser", p.advance.some((a) => a.matchId === "losers" && a.teamId === "home"));
+  }
+
+  // Re-saving the same result must not churn the downstream slots.
+  {
+    const completed = base({ status: "COMPLETED", winnerId: "home", homeScore: 1, awayScore: 0 });
+    const p = plan(completed, { status: "COMPLETED", homeScore: 1, awayScore: 0 });
+    check("re-saving the same winner un-advances nothing", p.unadvance.length === 0);
+    check("re-saving the same winner is still idempotent-advance", p.advance.length === 2);
+  }
+
+  // Odd matchOrder falls back to the AWAY slot; a legacy FINISHED bye counts as completed.
+  {
+    const p = plan(base({ matchOrder: 1, loserNextMatchId: null }), { homeScore: 1 });
+    check("odd matchOrder advances into AWAY", p.advance.some((a) => a.matchId === "next" && a.slot === "AWAY"));
+    const legacy = plan(base({ status: "FINISHED", winnerId: "home", homeScore: 1 }), { status: "PENDING", homeScore: 0 });
+    check("legacy FINISHED bye is treated as completed", legacy.unadvance.some((u) => u.teamId === "home"));
+  }
+
+  // The downstream guard.
+  check("untouched downstream match can be reset", downstreamBlocksReset({ id: "n", status: "PENDING", homeScore: 0, awayScore: 0 }) === false);
+  check("live downstream match blocks the reset", downstreamBlocksReset({ id: "n", status: "LIVE", homeScore: 0, awayScore: 0 }));
+  check("completed downstream match blocks the reset", downstreamBlocksReset({ id: "n", status: "COMPLETED", homeScore: 1, awayScore: 0 }));
+  check("scored downstream match blocks the reset", downstreamBlocksReset({ id: "n", status: "READY", homeScore: 1, awayScore: 0 }));
 }
 
 console.log(failures === 0 ? "\nALL PASSED" : `\n${failures} CHECK(S) FAILED`);
