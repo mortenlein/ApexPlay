@@ -1,25 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Check, ChevronRight, ChevronLeft, Trophy, X, Info, Send, Copy, Loader2, Plus, Globe, Settings, Layers, Zap } from 'lucide-react';
-import { SUPPORTED_GAMES } from '@/lib/games';
+import { AlertTriangle, Check, ChevronRight, ChevronLeft, Trophy, X, Info, Send, Copy, Loader2, Plus, Globe, Settings, Layers, Zap } from 'lucide-react';
+import {
+    BO3_STAGES,
+    BO5_STAGES,
+    FORMAT_OPTIONS,
+    STAGE_LABELS,
+    SUPPORTED_GAMES,
+    defaultTeamSize,
+    stageLabel,
+    teamSizeLabel,
+} from '@/lib/games';
 
 interface TournamentWizardProps {
     onClose: () => void;
     onComplete: (data: any) => Promise<string | void>;
 }
-
-// Best-of stage options, value = "last N rounds from the final" (works for any bracket size).
-const STAGE_LABELS: Record<string, string> = {
-    '0': 'None (BO1)',
-    '1': 'Grand Final',
-    '2': 'Semi-Finals',
-    '3': 'Quarter-Finals',
-    '4': 'Round of 16',
-};
-const BO3_STAGES = ['0', '1', '2', '3', '4'];
-const BO5_STAGES = ['0', '1', '2', '3'];
 
 export default function TournamentWizard({ onClose, onComplete }: TournamentWizardProps) {
     const [step, setStep] = useState(1);
@@ -35,19 +33,33 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
     });
     const [createdId, setCreatedId] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
     const selectedGame = SUPPORTED_GAMES.find(g => g.id === formData.game);
     const nextStep = () => setStep(s => Math.min(s + 1, 6));
     const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
+    // Stepping back and picking a different game can leave a team size the new game does not
+    // support - snap it back to that game's default so the server never sees a mismatch.
+    useEffect(() => {
+        if (!selectedGame) return;
+        if (selectedGame.teamSize.includes(Number.parseInt(formData.teamSize, 10))) return;
+        setFormData(prev => ({ ...prev, teamSize: String(defaultTeamSize(selectedGame)) }));
+    }, [selectedGame, formData.teamSize]);
+
     const handleSubmit = async () => {
         setIsSubmitting(true);
+        setSubmitError(null);
         try {
             const id = await onComplete(formData);
-            if (id) { 
-                setCreatedId(id); 
-                setStep(6); 
+            if (id) {
+                setCreatedId(id);
+                setStep(6);
             }
+        } catch (error) {
+            // The parent toasts as well, but keep the organizer on the review step with the reason.
+            setSubmitError(error instanceof Error ? error.message : 'Could not create the tournament. Try again.');
+            setStep(5);
         } finally {
             setIsSubmitting(false);
         }
@@ -101,7 +113,7 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                 {SUPPORTED_GAMES.map((game) => (
                                     <button 
                                         key={game.id}
-                                        onClick={() => { setFormData({ ...formData, game: game.id, teamSize: String(game.teamSize[game.teamSize.length - 1]) }); nextStep(); }}
+                                        onClick={() => { setFormData({ ...formData, game: game.id, teamSize: String(defaultTeamSize(game)) }); nextStep(); }}
                                         className={`group relative h-48 rounded-xl overflow-hidden border-2 transition-all text-left ${formData.game === game.id ? 'border-[var(--mds-action)] bg-[var(--mds-action)]/5' : 'border-[var(--mds-border)] hover:border-[var(--mds-action)]/40'}`}
                                     >
                                         <Image 
@@ -162,10 +174,7 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                 <div className="space-y-4">
                                     <label className="mds-uppercase-label opacity-40">Bracket Style</label>
                                     <div className="space-y-3">
-                                        {[
-                                            { id: 'SINGLE_ELIMINATION', name: 'Single Elimination', desc: 'Direct bracket exit on loss' },
-                                            { id: 'DOUBLE_ELIMINATION', name: 'Double Elimination', desc: 'Lower bracket second chance' },
-                                        ].map(f => (
+                                        {FORMAT_OPTIONS.map(f => (
                                             <button 
                                                 key={f.id} 
                                                 onClick={() => setFormData({ ...formData, format: f.id })}
@@ -187,7 +196,7 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                                 onClick={() => setFormData({ ...formData, teamSize: String(size) })}
                                                 className={`rounded-lg border-2 p-5 text-center transition-all ${formData.teamSize === String(size) ? 'border-[var(--mds-action)] bg-[var(--mds-action)]/10 shadow-[0_0_0_1px_var(--mds-action)]' : 'border-[var(--mds-border)] bg-[var(--mds-input)]/20 hover:border-[var(--mds-action)]/40'}`}
                                             >
-                                                <div className="font-bold text-lg uppercase tracking-tighter">{selectedGame.teamSizeLabels?.[size] || `${size}v${size}`}</div>
+                                                <div className="font-bold text-lg uppercase tracking-tighter">{teamSizeLabel(selectedGame, size)}</div>
                                             </button>
                                         ))}
                                     </div>
@@ -227,7 +236,7 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                             className="mds-input h-14 cursor-pointer appearance-none px-6 pr-10 font-bold uppercase tracking-tight"
                                         >
                                             {BO3_STAGES.map((v) => (
-                                                <option key={v} value={v}>{STAGE_LABELS[v]}</option>
+                                                <option key={v} value={String(v)}>{STAGE_LABELS[v]}</option>
                                             ))}
                                         </select>
                                         <div className="absolute top-1/2 right-4 -translate-y-1/2 pointer-events-none opacity-40">
@@ -245,7 +254,7 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                             className="mds-input h-14 cursor-pointer appearance-none px-6 pr-10 font-bold uppercase tracking-tight"
                                         >
                                             {BO5_STAGES.map((v) => (
-                                                <option key={v} value={v}>{STAGE_LABELS[v]}</option>
+                                                <option key={v} value={String(v)}>{STAGE_LABELS[v]}</option>
                                             ))}
                                         </select>
                                         <div className="absolute top-1/2 right-4 -translate-y-1/2 pointer-events-none opacity-40">
@@ -288,8 +297,8 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                     {[
                                         { label: 'Format Style', value: formData.format === 'SINGLE_ELIMINATION' ? 'Single' : 'Double' },
                                         { label: 'Decider Match', value: formData.hasThirdPlace ? 'Active' : 'N/A' },
-                                        { label: 'BO3 From', value: STAGE_LABELS[formData.bo3LastRounds] || 'None (BO1)' },
-                                        { label: 'BO5 From', value: STAGE_LABELS[formData.bo5LastRounds] || 'None (BO1)' },
+                                        { label: 'BO3 From', value: stageLabel(Number.parseInt(formData.bo3LastRounds, 10)) },
+                                        { label: 'BO5 From', value: stageLabel(Number.parseInt(formData.bo5LastRounds, 10)) },
                                     ].map(item => (
                                         <div key={item.label}>
                                             <p className="mds-uppercase-label text-[8px] opacity-40 mb-1.5">{item.label}</p>
@@ -298,6 +307,12 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                     ))}
                                 </div>
                             </div>
+                            {submitError && (
+                                <div className="flex items-start gap-3 p-5 rounded-xl border border-[var(--mds-red)]/30 bg-[var(--mds-red)]/5" role="alert">
+                                    <AlertTriangle size={16} className="text-[var(--mds-red)] mt-0.5 shrink-0" />
+                                    <p className="text-xs font-bold uppercase tracking-tight text-[var(--mds-red)] leading-relaxed">{submitError}</p>
+                                </div>
+                            )}
                         </div>
                     )}
 
