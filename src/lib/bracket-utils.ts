@@ -1,3 +1,7 @@
+// Relative (not "@/lib/...") on purpose: scripts/test-bracket-utils.ts loads this module
+// through ts-node, which is not configured with tsconfig path aliases.
+import { scoreLimitFor } from "./match-status";
+
 export type BracketSlot = "HOME" | "AWAY";
 
 export interface BracketMatch {
@@ -12,9 +16,10 @@ export interface BracketMatch {
     bestOf: number;
     scoreLimit: number;
     bracketType: string;
-    // Optional, additive: single-elimination leaves these undefined and keeps its existing
-    // behaviour (winner -> WINNERS, slot by matchOrder parity). Double-elimination sets them
-    // so winners/losers can be routed across WINNERS/LOSERS/GRAND_FINAL with explicit slots.
+    // Optional, additive. `*BracketType` is only set by double-elimination (routing across
+    // WINNERS/LOSERS/GRAND_FINAL); single-elimination leaves it undefined and defaults to
+    // WINNERS. The HOME/AWAY slots are now always explicit where a destination exists, in both
+    // generators — `slotField()` still falls back to matchOrder parity for legacy rows.
     nextMatchBracketType?: string;
     loserNextMatchBracketType?: string;
     nextMatchSlot?: BracketSlot;
@@ -40,9 +45,24 @@ export function bestOfForRound(
 ): { bestOf: number; limit: number } {
     const bo5 = opts.bo5LastRounds ?? 0;
     const bo3 = opts.bo3LastRounds ?? 0;
-    if (bo5 > 0 && round > totalRounds - bo5) return { bestOf: 5, limit: 3 };
-    if (bo3 > 0 && round > totalRounds - bo3) return { bestOf: 3, limit: 2 };
-    return { bestOf: 1, limit: 1 };
+    // `limit` is always derived from `bestOf` (never a second hand-written number) so a
+    // template's scoreLimit can't drift away from its best-of.
+    const bo = bo5 > 0 && round > totalRounds - bo5 ? 5 : bo3 > 0 && round > totalRounds - bo3 ? 3 : 1;
+    return { bestOf: bo, limit: scoreLimitFor(bo) };
+}
+
+/**
+ * Which team column a winner/loser lands in when it is pushed into its destination match.
+ * Mirrors the advancement rule in `api/matches/[id]` and the CS2 webhook: an explicit slot from
+ * the bracket template wins; `matchOrder` parity is only the fallback for older rows (and for
+ * templates that predate explicit slots).
+ */
+export function slotField(
+    slot: string | null | undefined,
+    matchOrder: number
+): 'homeTeamId' | 'awayTeamId' {
+    const isHome = slot ? slot === 'HOME' : matchOrder % 2 === 0;
+    return isHome ? 'homeTeamId' : 'awayTeamId';
 }
 
 export function generateSingleElimination(
@@ -69,13 +89,20 @@ export function generateSingleElimination(
             const nextRound = r + 1;
             const nextOrder = Math.floor(m / 2);
 
-            let loserNextMatchRound = null;
-            let loserNextMatchOrder = null;
+            let loserNextMatchRound: number | null = null;
+            let loserNextMatchOrder: number | null = null;
+            let loserNextMatchSlot: BracketSlot | undefined;
+            let loserNextMatchBracketType: string | undefined;
 
-            // Link semi-finals to 3rd place match if enabled
+            // Link semi-finals to 3rd place match if enabled. Destination and slot are both
+            // explicit: the round has exactly two matches, so the first semi's loser is HOME and
+            // the second's AWAY. (Leaving the slot unset used to work only by matchOrder-parity
+            // coincidence — two losers aimed at the same match with no stated columns.)
             if (options.hasThirdPlace && r === rounds - 1) {
                 loserNextMatchRound = rounds; // Place 3rd place match in the final column logically
                 loserNextMatchOrder = 1; // Final is order 0, Third Place is order 1
+                loserNextMatchSlot = m === 0 ? 'HOME' : 'AWAY';
+                loserNextMatchBracketType = 'THIRD_PLACE';
             }
 
             matches.push({
@@ -85,8 +112,13 @@ export function generateSingleElimination(
                 awayTeamId: null,
                 nextMatchRound: isFinal ? null : nextRound,
                 nextMatchOrder: isFinal ? null : nextOrder,
+                // Explicit winner slot (same result the old parity fallback produced) so the
+                // advancement + bye-propagation code never has to guess.
+                nextMatchSlot: isFinal ? undefined : (m % 2 === 0 ? 'HOME' : 'AWAY'),
                 loserNextMatchRound,
                 loserNextMatchOrder,
+                loserNextMatchSlot,
+                loserNextMatchBracketType,
                 bestOf: format.bestOf,
                 scoreLimit: format.limit,
                 bracketType: 'WINNERS'
@@ -256,7 +288,7 @@ export function generateDoubleElimination(
                 homeTeamId: null,
                 awayTeamId: null,
                 bestOf: 1,
-                scoreLimit: 1,
+                scoreLimit: scoreLimitFor(1),
                 bracketType: "LOSERS",
                 loserNextMatchRound: null,
                 loserNextMatchOrder: null,

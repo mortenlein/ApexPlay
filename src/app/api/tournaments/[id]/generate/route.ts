@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { generateSingleElimination, generateDoubleElimination } from '@/lib/bracket-utils';
+import { generateSingleElimination, generateDoubleElimination, slotField } from '@/lib/bracket-utils';
+import { isDone, scoreLimitFor } from '@/lib/match-status';
 import { announceTournamentUpdate } from '@/lib/discord';
 import { requireAdminApi } from '@/lib/route-auth';
 import { buildActorLabel, recordAudit } from '@/lib/audit';
@@ -74,10 +75,12 @@ export async function POST(request: Request, { params }: { params: { id: string 
                         matchOrder: m.matchOrder,
                         homeTeamId: m.homeTeamId,
                         awayTeamId: m.awayTeamId,
-                        status: isBye ? 'FINISHED' : 'PENDING',
+                        // Byes are finished on creation. COMPLETED is the canonical vocabulary
+                        // (the shared DONE set still tolerates historical 'FINISHED' rows).
+                        status: isBye ? 'COMPLETED' : 'PENDING',
                         winnerId: isBye ? (m.homeTeamId || m.awayTeamId) : null,
                         bestOf: m.bestOf,
-                        scoreLimit: m.scoreLimit,
+                        scoreLimit: m.scoreLimit ?? scoreLimitFor(m.bestOf),
                         bracketType: m.bracketType,
                     },
                 });
@@ -131,18 +134,19 @@ export async function POST(request: Request, { params }: { params: { id: string 
             })
         );
 
-        // 5.5. Propagate Bye winners to the next round
+        // 5.5. Propagate Bye winners to the next round. The destination column comes from the
+        //      `nextMatchSlot` written in step 5 (matchOrder parity is only the legacy fallback),
+        //      so a bye lands in the same slot the advancement code would have used.
         const finalMatches = await prisma.match.findMany({ where: { tournamentId } });
         await prisma.$transaction(
-            finalMatches.filter(m => m.status === 'FINISHED' && m.winnerId && m.nextMatchId).map(m => {
-                const isHome = m.matchOrder % 2 === 0;
-                return prisma.match.update({
-                    where: { id: m.nextMatchId! },
-                    data: {
-                        [isHome ? 'homeTeamId' : 'awayTeamId']: m.winnerId
-                    }
-                });
-            })
+            finalMatches
+                .filter((m) => isDone(m.status) && m.winnerId && m.nextMatchId)
+                .map((m) =>
+                    prisma.match.update({
+                        where: { id: m.nextMatchId! },
+                        data: { [slotField(m.nextMatchSlot, m.matchOrder)]: m.winnerId },
+                    })
+                )
         );
 
         // 6. One summary announcement (per-match "ready" pings happen later when matches start).
