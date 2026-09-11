@@ -3,6 +3,7 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { getQueryClient } from "@/lib/query-client";
 import TournamentsOverviewClient from "@/components/TournamentsOverviewClient";
 import prisma from "@/lib/prisma";
+import { getTournamentStage } from "@/lib/tournament-stage";
 import { Loader2 } from "lucide-react";
 
 export default async function TournamentsOverview() {
@@ -12,8 +13,10 @@ export default async function TournamentsOverview() {
   await queryClient.prefetchQuery({
     queryKey: ['tournaments'],
     queryFn: async () => {
-      // Direct prisma fetch for the server-side prefetch
-      const tournaments = await prisma.tournament.findMany({
+      // Direct prisma fetch for the server-side prefetch. This has to mirror
+      // GET /api/tournaments (the client refetches under the same query key), so the
+      // lifecycle `stage` is derived here the same way the route derives it.
+      const rows = await prisma.tournament.findMany({
           orderBy: { createdAt: 'desc' },
           select: {
               id: true,
@@ -21,9 +24,15 @@ export default async function TournamentsOverview() {
               game: true,
               teamSize: true,
               format: true,
-              createdAt: true
+              createdAt: true,
+              teams: { select: { id: true } },
+              matches: { select: { status: true } }
           }
       });
+      const tournaments = rows.map(({ teams, matches, ...tournament }) => ({
+          ...tournament,
+          stage: getTournamentStage(teams, matches),
+      }));
       return { tournaments };
     }
   });

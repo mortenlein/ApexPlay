@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { SUPPORTED_GAMES, coerceLastRounds, isTournamentFormat } from '@/lib/games';
 import { requireAdminApi } from '@/lib/route-auth';
+import { getTournamentStage } from '@/lib/tournament-stage';
 import { buildActorLabel, recordAudit } from '@/lib/audit';
 
 export async function GET(request: NextRequest) {
@@ -11,7 +12,10 @@ export async function GET(request: NextRequest) {
     const fetchAll = limitParam === 'all';
     const limit = fetchAll ? undefined : parseInt(limitParam, 10);
 
-    const tournaments = await prisma.tournament.findMany({
+    // `teams`/`matches` are selected down to the two columns `getTournamentStage` reads (an id
+    // and a status) purely so the stage can be derived here — they are stripped from the
+    // response below, so the directory payload stays a list of cards, not a bracket dump.
+    const rows = await prisma.tournament.findMany({
         take: limit,
         skip: cursor ? 1 : 0,
         cursor: cursor && !fetchAll ? { id: cursor } : undefined,
@@ -26,12 +30,19 @@ export async function GET(request: NextRequest) {
             updatedAt: true,
             rosterLocked: true,
             steamSignupEnabled: true,
+            teams: { select: { id: true } },
+            matches: { select: { status: true } },
             _count: {
                 select: { teams: true, matches: true }
             }
         },
         orderBy: { createdAt: 'desc' },
     });
+
+    const tournaments = rows.map(({ teams, matches, ...tournament }) => ({
+        ...tournament,
+        stage: getTournamentStage(teams, matches),
+    }));
 
     const nextCursor = !fetchAll && limit && tournaments.length === limit ? tournaments[tournaments.length - 1].id : null;
 

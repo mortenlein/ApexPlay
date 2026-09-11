@@ -8,7 +8,17 @@ import Link from "next/link";
 import { getGameMetadata } from "@/lib/games";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { clientApi } from "@/lib/client-api";
+import { STAGE_META, type TournamentStage } from "@/lib/tournament-stage";
 import { Card, Badge, EmptyState } from "@/components/ui";
+
+// Same tone map the landing page uses for its stage badges (src/app/page.tsx), so a
+// tournament reads identically on both boards.
+const STAGE_TONE: Record<TournamentStage, "neutral" | "info" | "live" | "done"> = {
+  DRAFT: "neutral",
+  REGISTRATION: "info",
+  LIVE: "live",
+  COMPLETE: "done",
+};
 
 export default function TournamentsOverviewClient() {
   const searchParams = useSearchParams();
@@ -85,6 +95,8 @@ export default function TournamentsOverviewClient() {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filtered.map((t: any, index: number) => {
               const gameMeta = getGameMetadata(t.game);
+              // `stage` is derived server-side (GET /api/tournaments and the SSR prefetch).
+              const stage: TournamentStage | null = t.stage && t.stage in STAGE_META ? t.stage : null;
               return (
                 <Link key={t.id} href={`/tournaments/${t.id}`}>
                   <Card interactive className="flex h-full flex-col overflow-hidden p-0">
@@ -104,6 +116,11 @@ export default function TournamentsOverviewClient() {
                       <div className="absolute left-4 top-4">
                         <Badge tone="neutral">{gameMeta?.name || t.game}</Badge>
                       </div>
+                      {stage && (
+                        <div className="absolute right-4 top-4">
+                          <Badge tone={STAGE_TONE[stage]}>{STAGE_META[stage].label}</Badge>
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-1 flex-col justify-between gap-5 p-5">
                       <div>
