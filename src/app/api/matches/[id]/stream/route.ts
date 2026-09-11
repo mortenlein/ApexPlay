@@ -65,6 +65,7 @@ async function getMatchPayload(matchId: string) {
             homeTeamId: true,
             awayTeamId: true,
             mapScores: true,
+            resultType: true,
             serverIp: true,
             serverPort: true,
             serverPassword: true,

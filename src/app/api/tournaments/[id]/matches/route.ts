@@ -56,6 +56,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
                 homeTeamId: true,
                 awayTeamId: true,
                 mapScores: true,
+                resultType: true,
                 homeTeam: {
                     select: {
                         id: true,

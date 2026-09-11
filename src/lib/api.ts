@@ -196,6 +196,7 @@ const matchSelect = {
   homeTeamId: true,
   awayTeamId: true,
   mapScores: true,
+  resultType: true,
   homeTeam: {
     select: {
       id: true,

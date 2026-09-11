@@ -54,7 +54,7 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
   return (
     <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-[var(--mds-overlay)] backdrop-blur-md" onClick={onClose}></div>
-      <div className="mds-card w-full max-w-3xl p-0 relative z-10 flex flex-col overflow-hidden shadow-2xl scale-in-center duration-300 border-[var(--mds-action)]/20 hover:border-[var(--mds-action)]/40 transition-all">
+      <div className="mds-card w-full max-w-3xl max-h-[92vh] p-0 relative z-10 flex flex-col overflow-hidden shadow-2xl scale-in-center duration-300 border-[var(--mds-action)]/20 hover:border-[var(--mds-action)]/40 transition-all">
         <header className="px-10 py-10 border-b border-[var(--mds-border)] bg-[var(--mds-input)]/20 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-6">
             <div className="h-14 w-14 rounded-xl bg-[var(--mds-red)]/10 text-[var(--mds-red)] border border-[var(--mds-red)]/20 flex items-center justify-center shadow-lg">
@@ -79,7 +79,7 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
           </button>
         </header>
         
-        <form onSubmit={onSaveMatch} className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
+        <form id="edit-match-form" onSubmit={onSaveMatch} className="flex-1 min-h-0 overflow-y-auto p-10 space-y-8 custom-scrollbar">
           {/* STATUS SELECTOR */}
           <div className="space-y-4">
             <label className="mds-uppercase-label">Match Status</label>
@@ -251,17 +251,20 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
             </p>
           </div>
 
-          <div className="pt-4">
+        </form>
+
+        {/* Save lives outside the scroll area so it is always reachable, whatever the window height. */}
+        <footer className="px-10 py-5 border-t border-[var(--mds-border)] bg-[var(--mds-input)]/10">
             <button
                 type="submit"
+                form="edit-match-form"
                 disabled={isSaving}
                 className="mds-btn-primary w-full h-14 text-[11px] font-black uppercase tracking-[0.15em] shadow-lg shadow-[var(--mds-action)]/20"
             >
                 {isSaving ? <RefreshCw className="animate-spin" size={18} /> : <Save size={18} />}
                 Update Match Data
             </button>
-          </div>
-        </form>
+        </footer>
       </div>
     </div>
   );
