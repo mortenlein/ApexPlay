@@ -160,3 +160,133 @@ export async function createCallableMatch(options: { homeUserId?: string; awayUs
 
   return { tournament, home, away, match };
 }
+
+// ---------------------------------------------------------------------------
+// Bracket-engine helpers (appended: the helpers above this line are shared with
+// the other LAN suites, so the bracket-* specs only ever add to the bottom).
+//
+// The import lives down here on purpose — `import type` is hoisted and costs
+// nothing at runtime, and keeping it beside its users makes this block a pure
+// append that cannot disturb what the other suites read.
+// ---------------------------------------------------------------------------
+import type { APIRequestContext } from '@playwright/test';
+
+type MatchRow = Awaited<ReturnType<typeof readMatch>>;
+
+/** Matches that are over. Mirrors `DONE_STATUSES` in src/lib/match-status.ts. */
+const DONE = ['COMPLETED', 'FINISHED'];
+
+/** Win condition for a best-of series — the same rule as `scoreLimitFor`. */
+export const seriesLimit = (bestOf: number | null | undefined) =>
+  Math.floor(Math.max(1, bestOf ?? 1) / 2) + 1;
+
+/** True for a bye row: exactly one team, decided at generation time. */
+export const isBye = (match: { homeTeamId: string | null; awayTeamId: string | null }) =>
+  Boolean(match.homeTeamId) !== Boolean(match.awayTeamId);
+
+export const isDoneRow = (match: { status: string | null }) => DONE.includes((match.status ?? '').toUpperCase());
+
+/** The column a winner/loser lands in, as the route resolves it (explicit slot, else parity). */
+export const slotColumn = (slot: string | null | undefined, matchOrder: number): 'homeTeamId' | 'awayTeamId' =>
+  (slot ? slot === 'HOME' : matchOrder % 2 === 0) ? 'homeTeamId' : 'awayTeamId';
+
+export interface BracketSeedOptions extends TournamentOptions {
+  /** How many of the final rounds are BO5 (the one column `createTournament` doesn't take). */
+  bo5LastRounds?: number | null;
+  /** How many seeded teams to create (seed 1..teams). */
+  teams: number;
+}
+
+/**
+ * A generated bracket, ready to play: tournament + `teams` seeded teams + a real
+ * `POST /generate` through the API, so the routing columns are the ones the product writes.
+ * Throws with the response body when generation is refused, which fails the test at the call
+ * site instead of three assertions later.
+ */
+export async function seedAndGenerate(api: APIRequestContext, options: BracketSeedOptions) {
+  const { teams: teamCount, bo5LastRounds, ...tournamentOptions } = options;
+  const tournament = await createTournament(tournamentOptions);
+  if (bo5LastRounds !== undefined && bo5LastRounds !== null) {
+    await prisma.tournament.update({ where: { id: tournament.id }, data: { bo5LastRounds } });
+  }
+  const teams = await createSeededTeams(tournament.id, teamCount);
+
+  const res = await api.post(`/api/tournaments/${tournament.id}/generate`, { data: {} });
+  if (res.status() !== 200) {
+    throw new Error(`seedAndGenerate: /generate returned ${res.status()} — ${await res.text()}`);
+  }
+
+  return { tournamentId: tournament.id, tournament, teams, matches: await readMatches(tournament.id) };
+}
+
+/** The seeded team wearing `seed`. */
+export const bySeed = <T extends { seed: number | null }>(teams: T[], seed: number): T => {
+  const team = teams.find((t) => t.seed === seed);
+  if (!team) throw new Error(`bySeed(${seed}): no such team`);
+  return team;
+};
+
+/**
+ * Score a match to its win condition through the real route, so `HOME`/`AWAY` wins it.
+ * The stored `bestOf` is read first: a BO5 needs 3 maps where a BO1 needs 1, and a hard-coded
+ * scoreline would quietly stop completing matches the moment a round's format changed.
+ */
+export async function complete(api: APIRequestContext, matchId: string, winner: 'HOME' | 'AWAY' = 'HOME') {
+  const match = await readMatch(matchId);
+  const limit = seriesLimit(match.bestOf);
+  const data = winner === 'HOME' ? { homeScore: limit, awayScore: 0 } : { homeScore: 0, awayScore: limit };
+  const res = await api.post(`/api/matches/${matchId}`, { data });
+  if (res.status() !== 200) {
+    throw new Error(`complete(${matchId.slice(0, 8)}, ${winner}): ${res.status()} — ${await res.text()}`);
+  }
+  return (await res.json()) as MatchRow & { winnerId: string | null };
+}
+
+/** Put a completed match back on the floor (the "un-advance" path). */
+export async function reopen(api: APIRequestContext, matchId: string, status = 'READY') {
+  return api.post(`/api/matches/${matchId}`, { data: { status } });
+}
+
+export interface PlayThroughOptions {
+  /** Which side wins a given match. Default: HOME, so the higher seed of each pairing survives. */
+  winner?: (match: MatchRow) => 'HOME' | 'AWAY';
+  /** Safety valve: how many passes before we call the bracket stuck. */
+  maxPasses?: number;
+}
+
+/**
+ * Play a whole bracket out. Each pass completes every match that is currently playable (not
+ * done, both teams known); finishing those fills the next slots, so the loop walks any shape —
+ * single elimination with byes, a third-place match, or a double-elim bracket whose losers side
+ * only becomes playable as the winners side drops teams into it.
+ *
+ * Returns one entry per completed match: its pre-state (routing columns included) and the row
+ * the route wrote back.
+ */
+export async function playThrough(
+  api: APIRequestContext,
+  tournamentId: string,
+  options: PlayThroughOptions = {}
+) {
+  const played: { before: MatchRow; after: MatchRow & { winnerId: string | null } }[] = [];
+
+  for (let pass = 0; pass < (options.maxPasses ?? 40); pass++) {
+    const playable = (await readMatches(tournamentId))
+      .filter((m) => !isDoneRow(m) && m.homeTeamId && m.awayTeamId)
+      .sort((a, b) => a.round - b.round || a.matchOrder - b.matchOrder);
+
+    if (playable.length === 0) return played;
+
+    for (const match of playable) {
+      const after = await complete(api, match.id, options.winner?.(match) ?? 'HOME');
+      played.push({ before: match, after });
+    }
+  }
+
+  throw new Error(`playThrough(${tournamentId}): bracket never resolved`);
+}
+
+/** Give an existing team's players a real user, so `/api/me/queue` can find them. */
+export async function assignTeamToUser(teamId: string, userId: string) {
+  await prisma.player.updateMany({ where: { teamId }, data: { userId } });
+}
