@@ -26,6 +26,20 @@ interface TournamentManageClientProps {
     tournamentId: string;
 }
 
+const EMPTY_MATCH_FORM = { homeScore: 0, awayScore: 0, bestOf: 1, status: 'READY', mapScores: [] as any[] };
+
+/**
+ * Form state for the match modal. `scoreLimit` is deliberately absent — the server derives it
+ * from bestOf. Legacy WAITING_FOR_PLAYERS rows are shown as READY ("Called").
+ */
+const buildMatchForm = (match: any) => ({
+    homeScore: match.homeScore || 0,
+    awayScore: match.awayScore || 0,
+    bestOf: match.bestOf || 1,
+    status: match.status === 'WAITING_FOR_PLAYERS' ? 'READY' : (match.status || 'READY'),
+    mapScores: typeof match.mapScores === 'string' ? JSON.parse(match.mapScores) : (Array.isArray(match.mapScores) ? match.mapScores : []),
+});
+
 export default function TournamentManageClient({ tournamentId }: TournamentManageClientProps) {
     usePerformanceBudget('TournamentManageClient', 250);
     const queryClient = useQueryClient();
@@ -44,7 +58,7 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
 
     // Modal state
     const [editingMatch, setEditingMatch] = useState<any>(null);
-    const [matchForm, setMatchForm] = useState({ homeScore: 0, awayScore: 0, bestOf: 1, status: 'READY', mapScores: [] });
+    const [matchForm, setMatchForm] = useState(EMPTY_MATCH_FORM);
 
     const updateActiveTab = (tab: string) => {
         setActiveTab(tab);
@@ -223,25 +237,42 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
         onError: (error) => showMutationError(error, 'Could not save seeds'),
     });
 
+    // Generating locks the roster, so every regeneration has to pass overrideLock or the second
+    // call is refused by the lock guard (423).
     const generateMatchesMutation = useMutation({
-        mutationFn: async () => {
+        mutationFn: async ({ overrideLock }: { overrideLock: boolean }) => {
             setGenerating(true);
             try {
                 return await apiRequest(`/api/tournaments/${tournamentId}/generate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({}),
+                    body: JSON.stringify(overrideLock ? { overrideLock: true } : {}),
                 });
             } finally {
                 setGenerating(false);
             }
         },
-        onSuccess: () => {
-            toast.success(matches.length > 0 ? 'Bracket regenerated' : 'Bracket generated', 'Match structure is ready for staff and players.');
+        onSuccess: (_data, variables) => {
+            toast.success(variables.overrideLock ? 'Bracket regenerated' : 'Bracket generated', 'Match structure is ready for staff and players.');
             void invalidateWorkspace();
         },
         onError: (error) => showMutationError(error, 'Could not generate bracket'),
     });
+
+    /**
+     * `alreadyConfirmed` is for the call sites that put up their own (accurate) dialog first,
+     * so staff are never asked twice.
+     */
+    const handleGenerateMatches = (alreadyConfirmed = false) => {
+        const regenerating = matches.length > 0;
+        if (!alreadyConfirmed) {
+            const message = regenerating
+                ? 'This will delete all existing matches and results and rebuild the bracket. Continue?'
+                : 'Generate the bracket now?\n\nThis creates the first round from the seeded teams and locks roster edits.';
+            if (!window.confirm(message)) return;
+        }
+        generateMatchesMutation.mutate({ overrideLock: regenerating });
+    };
 
     const saveMatchMutation = useMutation({
         mutationFn: async ({ id, ...payload }: any) =>
@@ -258,7 +289,16 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
             toast.success('Match saved', 'Scores and match status were updated.');
             void invalidateWorkspace();
         },
-        onError: (error) => showMutationError(error, 'Could not save match'),
+        onError: (error) => {
+            // Both guards on this route answer 409 — the optimistic-concurrency check and the
+            // "downstream match already started" refusal — so show the server's own wording.
+            if (error instanceof ApiError && error.status === 409) {
+                toast.error('Match not saved', error.message);
+                void invalidateWorkspace();
+                return;
+            }
+            showMutationError(error, 'Could not save match');
+        },
     });
 
     const loadMatchMutation = useMutation({
@@ -327,7 +367,7 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
         setDraftSeeds({});
     };
 
-    const handleAnnounceDiscord = async (match: any, type: 'START' | 'RESULT', silent = false) => {
+    const handleAnnounceDiscord = async (match: any, type: 'START' | 'RESULT') => {
         try {
             await apiRequest(`/api/discord/announce`, {
                 method: 'POST',
@@ -338,14 +378,10 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
                     type,
                 }),
             });
-            if (!silent) {
-                toast.success('Announcement sent', 'The update was written to the notification stream.');
-            }
+            toast.success('Announcement sent', 'The update was written to the notification stream.');
             void invalidateWorkspace();
         } catch (error) {
-            if (!silent) {
-                showMutationError(error, 'Could not send match update');
-            }
+            showMutationError(error, 'Could not send match update');
             throw error;
         }
     };
@@ -480,9 +516,7 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
                                     if (stage === 'DRAFT') {
                                         updateActiveTab('participants');
                                     } else if (stage === 'REGISTRATION') {
-                                        if (window.confirm('Generate the bracket now?\n\nThis creates the first round from the seeded teams and locks roster edits.')) {
-                                            generateMatchesMutation.mutate();
-                                        }
+                                        handleGenerateMatches();
                                     } else if (stage === 'LIVE') {
                                         updateActiveTab('control');
                                     } else {
@@ -498,13 +532,7 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
                                     matches={matches}
                                     onOpenMatchModal={(m) => {
                                         setEditingMatch(m);
-                                        setMatchForm({
-                                            homeScore: m.homeScore || 0,
-                                            awayScore: m.awayScore || 0,
-                                            bestOf: m.bestOf || 1,
-                                            status: m.status || 'READY',
-                                            mapScores: typeof m.mapScores === 'string' ? JSON.parse(m.mapScores) : (Array.isArray(m.mapScores) ? m.mapScores : []),
-                                        });
+                                        setMatchForm(buildMatchForm(m));
                                     }}
                                 />
                             )}
@@ -516,18 +544,12 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
                                     matches={matches}
                                     activity={activity}
                                     notifications={notifications}
-                                    onGenerateMatches={() => generateMatchesMutation.mutate()}
+                                    onGenerateMatches={() => handleGenerateMatches(true)}
                                     generating={generating}
                                     onCopyPublicLink={handleCopyPublicLink}
                                     onOpenMatchModal={(m) => {
                                         setEditingMatch(m);
-                                        setMatchForm({ 
-                                            homeScore: m.homeScore || 0, 
-                                            awayScore: m.awayScore || 0, 
-                                            bestOf: m.bestOf || 1,
-                                            status: m.status || 'READY',
-                                            mapScores: typeof m.mapScores === 'string' ? JSON.parse(m.mapScores) : (Array.isArray(m.mapScores) ? m.mapScores : [])
-                                        });
+                                        setMatchForm(buildMatchForm(m));
 
                                     }}
                                     onSetTab={updateActiveTab}
@@ -572,17 +594,11 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
                             {(activeTab === 'matches' || activeTab === 'scoreboard') && (
                                 <ManageMatches 
                                     matches={matches}
-                                    onGenerateMatches={() => generateMatchesMutation.mutate()}
+                                    onGenerateMatches={() => handleGenerateMatches(true)}
                                     generating={generating}
                                     onOpenMatchModal={(m) => {
                                         setEditingMatch(m);
-                                        setMatchForm({ 
-                                            homeScore: m.homeScore || 0, 
-                                            awayScore: m.awayScore || 0, 
-                                            bestOf: m.bestOf || 1,
-                                            status: m.status || 'READY',
-                                            mapScores: typeof m.mapScores === 'string' ? JSON.parse(m.mapScores) : (Array.isArray(m.mapScores) ? m.mapScores : [])
-                                        });
+                                        setMatchForm(buildMatchForm(m));
 
                                     }}
                                     teamsCount={teams.length}
@@ -638,11 +654,21 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
                         e.preventDefault();
                         saveMatchMutation.mutate({ id: editingMatch.id, ...matchForm });
                     }}
+                    onForfeit={(side) => {
+                        // Scores are left out on purpose: the server fills in the walkover
+                        // scoreline (scoreLimit : 0) in the winner's favour.
+                        saveMatchMutation.mutate({
+                            id: editingMatch.id,
+                            bestOf: matchForm.bestOf,
+                            status: matchForm.status,
+                            forfeit: side,
+                        });
+                    }}
                     onAnnounceDiscord={handleAnnounceDiscord}
                     onLoadMatch={async (matchId) => {
                         try {
                             const result: any = await loadMatchMutation.mutateAsync(matchId);
-                            toast.success('Match ready', result.message || 'Match is ready for players.');
+                            toast.success('Match called', result.message || 'Both teams were notified.');
                         } catch (error: any) {
                             showMutationError(error, 'Could not start match');
                         }

@@ -126,14 +126,26 @@ export default function AdminDashboardClient() {
     });
   };
 
-  const bulkSchedule = async (tournamentId: string, teamsCount: number) => {
+  const bulkSchedule = async (tournamentId: string, teamsCount: number, matchesCount: number) => {
     if (teamsCount < 2) {
       toast.info('Not enough teams', 'At least two teams are required to generate rounds.');
       return;
     }
 
-    await apiRequest(`/api/tournaments/${tournamentId}/generate`, { method: 'POST' });
-    toast.success('Rounds scheduled', 'Bracket rounds were generated for this tournament.');
+    // Generating locks the roster, so rebuilding an existing bracket has to pass overrideLock
+    // or the lock guard refuses it.
+    const regenerating = matchesCount > 0;
+    await apiRequest(`/api/tournaments/${tournamentId}/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(regenerating ? { overrideLock: true } : {}),
+    });
+    toast.success(
+      regenerating ? 'Bracket regenerated' : 'Bracket generated',
+      regenerating
+        ? 'Existing matches were replaced with a fresh bracket.'
+        : 'Bracket rounds were generated for this tournament.'
+    );
   };
 
   const bulkAnnounce = async (tournamentId: string) => {
@@ -323,9 +335,12 @@ export default function AdminDashboardClient() {
                       <button
                         type="button"
                         onClick={() => {
-                          const confirmed = window.confirm(`Schedule rounds for ${tournament.name} now?\n\nImpact:\n- Existing bracket structure may be regenerated.`);
+                          const hasMatches = (tournament._count?.matches || 0) > 0;
+                          const confirmed = window.confirm(hasMatches
+                            ? 'This will delete all existing matches and results and rebuild the bracket. Continue?'
+                            : `Schedule rounds for ${tournament.name} now?\n\nImpact:\n- The first round is created from the seeded teams and roster edits are locked.`);
                           if (!confirmed) return;
-                          void bulkSchedule(tournament.id, tournament._count?.teams || 0).catch((error) => {
+                          void bulkSchedule(tournament.id, tournament._count?.teams || 0, tournament._count?.matches || 0).catch((error) => {
                             toast.error('Scheduling failed', error instanceof Error ? error.message : 'Unable to schedule rounds');
                           });
                         }}
