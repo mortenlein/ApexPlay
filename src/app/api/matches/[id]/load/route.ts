@@ -12,7 +12,8 @@ import { buildActorLabel, recordAudit } from '@/lib/audit';
  * it (Discord + seating). Scores are updated by an organizer, or by inbound CS2/EON telemetry
  * on /api/webhooks/cs2. (The old DatHost/MatchZy server-orchestration path has been removed.)
  */
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     const unauthorized = await requireAdminApi();
     if (unauthorized) return unauthorized;
 

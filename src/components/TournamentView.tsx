@@ -30,7 +30,7 @@ interface TournamentViewProps {
 }
 
 function useModalA11y(
-  modalRef: React.RefObject<HTMLDivElement>,
+  modalRef: React.RefObject<HTMLDivElement | null>,
   open: boolean,
   onClose: () => void,
   lastFocusedRef: React.MutableRefObject<HTMLElement | null>

@@ -5,14 +5,15 @@ import { announceSignup } from '@/lib/discord';
 import { requireSignedInUser } from '@/lib/route-auth';
 import { recordAudit } from '@/lib/audit';
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     const session = await requireSignedInUser();
     if (!session || !session.user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id: tournamentId } = params;
-    
+
     // Fetch tournament to get its name
     const tournament = await prisma.tournament.findUnique({
         where: { id: tournamentId },

@@ -4,7 +4,8 @@ import { requireAdminApi } from '@/lib/route-auth';
 import { buildActorLabel, recordAudit } from '@/lib/audit';
 import { conflictResponse, hasTimestampConflict, normalizeExpectedUpdatedAt } from '@/lib/mutation-guards';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     try {
         const tournament = await prisma.tournament.findUnique({
             where: { id: params.id },
@@ -26,7 +27,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
     }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     const unauthorized = await requireAdminApi();
     if (unauthorized) return unauthorized;
 
@@ -86,7 +88,8 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     const unauthorized = await requireAdminApi();
     if (unauthorized) return unauthorized;
 

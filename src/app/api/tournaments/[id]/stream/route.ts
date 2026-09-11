@@ -57,7 +57,8 @@ async function getTournamentMatches(tournamentId: string) {
  * SSE endpoint: GET /api/tournaments/{id}/stream
  * Streams all match updates for a tournament in real-time.
  */
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     const tournamentId = params.id;
 
     const stream = new ReadableStream({

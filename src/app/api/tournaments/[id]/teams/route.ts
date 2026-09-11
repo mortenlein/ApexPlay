@@ -6,7 +6,8 @@ import { buildTeamsCsv, parseCsvRows } from '@/lib/csv';
 import { buildActorLabel, recordAudit } from '@/lib/audit';
 import { lockedResponse } from '@/lib/mutation-guards';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     const teams = await prisma.team.findMany({
         where: { tournamentId: params.id },
         select: {
@@ -54,7 +55,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
     return NextResponse.json(teams);
 }
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     try {
         const body = await request.json();
         const tournament = await prisma.tournament.findUnique({

@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, use } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { clientApi } from '@/lib/client-api';
 
-export default function RosterOverlay({ params }: { params: { id: string } }) {
+export default function RosterOverlay(props: { params: Promise<{ id: string }> }) {
+    const params = use(props.params);
     const searchParams = useSearchParams();
     const chromaKey = searchParams.get('chroma') || 'transparent';
 

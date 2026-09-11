@@ -5,7 +5,8 @@ import { requireAdminApi } from '@/lib/route-auth';
 import { buildActorLabel, recordAudit } from '@/lib/audit';
 
 /** GET — current EON bridge status (admin). */
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const unauthorized = await requireAdminApi();
   if (unauthorized) return unauthorized;
 
@@ -22,7 +23,8 @@ export async function GET(_request: Request, { params }: { params: { id: string 
 }
 
 /** POST { action: 'enable' | 'disable' | 'rotate' } — mint/clear the bridge token (admin). */
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const unauthorized = await requireAdminApi();
   if (unauthorized) return unauthorized;
 

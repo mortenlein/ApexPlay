@@ -6,7 +6,8 @@ import TournamentView from "@/components/TournamentView";
 import TournamentSkeleton from "@/components/TournamentSkeleton";
 import { notFound } from "next/navigation";
 
-export default async function TournamentPage({ params }: { params: { id: string } }) {
+export default async function TournamentPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const queryClient = getQueryClient();
   const tournament = await getTournament(params.id);
 

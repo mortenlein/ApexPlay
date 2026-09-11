@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useEffect, useState, useCallback } from 'react';
+import React, { useMemo, useEffect, useState, useCallback, use } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ReactFlow, { Background, Edge, Node, Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -115,7 +115,8 @@ const StreamMatchNode = ({ data }: any) => {
     );
 };
 
-export default function StreamOverlay({ params }: { params: { id: string } }) {
+export default function StreamOverlay(props: { params: Promise<{ id: string }> }) {
+    const params = use(props.params);
     const searchParams = useSearchParams();
     const compact = searchParams.get('compact') === 'true';
     const chromaKey = searchParams.get('chroma') || 'transparent';

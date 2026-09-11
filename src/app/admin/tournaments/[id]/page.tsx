@@ -8,7 +8,8 @@ import prisma from "@/lib/prisma";
 import { requireAdminPage } from "@/lib/route-auth";
 import { notFound } from "next/navigation";
 
-export default async function AdminTournamentManagePage({ params }: { params: { id: string } }) {
+export default async function AdminTournamentManagePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   await requireAdminPage(`/admin/tournaments/${params.id}`);
 
   const queryClient = getQueryClient();

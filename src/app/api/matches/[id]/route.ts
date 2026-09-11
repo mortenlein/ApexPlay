@@ -7,7 +7,8 @@ import { buildActorLabel, recordAudit } from '@/lib/audit';
 import { notifyMatchReady } from '@/lib/notify';
 import { conflictResponse, hasTimestampConflict, normalizeExpectedUpdatedAt } from '@/lib/mutation-guards';
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     const unauthorized = await requireAdminApi();
     if (unauthorized) return unauthorized;
 

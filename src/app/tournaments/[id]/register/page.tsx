@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import Image from 'next/image';
 import { Trophy, Users, ShieldCheck, ArrowRight, CheckCircle2, AlertCircle, Loader2, Gamepad2, Upload, Share2, Copy } from 'lucide-react';
@@ -13,7 +13,8 @@ import { RouteNotFoundState } from '@/components/RouteStates';
 
 const PUBLIC_NAV = [{ href: '/tournaments', label: 'Tournaments' }];
 
-export default function RegisterPage({ params }: { params: { id: string } }) {
+export default function RegisterPage(props: { params: Promise<{ id: string }> }) {
+    const params = use(props.params);
     const { data: session, status } = useSession();
     const searchParams = useSearchParams();
     const inviteCode = searchParams.get('invite');

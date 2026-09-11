@@ -54,7 +54,8 @@ async function getMatchPayload(matchId: string) {
  * SSE endpoint: GET /api/matches/{id}/stream
  * Streams updates for a single match in real-time.
  */
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     const matchId = params.id;
 
     const stream = new ReadableStream({

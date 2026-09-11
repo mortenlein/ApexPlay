@@ -2,10 +2,8 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAdminApi } from '@/lib/route-auth';
 
-export async function GET(
-    request: Request,
-    { params }: { params: { id: string } }
-) {
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     try {
         const scoreboard = await prisma.scoreboardEntry.findMany({
             where: { tournamentId: params.id },
@@ -18,10 +16,8 @@ export async function GET(
     }
 }
 
-export async function POST(
-    request: Request,
-    { params }: { params: { id: string } }
-) {
+export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     const unauthorized = await requireAdminApi();
     if (unauthorized) return unauthorized;
 
