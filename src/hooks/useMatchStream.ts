@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * One frame off the tournament channel. Match mutations carry { matchId, match }; other events
@@ -15,70 +15,103 @@ export interface MatchStreamEvent {
     [key: string]: any;
 }
 
+export type StreamStatus = 'idle' | 'connecting' | 'open' | 'reconnecting';
+
+export interface MatchStreamState {
+    /** Connection state, so a live board can show whether it is really live. */
+    status: StreamStatus;
+    /** Wall-clock time of the last frame (data or keepalive comment is NOT counted — data only). */
+    lastEventAt: number | null;
+}
+
+interface MatchStreamOptions {
+    /**
+     * Fired after a connection is (re)established following a drop. The stream does not replay
+     * missed frames, so consumers should refetch here to heal whatever happened while offline.
+     */
+    onReconnect?: () => void;
+}
+
+const MAX_RETRY_DELAY_MS = 30000;
+
 /**
- * React hook for subscribing to real-time match updates via SSE.
- * 
- * @param tournamentId - The tournament ID to subscribe to
- * @param onMatchUpdate - Callback fired with updated match data
- * 
- * Usage:
- *   useMatchStream(tournamentId, (data) => {
- *       // data.matchId, data.match (full match object with teams/players)
- *       setMatches(prev => prev.map(m => m.id === data.matchId ? data.match : m));
- *   });
+ * Subscribe to the tournament SSE channel (`/api/tournaments/[id]/stream`).
+ *
+ * Reconnects with exponential backoff (1s → 30s). Every EventSource and every pending retry
+ * timer is tracked in refs and torn down on unmount / tournament change, so navigating away
+ * never leaves a zombie stream behind (the previous version only closed the first socket).
  */
 export function useMatchStream(
     tournamentId: string | null,
-    onMatchUpdate: (data: MatchStreamEvent) => void
-) {
-    const callbackRef = useRef(onMatchUpdate);
-    callbackRef.current = onMatchUpdate;
+    onEvent: (data: MatchStreamEvent) => void,
+    options: MatchStreamOptions = {}
+): MatchStreamState {
+    const callbackRef = useRef(onEvent);
+    callbackRef.current = onEvent;
+    const onReconnectRef = useRef(options.onReconnect);
+    onReconnectRef.current = options.onReconnect;
 
-    const retryCountRef = useRef(0);
-    const maxRetryDelay = 30000; // 30 seconds
-
-    const reconnect = useCallback(() => {
-        if (!tournamentId) return;
-
-        const eventSource = new EventSource(`/api/tournaments/${tournamentId}/stream`);
-
-        eventSource.onopen = () => {
-            console.log('[useMatchStream] Connection established');
-            retryCountRef.current = 0; // Reset on success
-        };
-
-        eventSource.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                callbackRef.current(data);
-            } catch (e) {
-                console.error('[useMatchStream] Parse error:', e);
-            }
-        };
-
-        eventSource.onerror = () => {
-            eventSource.close();
-            
-            // Exponential backoff: 1s, 2s, 4s, 8s... up to 30s
-            const delay = Math.min(Math.pow(2, retryCountRef.current) * 1000, maxRetryDelay);
-            console.log(`[useMatchStream] Connection error. Retrying in ${delay}ms...`);
-            
-            setTimeout(() => {
-                retryCountRef.current++;
-                reconnect();
-            }, delay);
-        };
-
-        return eventSource;
-    }, [tournamentId]);
+    const [state, setState] = useState<MatchStreamState>({ status: 'idle', lastEventAt: null });
 
     useEffect(() => {
-        if (!tournamentId) return;
+        if (!tournamentId) {
+            setState({ status: 'idle', lastEventAt: null });
+            return;
+        }
 
-        const eventSource = reconnect();
+        let disposed = false;
+        let source: EventSource | null = null;
+        let retryTimer: ReturnType<typeof setTimeout> | null = null;
+        let retryCount = 0;
+        let hadDrop = false;
+
+        const connect = () => {
+            if (disposed) return;
+            setState((prev) => ({ ...prev, status: retryCount === 0 && !hadDrop ? 'connecting' : 'reconnecting' }));
+            source = new EventSource(`/api/tournaments/${tournamentId}/stream`);
+
+            source.onopen = () => {
+                if (disposed) return;
+                retryCount = 0;
+                setState((prev) => ({ ...prev, status: 'open' }));
+                if (hadDrop) {
+                    hadDrop = false;
+                    onReconnectRef.current?.();
+                }
+            };
+
+            source.onmessage = (event) => {
+                if (disposed) return;
+                try {
+                    const data = JSON.parse(event.data);
+                    setState((prev) => ({ ...prev, lastEventAt: Date.now() }));
+                    callbackRef.current(data);
+                } catch (e) {
+                    console.error('[useMatchStream] Parse error:', e);
+                }
+            };
+
+            source.onerror = () => {
+                if (disposed) return;
+                source?.close();
+                source = null;
+                hadDrop = true;
+                const delay = Math.min(Math.pow(2, retryCount) * 1000, MAX_RETRY_DELAY_MS);
+                retryCount += 1;
+                setState((prev) => ({ ...prev, status: 'reconnecting' }));
+                retryTimer = setTimeout(connect, delay);
+            };
+        };
+
+        connect();
 
         return () => {
-            eventSource?.close();
+            disposed = true;
+            if (retryTimer) clearTimeout(retryTimer);
+            source?.close();
+            source = null;
         };
-    }, [tournamentId, reconnect]);
+    }, [tournamentId]);
+
+    return state;
 }

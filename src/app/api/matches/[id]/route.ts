@@ -190,6 +190,15 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
             await handleAdvance(step.matchId, step.teamId, step.slot === 'HOME');
         }
 
+        // A finished match releases its players: clear their at-seat stamps so the next call
+        // starts from "not found yet" on every marshal's board.
+        if (isDone(plan.status) && !isDone(match.status)) {
+            const teamIds = [match.homeTeamId, match.awayTeamId].filter((id): id is string => Boolean(id));
+            if (teamIds.length > 0) {
+                await prisma.player.updateMany({ where: { teamId: { in: teamIds } }, data: { checkedInAt: null } });
+            }
+        }
+
         await broadcastMatch(updatedMatch.id);
 
         // Notify both teams when a match becomes ready/live (web push + in-app log).

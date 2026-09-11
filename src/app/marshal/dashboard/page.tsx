@@ -1,29 +1,42 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Users, MapPin, Bell, Check, RefreshCw, Loader2, Megaphone, Play } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Users,
+  MapPin,
+  Bell,
+  Check,
+  RefreshCw,
+  Loader2,
+  Megaphone,
+  Play,
+  WifiOff,
+  X,
+  Clock,
+} from "lucide-react";
 import { clientApi } from "@/lib/client-api";
 import { Card, Badge, StatusBadge, Button, EmptyState } from "@/components/ui";
 import { useMatchStream } from "@/hooks/useMatchStream";
 import { isCalled, isDone, isLive } from "@/lib/match-status";
 
+/**
+ * Marshal board — the floor tool.
+ *
+ * A marshal walks the venue with a phone, finds the players of a called match by their seat
+ * label, and taps each one once they are seated. The board is optimised for exactly that:
+ * called matches first (oldest call at the top), every player row is a big tap target that
+ * shows the seat before the name, and the at-seat state is shared live with every other
+ * marshal through the tournament SSE stream. Scores are entered in the organizer Control view,
+ * not here.
+ */
+
 /** Fallback poll for the match list — the SSE stream is the live path, this only heals gaps. */
 const MATCH_REFRESH_MS = 30000;
 /** The notification feed has no stream of its own, so it stays polled (slowly). */
 const NOTIFICATION_REFRESH_MS = 15000;
-
-/**
- * Matches that need a marshal on the floor, most urgent first. Called first (those are the
- * players who have to be found and walked to a station), then live, then everything still
- * pending. Derived from the shared status sets so a new status can't silently sort last.
- */
-const urgency = (status: string | null | undefined) =>
-  isCalled(status) ? 0 : isLive(status) ? 1 : 2;
-
-const byUrgency = (a: any, b: any) =>
-  urgency(a.status) - urgency(b.status) ||
-  (a.round ?? 0) - (b.round ?? 0) ||
-  (a.matchOrder ?? 0) - (b.matchOrder ?? 0);
+/** localStorage key for the marshal's chosen tournament (survives reloads on the same phone). */
+const TOURNAMENT_STORAGE_KEY = "apexplay.marshal.tournament";
 
 /** Check-in state keyed by player id: an ISO timestamp when at seat, null when not. */
 type CheckinMap = Record<string, string | null>;
@@ -33,11 +46,33 @@ function checkinsFromMatches(matches: any[]): CheckinMap {
   for (const match of matches) {
     for (const side of ["homeTeam", "awayTeam"] as const) {
       for (const player of match?.[side]?.players || []) {
-        map[player.id] = player.checkedInAt ? String(player.checkedInAt) : null;
+        if (player?.id) map[player.id] = player.checkedInAt ? String(player.checkedInAt) : null;
       }
     }
   }
   return map;
+}
+
+/** Seats sort naturally ("A2" before "A10"); players without a seat go last. */
+const seatCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+const bySeat = (a: any, b: any) => {
+  if (!a.seating && !b.seating) return 0;
+  if (!a.seating) return 1;
+  if (!b.seating) return -1;
+  return seatCollator.compare(String(a.seating), String(b.seating));
+};
+
+/** Oldest call first: the team that has waited longest is the one to fetch next. */
+const byCalledAt = (a: any, b: any) =>
+  new Date(a.updatedAt || 0).getTime() - new Date(b.updatedAt || 0).getTime();
+const byBracketOrder = (a: any, b: any) =>
+  (a.round ?? 0) - (b.round ?? 0) || (a.matchOrder ?? 0) - (b.matchOrder ?? 0);
+
+function minutesAgo(iso: string | null | undefined, now: number): number | null {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return null;
+  return Math.max(0, Math.round((now - t) / 60000));
 }
 
 function PlayerSeatRow({
@@ -51,35 +86,35 @@ function PlayerSeatRow({
   saving: boolean;
   onToggle: () => void;
 }) {
+  const displayName = player.nickname || player.name?.split(" ")[0] || "Player";
   return (
     <button
       type="button"
       onClick={onToggle}
       disabled={saving}
       aria-pressed={atSeat}
+      aria-label={`${displayName}, seat ${player.seating || "unknown"}, ${atSeat ? "at seat" : "not at seat"}`}
       data-testid={`marshal-player-${player.id}`}
-      className={`flex w-full items-center gap-3 rounded-sm border px-3 py-2 text-left transition-all disabled:opacity-60 ${
+      className={`flex min-h-[3.25rem] w-full items-center gap-3 rounded-md border px-3 py-2 text-left transition-all active:scale-[0.99] disabled:opacity-60 ${
         atSeat
-          ? "border-success/40 bg-success/10"
+          ? "border-success/50 bg-success/10"
           : "border-line bg-field hover:border-line-hover"
       }`}
     >
       <span
-        className={`min-w-[3.25rem] rounded-sm px-2 py-1 text-center font-mono text-sm font-bold ${
+        className={`min-w-[3.75rem] rounded-sm px-2 py-1.5 text-center font-mono text-base font-bold tabular-nums ${
           player.seating ? "bg-brand-soft text-brand" : "bg-white/5 text-fg-subtle"
         }`}
       >
         {player.seating || "—"}
       </span>
-      <span className="flex-1 truncate text-sm font-semibold">
-        {player.nickname || player.name?.split(" ")[0] || "Player"}
-      </span>
+      <span className="flex-1 truncate text-base font-semibold">{displayName}</span>
       {saving ? (
-        <Loader2 size={15} className="animate-spin text-fg-subtle" />
+        <Loader2 size={18} className="animate-spin text-fg-subtle" />
       ) : atSeat ? (
-        <Check size={16} className="text-success" />
+        <Check size={20} className="text-success" />
       ) : (
-        <MapPin size={15} className="text-fg-subtle" />
+        <MapPin size={18} className="text-fg-subtle" />
       )}
     </button>
   );
@@ -87,29 +122,26 @@ function PlayerSeatRow({
 
 function TeamColumn({
   team,
+  label,
   isAtSeat,
   isSaving,
   onToggle,
-  label,
 }: {
   team: any;
+  label: string;
   isAtSeat: (player: any) => boolean;
   isSaving: (playerId: string) => boolean;
   onToggle: (player: any) => void;
-  label: string;
 }) {
-  const players = team?.players || [];
+  const players = useMemo(() => [...(team?.players || [])].sort(bySeat), [team?.players]);
   const seated = players.filter((p: any) => isAtSeat(p)).length;
+  const complete = players.length > 0 && seated === players.length;
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-bold">{team?.name || label}</span>
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate text-sm font-bold">{team?.name || label}</span>
         {players.length > 0 && (
-          <span
-            className={`text-xs font-semibold ${
-              seated === players.length ? "text-success" : "text-fg-muted"
-            }`}
-          >
+          <span className={`shrink-0 text-xs font-semibold ${complete ? "text-success" : "text-fg-muted"}`}>
             {seated}/{players.length} at seat
           </span>
         )}
@@ -135,28 +167,145 @@ function TeamColumn({
   );
 }
 
+function MatchCard({
+  match,
+  now,
+  busy,
+  isAtSeat,
+  isSaving,
+  onToggle,
+  onCall,
+  onLive,
+}: {
+  match: any;
+  now: number;
+  busy: boolean;
+  isAtSeat: (player: any) => boolean;
+  isSaving: (playerId: string) => boolean;
+  onToggle: (player: any) => void;
+  onCall: (match: any) => void;
+  onLive: (match: any) => void;
+}) {
+  const called = isCalled(match.status);
+  const live = isLive(match.status);
+  const canCall = !called && !live;
+  const canGoLive = called;
+  const players = [...(match.homeTeam?.players || []), ...(match.awayTeam?.players || [])];
+  const seated = players.filter((p) => isAtSeat(p)).length;
+  const allSeated = players.length > 0 && seated === players.length;
+  const calledFor = called ? minutesAgo(match.updatedAt, now) : null;
+
+  return (
+    <Card
+      data-testid={`marshal-match-${match.id}`}
+      className={`space-y-4 ${called ? "border-success/40" : ""} ${live ? "border-danger/30" : ""}`}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge status={match.status} />
+          <span className="text-xs font-semibold text-fg-subtle">
+            Round {match.round} · #{match.id.slice(0, 4)}
+          </span>
+          {calledFor !== null && (
+            <span
+              className={`flex basis-full items-center gap-1 whitespace-nowrap text-xs font-semibold sm:basis-auto ${
+                calledFor >= 10 ? "text-warning" : "text-fg-subtle"
+              }`}
+              title="Time since the match was called"
+            >
+              <Clock size={12} /> called {calledFor === 0 ? "just now" : `${calledFor} min ago`}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {players.length > 0 && (called || live) && (
+            <span className={`text-xs font-bold ${allSeated ? "text-success" : "text-fg-muted"}`}>
+              {seated}/{players.length} seated
+            </span>
+          )}
+          {canCall && (
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={busy}
+              data-testid={`marshal-call-${match.id}`}
+              onClick={() => onCall(match)}
+            >
+              {busy ? <Loader2 size={14} className="animate-spin" /> : <Megaphone size={14} />}
+              Call match
+            </Button>
+          )}
+          {canGoLive && (
+            <Button
+              variant={allSeated ? "primary" : "secondary"}
+              size="sm"
+              disabled={busy}
+              data-testid={`marshal-live-${match.id}`}
+              onClick={() => onLive(match)}
+            >
+              {busy ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+              Mark live
+            </Button>
+          )}
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <TeamColumn team={match.homeTeam} label="Team A" isAtSeat={isAtSeat} isSaving={isSaving} onToggle={onToggle} />
+        <TeamColumn team={match.awayTeam} label="Team B" isAtSeat={isAtSeat} isSaving={isSaving} onToggle={onToggle} />
+      </div>
+    </Card>
+  );
+}
+
+function Section({
+  title,
+  count,
+  tone,
+  children,
+}: {
+  title: string;
+  count: number;
+  tone: "ready" | "live" | "neutral";
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center gap-3">
+        <h2 className="mds-uppercase-label text-fg-subtle">{title}</h2>
+        <Badge tone={count > 0 ? tone : "neutral"}>{count}</Badge>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 export default function MarshalDashboard() {
+  const router = useRouter();
+
+  const [tournaments, setTournaments] = useState<any[]>([]);
   const [tournamentId, setTournamentId] = useState<string | null>(null);
   const [allMatches, setAllMatches] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   // Check-in lives on Player.checkedInAt (shared between marshals, survives a reload). This map
-  // is the local view of it: seeded from the matches payload, then moved by optimistic toggles
-  // and by `player:checkin` events from the tournament stream.
+  // is the local view of it: seeded from every matches payload / stream frame, then moved by
+  // optimistic toggles and by `player:checkin` events from the tournament stream.
   const [checkins, setCheckins] = useState<CheckinMap>({});
   const [savingPlayers, setSavingPlayers] = useState<string[]>([]);
   const [busyMatch, setBusyMatch] = useState<string | null>(null);
-  // Players with a toggle in flight must not be stomped by a refetch that raced the write.
+  // Players with a toggle in flight must not be stomped by a refetch/frame that raced the write.
   const savingPlayersRef = useRef<string[]>([]);
   savingPlayersRef.current = savingPlayers;
 
-  const applyMatches = useCallback((matchList: any[]) => {
-    setAllMatches(matchList);
-    const fresh = checkinsFromMatches(matchList);
+  /** Merge fresh server truth into the check-in map, except rows we are mid-write on. */
+  const absorbCheckins = useCallback((fresh: CheckinMap) => {
     setCheckins((prev) => {
-      const next = { ...fresh };
+      const next = { ...prev, ...fresh };
       for (const id of savingPlayersRef.current) {
         if (id in prev) next[id] = prev[id];
       }
@@ -164,10 +313,19 @@ export default function MarshalDashboard() {
     });
   }, []);
 
+  const applyMatches = useCallback(
+    (matchList: any[]) => {
+      setAllMatches(matchList);
+      absorbCheckins(checkinsFromMatches(matchList));
+      setLastSyncAt(Date.now());
+    },
+    [absorbCheckins]
+  );
+
   const refreshMatches = useCallback(
     async (id: string) => {
       const matchData = await clientApi.getMatches(id);
-      applyMatches(matchData || []);
+      applyMatches(Array.isArray(matchData) ? matchData : []);
     },
     [applyMatches]
   );
@@ -177,38 +335,52 @@ export default function MarshalDashboard() {
     setNotifications(response?.notifications || []);
   }, []);
 
-  // Resolve the tournament the floor is running, then load its matches + notification feed once.
+  const refreshAll = useCallback(
+    async (id: string, { silent = false } = {}) => {
+      if (!silent) setRefreshing(true);
+      try {
+        await Promise.all([refreshMatches(id), refreshNotifications(id)]);
+        setError(null);
+      } finally {
+        if (!silent) setRefreshing(false);
+      }
+    },
+    [refreshMatches, refreshNotifications]
+  );
+
+  // Resolve which tournament the floor is running: ?t= wins, then the phone's last choice, then
+  // the newest tournament that has a bracket.
   useEffect(() => {
     let cancelled = false;
 
-    const load = async () => {
+    const resolve = async () => {
       try {
         const tournamentResponse = await clientApi.getTournaments("all");
-        const tournaments = tournamentResponse?.tournaments || [];
-        const activeTournament =
-          tournaments.find((t: any) => (t._count?.matches || 0) > 0) || tournaments[0];
+        const list: any[] = tournamentResponse?.tournaments || [];
+        let requested: string | null = null;
+        let stored: string | null = null;
+        try {
+          requested = new URLSearchParams(window.location.search).get("t");
+          stored = window.localStorage.getItem(TOURNAMENT_STORAGE_KEY);
+        } catch {
+          /* private mode etc. */
+        }
+        const chosen =
+          (requested && list.find((t) => t.id === requested)) ||
+          (stored && list.find((t) => t.id === stored)) ||
+          list.find((t) => (t._count?.matches || 0) > 0) ||
+          list[0] ||
+          null;
 
-        if (!activeTournament) {
-          if (!cancelled) {
-            setTournamentId(null);
-            applyMatches([]);
-            setNotifications([]);
-          }
-        } else {
-          const [matchData, notificationResponse] = await Promise.all([
-            clientApi.getMatches(activeTournament.id),
-            clientApi.getNotifications(activeTournament.id),
-          ]);
-          if (!cancelled) {
-            setTournamentId(activeTournament.id);
-            applyMatches(matchData || []);
-            setNotifications(notificationResponse?.notifications || []);
-          }
-        }
-        if (!cancelled) {
-          setError(null);
+        if (cancelled) return;
+        setTournaments(list);
+        if (!chosen) {
+          setTournamentId(null);
           setLoading(false);
+        } else {
+          setTournamentId(chosen.id);
         }
+        setError(null);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Failed to load marshal board");
@@ -217,37 +389,94 @@ export default function MarshalDashboard() {
       }
     };
 
-    void load();
+    void resolve();
     return () => {
       cancelled = true;
     };
-  }, [applyMatches]);
+  }, []);
 
-  // Live updates: match rows and check-ins both arrive on the tournament stream.
-  useMatchStream(tournamentId, (data) => {
-    if (data?.type === "player:checkin") {
-      if (!data.playerId) return;
-      const playerId = data.playerId as string;
-      // A local write still in flight owns the row until its response lands.
-      if (savingPlayersRef.current.includes(playerId)) return;
-      setCheckins((prev) => ({
-        ...prev,
-        [playerId]: data.checkedInAt ? String(data.checkedInAt) : null,
-      }));
-      return;
+  // Load the chosen tournament's matches + notification feed (also runs when the marshal
+  // switches tournament).
+  useEffect(() => {
+    if (!tournamentId) return;
+    let cancelled = false;
+    try {
+      window.localStorage.setItem(TOURNAMENT_STORAGE_KEY, tournamentId);
+    } catch {
+      /* ignore */
     }
+    setLoading(true);
+    (async () => {
+      try {
+        const [matchData, notificationResponse] = await Promise.all([
+          clientApi.getMatches(tournamentId),
+          clientApi.getNotifications(tournamentId),
+        ]);
+        if (cancelled) return;
+        applyMatches(Array.isArray(matchData) ? matchData : []);
+        setNotifications(notificationResponse?.notifications || []);
+        setError(null);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load marshal board");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tournamentId, applyMatches]);
 
-    if (!data?.matchId || !data?.match) return;
-    setAllMatches((prev) => {
-      const index = prev.findIndex((m) => m.id === data.matchId);
-      if (index === -1) return [...prev, data.match];
-      const next = [...prev];
-      next[index] = { ...next[index], ...data.match };
-      return next;
-    });
-  });
+  const chooseTournament = useCallback(
+    (id: string) => {
+      setAllMatches([]);
+      setCheckins({});
+      setNotifications([]);
+      setTournamentId(id);
+      // Keep the URL shareable ("open the board for this tournament") without a navigation.
+      router.replace(`/marshal/dashboard?t=${encodeURIComponent(id)}`, { scroll: false });
+    },
+    [router]
+  );
 
-  // Slow fallback refetch — SSE carries the live changes, this heals a dropped connection.
+  // Live updates: match rows and check-ins both arrive on the tournament stream. After a dropped
+  // connection comes back, refetch — the stream does not replay what we missed.
+  const stream = useMatchStream(
+    tournamentId,
+    (data) => {
+      if (data?.type === "player:checkin") {
+        if (!data.playerId) return;
+        const playerId = data.playerId as string;
+        // A local write still in flight owns the row until its response lands.
+        if (savingPlayersRef.current.includes(playerId)) return;
+        setCheckins((prev) => ({
+          ...prev,
+          [playerId]: data.checkedInAt ? String(data.checkedInAt) : null,
+        }));
+        setLastSyncAt(Date.now());
+        return;
+      }
+
+      if (!data?.matchId || !data?.match) return;
+      setAllMatches((prev) => {
+        const index = prev.findIndex((m) => m.id === data.matchId);
+        if (index === -1) return [...prev, data.match];
+        const next = [...prev];
+        next[index] = { ...next[index], ...data.match };
+        return next;
+      });
+      // Frames carry full rosters (including checkedInAt after a call/complete reset).
+      absorbCheckins(checkinsFromMatches([data.match]));
+      setLastSyncAt(Date.now());
+    },
+    {
+      onReconnect: () => {
+        if (tournamentId) void refreshAll(tournamentId, { silent: true }).catch(() => {});
+      },
+    }
+  );
+
+  // Slow fallback refetch — SSE carries the live changes, this heals anything it missed.
   useEffect(() => {
     if (!tournamentId) return;
     const interval = setInterval(() => {
@@ -267,14 +496,44 @@ export default function MarshalDashboard() {
     return () => clearInterval(interval);
   }, [tournamentId, refreshNotifications]);
 
-  const matches = useMemo(
-    () => allMatches.filter((m: any) => !isDone(m.status)).sort(byUrgency),
-    [allMatches]
+  // Phones sleep and background tabs get throttled: when the board comes back into view, catch up.
+  useEffect(() => {
+    if (!tournamentId) return;
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        void refreshAll(tournamentId, { silent: true }).catch(() => {});
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", onVisible);
+    };
+  }, [tournamentId, refreshAll]);
+
+  // "called N min ago" ticks without needing a data change.
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  const open = useMemo(() => allMatches.filter((m: any) => !isDone(m.status)), [allMatches]);
+  const calledMatches = useMemo(() => open.filter((m) => isCalled(m.status)).sort(byCalledAt), [open]);
+  const liveMatches = useMemo(() => open.filter((m) => isLive(m.status)).sort(byBracketOrder), [open]);
+  const upNext = useMemo(
+    () =>
+      open
+        .filter((m) => !isCalled(m.status) && !isLive(m.status) && m.homeTeamId && m.awayTeamId)
+        .sort(byBracketOrder),
+    [open]
+  );
+  const waitingOnResults = useMemo(
+    () => open.filter((m) => !isCalled(m.status) && !isLive(m.status) && !(m.homeTeamId && m.awayTeamId)).length,
+    [open]
   );
 
-  // The local map wins when it knows the player (it is the freshest), else the row's own field —
-  // SSE match frames don't carry `checkedInAt`, so a match first seen on the stream falls back to
-  // "not at seat" until the next fallback refetch.
+  // The local map wins when it knows the player (it is the freshest), else the row's own field.
   const isAtSeat = useCallback(
     (player: any) =>
       player.id in checkins ? Boolean(checkins[player.id]) : Boolean(player.checkedInAt),
@@ -305,9 +564,7 @@ export default function MarshalDashboard() {
         setCheckins((prev) => ({ ...prev, [playerId]: confirmed ? String(confirmed) : null }));
       } catch (err) {
         setCheckins((prev) => ({ ...prev, [playerId]: previous ? String(previous) : null }));
-        setActionError(
-          err instanceof Error ? `Check-in failed: ${err.message}` : "Check-in failed"
-        );
+        setActionError(err instanceof Error ? `Check-in failed: ${err.message}` : "Check-in failed");
       } finally {
         setSavingPlayers((prev) => prev.filter((id) => id !== playerId));
       }
@@ -326,17 +583,17 @@ export default function MarshalDashboard() {
       setBusyMatch(match.id);
       try {
         const response = await clientApi.callMatch(match.id);
-        mergeMatch(match.id, response?.match ? { status: response.match.status } : { status: "READY" });
+        const fresh = response?.match;
+        mergeMatch(match.id, fresh ? fresh : { status: "READY", updatedAt: new Date().toISOString() });
+        if (fresh) absorbCheckins(checkinsFromMatches([fresh]));
         if (tournamentId) void refreshNotifications(tournamentId).catch(() => {});
       } catch (err) {
-        setActionError(
-          err instanceof Error ? `Could not call match: ${err.message}` : "Could not call match"
-        );
+        setActionError(err instanceof Error ? `Could not call match: ${err.message}` : "Could not call match");
       } finally {
         setBusyMatch(null);
       }
     },
-    [mergeMatch, refreshNotifications, tournamentId]
+    [absorbCheckins, mergeMatch, refreshNotifications, tournamentId]
   );
 
   /** "Mark live" — the teams are seated and the game has started. Scores stay in Control. */
@@ -346,11 +603,9 @@ export default function MarshalDashboard() {
       setBusyMatch(match.id);
       try {
         const response = await clientApi.setMatchStatus(match.id, "LIVE");
-        mergeMatch(match.id, { status: response?.match?.status || "LIVE" });
+        mergeMatch(match.id, { status: response?.status || response?.match?.status || "LIVE" });
       } catch (err) {
-        setActionError(
-          err instanceof Error ? `Could not mark live: ${err.message}` : "Could not mark live"
-        );
+        setActionError(err instanceof Error ? `Could not mark live: ${err.message}` : "Could not mark live");
       } finally {
         setBusyMatch(null);
       }
@@ -358,10 +613,20 @@ export default function MarshalDashboard() {
     [mergeMatch]
   );
 
+  const activeTournament = tournaments.find((t) => t.id === tournamentId);
+  const connection =
+    stream.status === "open"
+      ? { label: "Live", dot: "bg-success animate-pulse", icon: null }
+      : stream.status === "reconnecting"
+        ? { label: "Reconnecting…", dot: "bg-warning", icon: <WifiOff size={12} /> }
+        : stream.status === "connecting"
+          ? { label: "Connecting…", dot: "bg-fg-subtle", icon: null }
+          : { label: "Not connected", dot: "bg-fg-subtle", icon: <WifiOff size={12} /> };
+
   return (
     <div className="min-h-screen bg-page text-fg">
-      <main className="mds-container space-y-6 py-8">
-        <div className="flex items-end justify-between gap-4">
+      <main className="mds-container space-y-6 py-6 sm:py-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="mds-uppercase-label text-brand">Floor control</p>
             <h1 className="mt-1 font-brand text-3xl font-bold tracking-tight">Marshal board</h1>
@@ -370,10 +635,44 @@ export default function MarshalDashboard() {
               player once they&apos;re seated — every marshal sees it.
             </p>
           </div>
-          <span className="hidden items-center gap-2 text-xs font-semibold text-fg-subtle sm:flex">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-success" />
-            Live stream
-          </span>
+          <div className="flex flex-wrap items-center gap-3">
+            {tournaments.length > 1 && (
+              <label className="flex items-center gap-2 text-xs font-semibold text-fg-subtle">
+                <span className="sr-only">Tournament</span>
+                <select
+                  aria-label="Tournament"
+                  data-testid="marshal-tournament-select"
+                  value={tournamentId || ""}
+                  onChange={(e) => chooseTournament(e.target.value)}
+                  className="mds-input h-10 max-w-[16rem] text-sm"
+                >
+                  {tournaments.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <span
+              className="flex items-center gap-2 text-xs font-semibold text-fg-subtle"
+              data-testid="marshal-connection"
+              title={lastSyncAt ? `Last update ${new Date(lastSyncAt).toLocaleTimeString()}` : undefined}
+            >
+              <span className={`h-2 w-2 rounded-full ${connection.dot}`} />
+              {connection.icon}
+              {connection.label}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label="Refresh"
+              disabled={!tournamentId || refreshing}
+              onClick={() => tournamentId && void refreshAll(tournamentId).catch((err) => setError(err?.message || "Refresh failed"))}
+            >
+              <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+            </Button>
+          </div>
         </div>
 
         {error && (
@@ -387,8 +686,16 @@ export default function MarshalDashboard() {
         )}
 
         {actionError && (
-          <Card className="border-danger/30">
+          <Card className="flex items-start justify-between gap-3 border-danger/30" role="alert">
             <p className="text-sm font-semibold text-danger">{actionError}</p>
+            <button
+              type="button"
+              aria-label="Dismiss"
+              className="text-fg-subtle hover:text-fg"
+              onClick={() => setActionError(null)}
+            >
+              <X size={16} />
+            </button>
           </Card>
         )}
 
@@ -396,81 +703,96 @@ export default function MarshalDashboard() {
           <div className="flex justify-center py-24">
             <Loader2 className="animate-spin text-brand" size={28} />
           </div>
+        ) : !tournamentId ? (
+          <EmptyState
+            icon={<Users size={26} />}
+            title="No tournament yet"
+            description="Once an organizer creates a tournament and generates the bracket, it appears here."
+          />
         ) : (
           <>
-            <div className="flex items-center gap-3">
-              <h2 className="mds-uppercase-label text-fg-subtle">Matches needing players</h2>
-              <Badge tone="neutral">{matches.length}</Badge>
-            </div>
-
-            {matches.length === 0 ? (
-              <EmptyState
-                icon={<Users size={26} />}
-                title="No open matches"
-                description="When a match is called, its teams and seats appear here."
-              />
-            ) : (
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                {matches.map((match: any) => {
-                  const bothTeams = Boolean(match.homeTeamId && match.awayTeamId);
-                  const busy = busyMatch === match.id;
-                  const canCall = bothTeams && !isCalled(match.status) && !isLive(match.status);
-                  const canGoLive = bothTeams && !isLive(match.status);
-                  return (
-                    <Card key={match.id} data-testid={`marshal-match-${match.id}`} className="space-y-4">
-                      <div className="flex items-center justify-between gap-3 border-b border-line pb-3">
-                        <span className="text-xs font-semibold text-fg-subtle">
-                          Round {match.round} · #{match.id.slice(0, 4)}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <StatusBadge status={match.status} />
-                          {canCall && (
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              disabled={busy}
-                              data-testid={`marshal-call-${match.id}`}
-                              onClick={() => void callMatch(match)}
-                            >
-                              {busy ? <Loader2 size={14} className="animate-spin" /> : <Megaphone size={14} />}
-                              Call match
-                            </Button>
-                          )}
-                          {canGoLive && (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              disabled={busy}
-                              data-testid={`marshal-live-${match.id}`}
-                              onClick={() => void markLive(match)}
-                            >
-                              {busy ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
-                              Mark live
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                        <TeamColumn
-                          team={match.homeTeam}
-                          label="Team A"
-                          isAtSeat={isAtSeat}
-                          isSaving={isSaving}
-                          onToggle={(p) => void toggleAtSeat(p)}
-                        />
-                        <TeamColumn
-                          team={match.awayTeam}
-                          label="Team B"
-                          isAtSeat={isAtSeat}
-                          isSaving={isSaving}
-                          onToggle={(p) => void toggleAtSeat(p)}
-                        />
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
+            {activeTournament && tournaments.length === 1 && (
+              <p className="text-sm text-fg-subtle">{activeTournament.name}</p>
             )}
+
+            <Section title="Called — go find them" count={calledMatches.length} tone="ready">
+              {calledMatches.length === 0 ? (
+                <p className="rounded-sm border border-dashed border-line px-4 py-3 text-sm text-fg-subtle">
+                  Nothing called right now.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                  {calledMatches.map((match: any) => (
+                    <MatchCard
+                      key={match.id}
+                      match={match}
+                      now={now}
+                      busy={busyMatch === match.id}
+                      isAtSeat={isAtSeat}
+                      isSaving={isSaving}
+                      onToggle={(p) => void toggleAtSeat(p)}
+                      onCall={(m) => void callMatch(m)}
+                      onLive={(m) => void markLive(m)}
+                    />
+                  ))}
+                </div>
+              )}
+            </Section>
+
+            {liveMatches.length > 0 && (
+              <Section title="Live" count={liveMatches.length} tone="live">
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                  {liveMatches.map((match: any) => (
+                    <MatchCard
+                      key={match.id}
+                      match={match}
+                      now={now}
+                      busy={busyMatch === match.id}
+                      isAtSeat={isAtSeat}
+                      isSaving={isSaving}
+                      onToggle={(p) => void toggleAtSeat(p)}
+                      onCall={(m) => void callMatch(m)}
+                      onLive={(m) => void markLive(m)}
+                    />
+                  ))}
+                </div>
+              </Section>
+            )}
+
+            <Section title="Up next" count={upNext.length} tone="neutral">
+              {upNext.length === 0 && waitingOnResults === 0 ? (
+                <EmptyState
+                  icon={<Users size={26} />}
+                  title="No open matches"
+                  description="When the bracket has matches with both teams known, they appear here."
+                />
+              ) : (
+                <>
+                  {upNext.length > 0 && (
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                      {upNext.map((match: any) => (
+                        <MatchCard
+                          key={match.id}
+                          match={match}
+                          now={now}
+                          busy={busyMatch === match.id}
+                          isAtSeat={isAtSeat}
+                          isSaving={isSaving}
+                          onToggle={(p) => void toggleAtSeat(p)}
+                          onCall={(m) => void callMatch(m)}
+                          onLive={(m) => void markLive(m)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {waitingOnResults > 0 && (
+                    <p className="text-xs text-fg-subtle">
+                      {waitingOnResults} more {waitingOnResults === 1 ? "match is" : "matches are"} waiting on earlier results.
+                    </p>
+                  )}
+                </>
+              )}
+            </Section>
 
             <section className="space-y-3 pt-2">
               <div className="flex items-center gap-2">

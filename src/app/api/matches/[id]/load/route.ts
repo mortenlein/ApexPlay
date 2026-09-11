@@ -36,6 +36,13 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
             return NextResponse.json({ error: 'Both teams must be assigned before loading a match' }, { status: 400 });
         }
 
+        // Calling a match resets both rosters' at-seat state: check-in is per call, not per player
+        // for the whole event, so a marshal never sees a stale tick from an earlier match.
+        await prisma.player.updateMany({
+            where: { teamId: { in: [match.homeTeam.id, match.awayTeam.id] } },
+            data: { checkedInAt: null },
+        });
+
         const updated = await prisma.match.update({
             where: { id: params.id },
             data: { status: 'READY' },
