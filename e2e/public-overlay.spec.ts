@@ -43,18 +43,17 @@ test('overlay renders the bracket chrome-free with stage labels, names, seats an
   await expect(page.getByRole('link', { name: 'Tournaments' })).toHaveCount(0);
 });
 
-// BUG: the stream overlay never marks the live match in a best-of-1 event, and mislabels
-// everything that has not started. The status footer — the only place the overlay prints
-// FINAL / LIVE (with the pulsing dot) — is rendered only when
-// `data.bestOf > 1 || isCenter || isThirdPlace` (src/app/bracket/[id]/overlay/page.tsx:118),
-// so in a BO1 bracket (the default: `bestOf: 1` unless bo3LastRounds is set) every match except
-// the grand final shows scores with no state at all: the observed node text for a COMPLETED
-// quarter-final is "Quarter-FinalsSeed 1S01:Player 11Seed 8S08:Player 80" — no FINAL, and the
-// LIVE match renders identically.
-// And where the footer IS rendered, PENDING is printed as "IN PROGRESS"
-// (same file, line 122: `status === 'COMPLETED' ? 'FINAL' : status === 'LIVE' ? … : 'IN PROGRESS'`),
-// so an unplayed grand final goes out on stream as in progress.
-test.fixme('overlay marks the live match and never calls a pending match in progress', async ({ page }) => {
+// Regression: the stream overlay never marked the live match in a best-of-1 event, and
+// mislabelled everything that had not started. The status footer — the only place the overlay
+// prints FINAL / LIVE (with the pulsing dot) — was rendered only when
+// `data.bestOf > 1 || isCenter || isThirdPlace`, so in a BO1 bracket (the default: `bestOf: 1`
+// unless bo3LastRounds is set) every match except the grand final showed scores with no state at
+// all: the observed node text for a COMPLETED quarter-final was
+// "Quarter-FinalsSeed 1S01:Player 11Seed 8S08:Player 80" — no FINAL, and the LIVE match rendered
+// identically. And where the footer WAS rendered, PENDING was printed as "IN PROGRESS", so an
+// unplayed grand final went out on stream as in progress. The footer is now unconditional and
+// its state comes from the shared helpers in src/lib/match-status.ts.
+test('overlay marks the live match and never calls a pending match in progress', async ({ page }) => {
   const { tournamentId, matches, playedMatches, liveMatch } = await seedPlayedBracket({ teams: 8, completed: 2 });
   const grandFinal = matches.find((m) => m.round === 3)!;
   expect(grandFinal.status).toBe('PENDING');
