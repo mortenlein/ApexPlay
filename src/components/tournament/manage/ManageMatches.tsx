@@ -1,5 +1,6 @@
 'use client';
 
+import { isDone, isLive } from '@/lib/match-status';
 import React from 'react';
 import { Sword, Filter, Zap, RefreshCw, Gamepad2, Settings2, CheckCircle2, AlertCircle } from 'lucide-react';
 
@@ -18,8 +19,8 @@ export const ManageMatches: React.FC<ManageMatchesProps> = ({
   onOpenMatchModal,
   teamsCount
 }) => {
-  const completedMatches = matches.filter(m => m.status === 'COMPLETED').length;
-  const liveMatches = matches.filter(m => m.status === 'LIVE' || m.status === 'IN_PROGRESS').length;
+  const completedMatches = matches.filter(m => isDone(m.status)).length;
+  const liveMatches = matches.filter(m => isLive(m.status)).length;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">

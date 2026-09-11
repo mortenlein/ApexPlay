@@ -610,7 +610,8 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
                                     tournament={tournament}
                                     onUpdateTournament={(payload) => updateTournamentMutation.mutate(payload)}
                                     onDeleteTournament={async () => {
-                                        if (confirm(`Delete ${tournament.name} permanently?\n\nImpact:\n- Teams, players, matches, scoreboard, and logs are removed.\n- Overlay links stop working immediately.\n\nThis cannot be undone.`)) {
+                                        // ManageSettings owns the confirmation dialog.
+                                        {
                                             try {
                                                 await apiRequest(`/api/tournaments/${tournamentId}`, { method: 'DELETE' });
                                                 toast.success('Tournament deleted', 'The tournament and related data were removed.', {

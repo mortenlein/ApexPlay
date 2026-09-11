@@ -1,5 +1,6 @@
 'use client';
 
+import { isActive, isDone } from '@/lib/match-status';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Plus, Trophy, LayoutDashboard, ExternalLink, LogOut, Radio, Users, Swords, Activity, AlertTriangle, Shield, Copy, Megaphone, CalendarClock, Eye, EyeOff, Gauge } from 'lucide-react';
@@ -60,7 +61,7 @@ export default function AdminDashboardClient() {
       const result = await clientApi.createTournament(payload);
       await queryClient.invalidateQueries({ queryKey: ['tournaments'] });
       await queryClient.invalidateQueries({ queryKey: ['activity'] });
-      setIsCreating(false);
+      // The wizard stays open on its final step (share link / go to setup); its Close calls onClose.
       toast.success('Tournament created', `${result.name} is ready for setup.`);
       return result.id;
     } catch (creationError) {
@@ -150,7 +151,7 @@ export default function AdminDashboardClient() {
 
   const bulkAnnounce = async (tournamentId: string) => {
     const matches = await clientApi.getMatches(tournamentId);
-    const targets = matches.filter((match: any) => ['READY', 'WAITING_FOR_PLAYERS', 'LIVE', 'COMPLETED'].includes(match.status)).slice(0, 8);
+    const targets = matches.filter((match: any) => isActive(match.status) || isDone(match.status)).slice(0, 8);
     if (targets.length === 0) {
       toast.info('No matches to announce', 'Create or load matches before broadcasting updates.');
       return;

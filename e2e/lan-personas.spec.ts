@@ -22,7 +22,7 @@ test('Marcus can start a match and Uncle Dave sees seats plus notifications', as
   await page.goto(`/admin/tournaments/${tournamentId}?tab=matches`);
   await page.getByTestId(`match-card-${matchId}`).click();
   await page.getByTestId('start-match-button').click();
-  await expect(page.getByTestId(`match-card-${matchId}`)).toContainText(/WAITING FOR PLAYERS/i);
+  await expect(page.getByTestId(`match-card-${matchId}`)).toContainText(/READY/i);
 
   const marshalContext = await browser.newContext({
     storageState: await page.context().storageState(),

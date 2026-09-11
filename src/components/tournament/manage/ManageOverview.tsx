@@ -1,5 +1,6 @@
 'use client';
 
+import { isCalled, isDone, isLive } from '@/lib/match-status';
 import React from 'react';
 import { Users, Sword, Shield, Zap, RefreshCw, BarChart3, Copy, Share2, ArrowRight, Clock3, Bell } from 'lucide-react';
 import { InlineNotice } from '@/components/workspace/WorkspaceChrome';
@@ -29,9 +30,9 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
   onSetTab,
   onCopyPublicLink,
 }) => {
-  const liveMatches = matches.filter((match) => match.status === 'LIVE' || match.status === 'IN_PROGRESS').length;
-  const waitingMatches = matches.filter((match) => match.status === 'WAITING_FOR_PLAYERS').length;
-  const completedMatches = matches.filter((match) => match.status === 'COMPLETED').length;
+  const liveMatches = matches.filter((match) => isLive(match.status)).length;
+  const waitingMatches = matches.filter((match) => isCalled(match.status)).length;
+  const completedMatches = matches.filter((match) => isDone(match.status)).length;
   const bracketStatus =
     matches.length === 0
       ? 'Not generated'
@@ -117,9 +118,9 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
                   >
                     <div className="flex items-center gap-3 overflow-hidden">
                       <div className={`shrink-0 h-2 w-2 rounded-full ${
-                        match.status === 'LIVE' ? 'bg-[var(--mds-red)] animate-pulse shadow-[0_0_8px_var(--mds-red)]' :
-                        match.status === 'COMPLETED' ? 'bg-[var(--mds-green)]' :
-                        match.status === 'WAITING_FOR_PLAYERS' ? 'bg-[var(--mds-amber)]' :
+                        isLive(match.status) ? 'bg-[var(--mds-red)] animate-pulse shadow-[0_0_8px_var(--mds-red)]' :
+                        isDone(match.status) ? 'bg-[var(--mds-green)]' :
+                        isCalled(match.status) ? 'bg-[var(--mds-amber)]' :
                         'bg-[var(--mds-text-muted)]'
                       }`} />
                       <div className="truncate">
