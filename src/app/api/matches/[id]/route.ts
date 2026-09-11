@@ -1,25 +1,34 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { announceResult, announceMatch } from '@/lib/discord';
-import { requireAdminApi } from '@/lib/route-auth';
+import { requireStaffApi } from '@/lib/route-auth';
 import { eventBus } from '@/lib/eventBus';
 import { buildActorLabel, recordAudit } from '@/lib/audit';
 import { notifyMatchReady } from '@/lib/notify';
 import { conflictResponse, hasTimestampConflict, normalizeExpectedUpdatedAt } from '@/lib/mutation-guards';
+import { isDone } from '@/lib/match-status';
+import { decideMatchResult, downstreamBlockedMessage, downstreamBlocksReset } from '@/lib/match-result';
 
+/**
+ * POST /api/matches/{id} — score / status / forfeit update. Staff (admin or marshal), because
+ * marshals run matches on the floor.
+ *
+ * Body: { homeScore?, awayScore?, mapScores?, bestOf?, status?, forfeit?, expectedUpdatedAt? }
+ * `scoreLimit` is NOT accepted — it is always derived from bestOf (first to floor(bestOf/2)+1).
+ */
 export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
-    const unauthorized = await requireAdminApi();
+    const unauthorized = await requireStaffApi();
     if (unauthorized) return unauthorized;
 
     try {
         const body = await request.json();
-        const { homeScore, awayScore, mapScores, bestOf, scoreLimit, status: manualStatus } = body;
+        const { homeScore, awayScore, mapScores, bestOf, status: manualStatus, forfeit } = body;
 
         const match = await prisma.match.findUnique({
             where: { id: params.id },
-            include: { 
-                homeTeam: true, 
+            include: {
+                homeTeam: true,
                 awayTeam: true,
                 tournament: true
             }
@@ -32,46 +41,38 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
             return conflictResponse();
         }
 
-        let winnerId = null;
-        let loserId = null;
-        let status = manualStatus || match.status || 'READY';
+        const decision = decideMatchResult(match, {
+            homeScore,
+            awayScore,
+            bestOf,
+            status: manualStatus,
+            forfeit,
+        });
 
-        // Auto-determine completion if scores reach limit (if not manually set)
-        const effectiveScoreLimit = scoreLimit || match.scoreLimit || 2; // Default to 2 for BO3
-        if (status !== 'COMPLETED') {
-            if (homeScore >= effectiveScoreLimit) {
-                winnerId = match.homeTeamId;
-                loserId = match.awayTeamId;
-                status = 'COMPLETED';
-            } else if (awayScore >= effectiveScoreLimit) {
-                winnerId = match.awayTeamId;
-                loserId = match.homeTeamId;
-                status = 'COMPLETED';
-            }
-        } else {
-            // Manually marked as completed, find winner by scores
-            if (homeScore > awayScore) {
-                winnerId = match.homeTeamId;
-                loserId = match.awayTeamId;
-            } else if (awayScore > homeScore) {
-                winnerId = match.awayTeamId;
-                loserId = match.homeTeamId;
-            }
+        if (!decision.ok) {
+            return NextResponse.json({ error: decision.error }, { status: decision.status });
         }
 
-        // Update current match
-        const updatedMatch = await prisma.match.update({
-            where: { id: params.id },
-            data: {
-                ...(homeScore !== undefined && { homeScore }),
-                ...(awayScore !== undefined && { awayScore }),
-                ...(mapScores !== undefined && { mapScores: typeof mapScores === 'string' ? mapScores : JSON.stringify(mapScores) }),
-                ...(bestOf !== undefined && { bestOf }),
-                ...(scoreLimit !== undefined && { scoreLimit }),
-                winnerId,
-                status
+        const plan = decision.plan;
+
+        // A previous result is being rolled back: refuse the whole update if a downstream match
+        // has already been started, so a team is never pulled out of a live/played game.
+        for (const step of plan.unadvance) {
+            const downstream = await prisma.match.findUnique({
+                where: { id: step.matchId },
+                select: { id: true, status: true, homeScore: true, awayScore: true, homeTeamId: true, awayTeamId: true },
+            });
+            if (!downstream) continue;
+
+            const holdsTeam = step.slot === 'HOME'
+                ? downstream.homeTeamId === step.teamId
+                : downstream.awayTeamId === step.teamId;
+            if (!holdsTeam) continue;
+
+            if (downstreamBlocksReset(downstream)) {
+                return NextResponse.json({ error: downstreamBlockedMessage(downstream.id) }, { status: 409 });
             }
-        });
+        }
 
         const broadcastMatch = async (matchId: string) => {
             const fullMatch = await prisma.match.findUnique({
@@ -96,21 +97,50 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
             eventBus.emit(`tournament:${fullMatch.tournamentId}`, payload);
         };
 
+        // Empty the downstream slot the old winner/loser was advanced into — but only if it
+        // still holds them, in case staff re-seeded it by hand.
+        const clearSlot = async (matchId: string, slot: 'HOME' | 'AWAY', teamId: string) => {
+            const cleared = await prisma.match.updateMany({
+                where: { id: matchId, ...(slot === 'HOME' ? { homeTeamId: teamId } : { awayTeamId: teamId }) },
+                data: slot === 'HOME' ? { homeTeamId: null } : { awayTeamId: null },
+            });
+            if (cleared.count > 0) {
+                await broadcastMatch(matchId);
+            }
+        };
+
+        for (const step of plan.unadvance) {
+            await clearSlot(step.matchId, step.slot, step.teamId);
+        }
+
+        // Update current match
+        const updatedMatch = await prisma.match.update({
+            where: { id: params.id },
+            data: {
+                homeScore: plan.homeScore,
+                awayScore: plan.awayScore,
+                ...(mapScores !== undefined && { mapScores: typeof mapScores === 'string' ? mapScores : JSON.stringify(mapScores) }),
+                bestOf: plan.bestOf,
+                scoreLimit: plan.scoreLimit,
+                winnerId: plan.winnerId,
+                resultType: plan.resultType,
+                status: plan.status
+            }
+        });
+
         // Announce result to Discord if just completed
-        if (status === 'COMPLETED' && match.status !== 'COMPLETED' && match.homeTeam && match.awayTeam) {
+        if (isDone(plan.status) && !isDone(match.status) && match.homeTeam && match.awayTeam) {
             await announceResult({
                 homeTeam: match.homeTeam.name,
                 awayTeam: match.awayTeam.name,
-                homeScore,
-                awayScore,
+                homeScore: plan.homeScore,
+                awayScore: plan.awayScore,
                 tournamentName: match.tournament.name,
                 tournamentId: match.tournamentId,
                 matchUrl: `${process.env.NEXTAUTH_URL}/tournaments/${match.tournamentId}`,
                 game: match.tournament.game
             });
         }
-
-        const wasJustCompleted = status === 'COMPLETED' && match.status !== 'COMPLETED';
 
         const handleAdvance = async (nextMatchId: string, advancedTeamId: string, isNextHome: boolean) => {
             const existingNextMatch = await prisma.match.findUnique({
@@ -156,35 +186,35 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
             eventBus.emit(`tournament:${nextMatch.tournamentId}`, payload);
         };
 
-        if (status === 'COMPLETED' && winnerId && match.nextMatchId) {
-            const isNextHome = match.nextMatchSlot ? match.nextMatchSlot === 'HOME' : match.matchOrder % 2 === 0;
-            await handleAdvance(match.nextMatchId, winnerId, isNextHome);
-        }
-
-        if (status === 'COMPLETED' && loserId && match.loserNextMatchId) {
-            const isNextHome = match.loserNextMatchSlot ? match.loserNextMatchSlot === 'HOME' : match.matchOrder % 2 === 0;
-            await handleAdvance(match.loserNextMatchId, loserId, isNextHome);
+        for (const step of plan.advance) {
+            await handleAdvance(step.matchId, step.teamId, step.slot === 'HOME');
         }
 
         await broadcastMatch(updatedMatch.id);
 
         // Notify both teams when a match becomes ready/live (web push + in-app log).
-        const wasJustActivated = (status === 'LIVE' || status === 'READY') && match.status !== status;
+        const wasJustActivated = (plan.status === 'LIVE' || plan.status === 'READY') && match.status !== plan.status;
         if (wasJustActivated) {
-            await notifyMatchReady(updatedMatch.id, status);
+            await notifyMatchReady(updatedMatch.id, plan.status);
         }
 
+        const forfeitNote = plan.resultType === 'FORFEIT' ? ' by forfeit' : '';
         await recordAudit({
             action: 'match.updated',
             entityType: 'match',
             entityId: updatedMatch.id,
             tournamentId: updatedMatch.tournamentId,
-            summary: `Updated match ${updatedMatch.id.slice(0, 8)} to ${updatedMatch.homeScore}:${updatedMatch.awayScore} (${updatedMatch.status})`,
+            summary: `Updated match ${updatedMatch.id.slice(0, 8)} to ${updatedMatch.homeScore}:${updatedMatch.awayScore} (${updatedMatch.status})${forfeitNote}`,
             actor: await buildActorLabel(),
             metadata: {
                 homeScore: updatedMatch.homeScore,
                 awayScore: updatedMatch.awayScore,
                 status: updatedMatch.status,
+                bestOf: updatedMatch.bestOf,
+                scoreLimit: updatedMatch.scoreLimit,
+                winnerId: updatedMatch.winnerId,
+                resultType: updatedMatch.resultType,
+                unadvanced: plan.unadvance.map((step) => `${step.matchId.slice(0, 8)}:${step.slot}`),
             },
         });
 
