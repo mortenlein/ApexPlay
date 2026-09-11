@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Sword, Save, RefreshCw, Send, CheckCircle2, History, Map, Globe, ShieldCheck, Trophy, Activity, Play } from 'lucide-react';
+import { X, Sword, Save, RefreshCw, Send, CheckCircle2, History, Clock, Flag, ShieldCheck, Trophy, Activity, Play } from 'lucide-react';
 
 interface EditMatchModalProps {
   match: any;
@@ -9,6 +9,7 @@ interface EditMatchModalProps {
   matchForm: any;
   setMatchForm: (form: any) => void;
   onSaveMatch: (e: React.FormEvent) => void;
+  onForfeit: (side: 'HOME' | 'AWAY') => void;
   onAnnounceDiscord: (match: any, type: 'START' | 'RESULT') => void;
   onLoadMatch: (matchId: string) => Promise<void>;
   isSaving: boolean;
@@ -21,12 +22,15 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
   matchForm,
   setMatchForm,
   onSaveMatch,
+  onForfeit,
   onAnnounceDiscord,
   onLoadMatch,
   isSaving,
   isLoadingMatch
 }) => {
   const [announcing, setAnnouncing] = useState(false);
+  const bothTeamsAssigned = Boolean(match.homeTeam && match.awayTeam);
+  const isForfeit = match.resultType === 'FORFEIT';
 
   const handleAnnounce = async (type: 'START' | 'RESULT') => {
     setAnnouncing(true);
@@ -35,6 +39,16 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
     } finally {
       setAnnouncing(false);
     }
+  };
+
+  const handleForfeit = (side: 'HOME' | 'AWAY') => {
+    const forfeiting = side === 'HOME' ? match.homeTeam?.name : match.awayTeam?.name;
+    const advancing = side === 'HOME' ? match.awayTeam?.name : match.homeTeam?.name;
+    const confirmed = window.confirm(
+      `Record a forfeit for ${forfeiting}?\n\nImpact:\n- ${advancing} is declared the winner and advances.\n- The match is marked final by forfeit.`
+    );
+    if (!confirmed) return;
+    onForfeit(side);
   };
 
   return (
@@ -47,7 +61,14 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
                 <Sword size={28} />
             </div>
             <div>
-              <h2 className="text-2xl font-black uppercase tracking-tight">Match Controls</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-black uppercase tracking-tight">Match Controls</h2>
+                {isForfeit && (
+                  <span className="flex items-center gap-1.5 rounded-md border border-[var(--mds-red)]/30 bg-[var(--mds-red)]/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-[var(--mds-red)]">
+                    <Flag size={10} /> Forfeit
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-3 mt-1.5 opacity-40 text-[9px] font-black uppercase tracking-[0.2em]">
                 <ShieldCheck size={12} /> Match ID: {match.id.split('-')[0].toUpperCase()}
               </div>
@@ -62,9 +83,10 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
           {/* STATUS SELECTOR */}
           <div className="space-y-4">
             <label className="mds-uppercase-label">Match Status</label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                    { id: 'READY', label: 'Ready', color: 'var(--mds-text-muted)', icon: History },
+                    { id: 'PENDING', label: 'Not called', color: 'var(--mds-text-subtle)', icon: Clock },
+                    { id: 'READY', label: 'Called', color: 'var(--mds-text-muted)', icon: History },
                     { id: 'LIVE', label: 'Live', color: 'var(--mds-red)', icon: Activity },
                     { id: 'COMPLETED', label: 'Final', color: 'var(--mds-green)', icon: CheckCircle2 }
                 ].map((s) => (
@@ -202,9 +224,36 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
             </div>
           </div>
 
+          {/* FORFEIT / WALKOVER */}
+          <div className="space-y-4">
+            <label className="mds-uppercase-label">Forfeit</label>
+            <div className="flex flex-wrap gap-3">
+                {(['HOME', 'AWAY'] as const).map((side) => (
+                    <button
+                        key={side}
+                        type="button"
+                        onClick={() => handleForfeit(side)}
+                        disabled={!bothTeamsAssigned || isSaving}
+                        data-testid={`forfeit-${side.toLowerCase()}-button`}
+                        className="flex-1 h-12 min-w-[160px] rounded-lg border border-[var(--mds-red)]/30 hover:border-[var(--mds-red)] hover:bg-[var(--mds-red)]/10 text-[var(--mds-red)] transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:hover:border-[var(--mds-red)]/30 disabled:hover:bg-transparent"
+                    >
+                        <Flag size={14} />
+                        <span className="text-[10px] font-black uppercase tracking-wider">
+                            {side === 'HOME' ? 'Home forfeits' : 'Away forfeits'}
+                        </span>
+                    </button>
+                ))}
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--mds-text-subtle)]">
+                {bothTeamsAssigned
+                    ? 'Declares the other team the winner and advances them immediately.'
+                    : 'Both teams must be assigned before a forfeit can be recorded.'}
+            </p>
+          </div>
+
           <div className="pt-4">
-            <button 
-                type="submit" 
+            <button
+                type="submit"
                 disabled={isSaving}
                 className="mds-btn-primary w-full h-14 text-[11px] font-black uppercase tracking-[0.15em] shadow-lg shadow-[var(--mds-action)]/20"
             >
@@ -213,16 +262,6 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
             </button>
           </div>
         </form>
-
-        <footer className="px-10 py-6 border-t border-[var(--mds-border)] bg-[var(--mds-input)]/10 flex items-center justify-between">
-            <div className="flex items-center gap-6 text-[9px] font-bold text-[var(--mds-text-subtle)] uppercase tracking-widest">
-                <div className="flex items-center gap-2"><Map size={12} /> Match data synced</div>
-                <div className="flex items-center gap-2"><History size={12} /> Ready for updates</div>
-            </div>
-            <div className="flex items-center gap-2 text-[9px] font-bold text-[var(--mds-text-subtle)] uppercase tracking-widest">
-                <Globe size={12} /> Tournament view
-            </div>
-        </footer>
       </div>
     </div>
   );
