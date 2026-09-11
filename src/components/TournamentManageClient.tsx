@@ -51,7 +51,9 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
     const [activeTab, setActiveTab] = useState('control');
     const [newTeam, setNewTeam] = useState({ name: '', logoUrl: '', seed: '', players: [] });
     const [generating, setGenerating] = useState(false);
-    const [editingTeam, setEditingTeam] = useState<any>(null);
+    // Only the id is held: the modal reads the live row out of the teams query so a roster edit is
+    // reflected the moment the query is invalidated.
+    const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
     const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
     const [draftSeeds, setDraftSeeds] = useState<Record<string, number | string>>({});
     const [importCsv, setImportCsv] = useState('');
@@ -101,6 +103,8 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
     });
 
     const loading = tournamentLoading || teamsLoading || matchesLoading;
+    // Live row for the open editor; the modal closes by itself if the team disappears.
+    const editingTeam = editingTeamId ? teams.find((team: any) => team.id === editingTeamId) : null;
     const activity = activityData?.entries || [];
     const notifications = notificationData?.notifications || [];
 
@@ -171,21 +175,18 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
     });
 
     const deleteTeamMutation = useMutation({
-        mutationFn: async ({ teamId, teamSnapshot }: { teamId: string; teamSnapshot?: any }) => {
-            const team = teams.find((entry: any) => entry.id === teamId);
-            return apiRequest(`/api/teams/${teamId}`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    expectedUpdatedAt: team?.updatedAt,
-                }),
-            });
-        },
-        onSuccess: (_, variables) => {
-            const teamSnapshot = variables.teamSnapshot;
+        mutationFn: async ({ teamId, force }: { teamId: string; teamSnapshot?: any; force?: boolean }) =>
+            clientApi.deleteTeam(teamId, { force }),
+        onSuccess: (result: any, variables) => {
+            // A forced removal happens while the roster is locked, and re-registering is refused
+            // by the same lock — so Undo is only offered on the unlocked path.
+            const teamSnapshot = variables.force ? undefined : variables.teamSnapshot;
+            const matchesAffected = Number(result?.matchesAffected) || 0;
             toast.success(
                 'Team removed',
-                'The team was removed from the bracket roster.',
+                matchesAffected > 0
+                    ? `The team was removed and pulled out of ${matchesAffected} match${matchesAffected === 1 ? '' : 'es'}.`
+                    : 'The team was removed from the bracket roster.',
                 teamSnapshot
                     ? {
                         label: 'Undo',
@@ -365,6 +366,91 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
         }));
         await updateSeedsMutation.mutateAsync(payload);
         setDraftSeeds({});
+    };
+
+    /**
+     * Team/roster editor handlers. Each resolves `true` when the server accepted the write, so the
+     * modal can drop its local draft; failures (423 locked / 409 stale) are surfaced as toasts here
+     * and leave the draft in place for a retry.
+     */
+    const isRosterLocked = Boolean(tournament?.rosterLocked);
+
+    const handleSaveTeamFields = async (teamId: string, payload: { name: string; logoUrl: string; seed: string }) => {
+        const team = teams.find((entry: any) => entry.id === teamId);
+        try {
+            await clientApi.updateTeam(teamId, {
+                name: payload.name,
+                logoUrl: payload.logoUrl,
+                // Seeding is refused while the roster is locked, so it is not even sent.
+                ...(isRosterLocked ? {} : { seed: payload.seed }),
+                expectedUpdatedAt: team?.updatedAt,
+            });
+            toast.success('Team saved', 'Team details were updated.');
+            await invalidateWorkspace();
+            return true;
+        } catch (error) {
+            showMutationError(error, 'Could not save team');
+            return false;
+        }
+    };
+
+    /** `steamId`/`isLeader` are locked fields; omit them so a seat fix is not refused with them. */
+    const buildPlayerPayload = (draft: any, includeIdentity: boolean) => ({
+        name: draft.name,
+        nickname: draft.nickname,
+        countryCode: draft.countryCode,
+        seating: draft.seating,
+        ...(includeIdentity ? { steamId: draft.steamId, isLeader: Boolean(draft.isLeader) } : {}),
+    });
+
+    const handleSavePlayer = async (playerId: string, draft: any) => {
+        try {
+            await clientApi.updatePlayer(playerId, buildPlayerPayload(draft, !isRosterLocked));
+            toast.success('Player saved', `${draft.name} was updated.`);
+            await invalidateWorkspace();
+            return true;
+        } catch (error) {
+            showMutationError(error, 'Could not save player');
+            return false;
+        }
+    };
+
+    const handleAddPlayer = async (teamId: string, draft: any) => {
+        try {
+            await clientApi.addTeamPlayer(teamId, buildPlayerPayload(draft, true));
+            toast.success('Player added', `${draft.name} joined the roster.`);
+            await invalidateWorkspace();
+            return true;
+        } catch (error) {
+            showMutationError(error, 'Could not add player');
+            return false;
+        }
+    };
+
+    const handleDeletePlayer = async (playerId: string) => {
+        try {
+            await clientApi.deletePlayer(playerId);
+            toast.success('Player removed', 'The player was removed from the roster.');
+            await invalidateWorkspace();
+            return true;
+        } catch (error) {
+            showMutationError(error, 'Could not remove player');
+            return false;
+        }
+    };
+
+    const handleDeleteTeam = (teamId: string) => {
+        const teamSnapshot = teams.find((team: any) => team.id === teamId);
+        if (!teamSnapshot) return;
+
+        // While the roster is locked the team is already placed in the bracket, so the removal has
+        // to be forced and the dialog says exactly what that does to the matches.
+        const message = isRosterLocked
+            ? `Force-remove ${teamSnapshot.name} while the bracket is live?\n\nImpact:\n- The team is pulled out of every match it is placed in (those slots go back to TBD).\n- Any win recorded for this team is cleared.\n- This cannot be undone from here — the team has to be re-registered with roster edits unlocked.`
+            : `Remove ${teamSnapshot.name} from this tournament?\n\nImpact:\n- Team and roster are removed from bracket participation.\n- Match slots may become TBD.\n\nYou can undo immediately from the success toast.`;
+        if (!window.confirm(message)) return;
+
+        deleteTeamMutation.mutate({ teamId, teamSnapshot, force: isRosterLocked });
     };
 
     const handleAnnounceDiscord = async (match: any, type: 'START' | 'RESULT') => {
@@ -564,18 +650,20 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
                                     setNewTeam={setNewTeam}
                                     onAddTeam={(e) => {
                                         e.preventDefault();
-                                        addTeamMutation.mutate(newTeam);
+                                        // Blank roster rows are dropped: an admin may register a partial team.
+                                        const players = (newTeam.players || [])
+                                            .map((player: any) => ({
+                                                name: (player.name || '').trim() || (player.nickname || '').trim(),
+                                                nickname: (player.nickname || '').trim(),
+                                                countryCode: (player.countryCode || '').trim(),
+                                                seating: (player.seating || '').trim(),
+                                                steamId: (player.steamId || '').trim(),
+                                            }))
+                                            .filter((player: any) => player.name);
+                                        addTeamMutation.mutate({ ...newTeam, players });
                                     }}
-                                    onEditTeam={setEditingTeam}
-                                    onDeleteTeam={(id) => {
-                                        const teamSnapshot = teams.find((team: any) => team.id === id);
-                                        if (!teamSnapshot) return;
-                                        const confirmed = window.confirm(
-                                            `Remove ${teamSnapshot.name} from this tournament?\n\nImpact:\n- Team and roster are removed from bracket participation.\n- Match slots may become TBD.\n\nYou can undo immediately from the success toast.`
-                                        );
-                                        if (!confirmed) return;
-                                        deleteTeamMutation.mutate({ teamId: id, teamSnapshot });
-                                    }}
+                                    onEditTeam={(team) => setEditingTeamId(team.id)}
+                                    onDeleteTeam={handleDeleteTeam}
                                     onDragStart={onDragStart}
                                     onDragOver={onDragOver}
                                     onDragEnd={onDragEnd}
@@ -635,13 +723,14 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
 
             {/* MODALS */}
             {editingTeam && (
-                <EditTeamModal 
+                <EditTeamModal
                     team={editingTeam}
-                    onClose={() => setEditingTeam(null)}
-                    onDeletePlayer={(pid) => {
-                        // Implement player deletion logic if needed
-                        console.log("Delete player", pid);
-                    }}
+                    tournament={tournament}
+                    onClose={() => setEditingTeamId(null)}
+                    onSaveTeam={(payload) => handleSaveTeamFields(editingTeam.id, payload)}
+                    onAddPlayer={(payload) => handleAddPlayer(editingTeam.id, payload)}
+                    onSavePlayer={handleSavePlayer}
+                    onDeletePlayer={handleDeletePlayer}
                 />
             )}
 
