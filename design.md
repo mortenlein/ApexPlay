@@ -59,6 +59,7 @@ Headings: h1 2.5rem, h2 1.75rem, h3 1.25rem, all weight 700 with `-0.02em` track
 | `Input` | Labelled field with optional hint. |
 | `EmptyState` | Zero states for lists/tables. |
 | `PageHeader` | Eyebrow + title + subtitle + right-aligned actions. |
+| `TopNav` | The single persistent, role-aware app header. |
 
 Underlying utility classes (`.mds-card`, `.mds-btn-primary`, `.mds-input`, `.mds-table`,
 `.mds-badge`, `.mds-empty-state`, `.workspace-*`) live in `globals.css`. Prefer the React
@@ -73,11 +74,12 @@ components; reach for the raw classes only for one-offs.
 
 ## 6. Surfaces (information architecture)
 
-The app is organized into three role-based surfaces (see `ANALYSIS_AND_ROADMAP.md` §2):
+The app is organized into three role-based surfaces:
 
 - **Public / Spectator** — brackets, schedule, live scores, rosters, OBS overlay. No login.
 - **Player** — Steam login: register, team invite link, your queue position, notifications.
-- **Control** — admin + marshal: manage tournaments, brackets, match flow, floor tools.
+- **Control** — admin (`/admin`) + marshal (`/marshal/dashboard`): tournaments, brackets, match
+  flow, floor tools. What each surface actually does day-to-day: `docs/LAN-RUNBOOK.md`.
 
 ## 7. Do / Don't
 

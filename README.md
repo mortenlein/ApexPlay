@@ -1,91 +1,103 @@
 # ApexPlay 🎯
 
-**Streamer-first tournament bracket management for CS2 (and any team-based esport).**
+**LAN tournament control for CS2 (and other team esports).** Brackets, floor operations, live
+scores and an OBS overlay, run from one dark-mode control surface.
 
-ApexPlay lets you create and manage single-elimination brackets, track live match scores, and display a real-time OBS overlay — all from a clean, dark-mode dashboard.
+Running an event? Go straight to the **[LAN day runbook](docs/LAN-RUNBOOK.md)**.
+Project status and remaining work: **[ANALYSIS_AND_ROADMAP.md](ANALYSIS_AND_ROADMAP.md)**.
+Design language: **[design.md](design.md)**.
 
 ---
 
 ## Features
 
-- 📋 **Dashboard** — Create and manage multiple tournaments
-- 🏆 **Bracket Generator** — Automatic single-elimination seeding with standard meet-in-the-middle seeding
-- 🎮 **BO1 / BO3 / BO5** — Per-round best-of format support (e.g. BO3 from Semi-Finals, BO5 for Grand Final)
-- 🎯 **3rd Place Decider** — Optional third place match
-- 🖥️ **OBS Overlay** — Live browser source overlay with transparent/chroma key background, auto-refreshing every 10s
-- 🏷️ **Stage Badges** — Every round labelled (Grand Final, Semi-Finals, Quarter-Finals, Round of 16, etc.)
-- 📝 **Score Tracking** — Per-map scores tracked alongside series scores
-- 🐳 **Docker Support** — Single command to run via Docker Compose
+- 🔐 **Steam sign-in for everything** — no anonymous registration, no admin password. Roles are
+  identities: `ADMIN_STEAMIDS` → organizer, `MARSHAL_STEAMIDS` → floor staff, everyone else is a
+  player.
+- 🏆 **Single & double elimination** — meet-in-the-middle seeding, byes in single elimination,
+  optional 3rd-place decider. (Double elimination currently needs a power-of-two team count.)
+- 🎮 **Per-stage BO1 / BO3 / BO5** — stage-relative ("BO3 from Semi-Finals, BO5 for the Grand
+  Final"); the series win condition is always derived from best-of.
+- 📝 **Score entry with map scores** — series score plus one row per map, auto-advance on the win
+  condition, and un-advance when a result is corrected (guarded: a downstream match that has
+  already started must be reset first).
+- 🏳️ **Forfeit / walkover** — the match is marked final by forfeit and the opponent advances.
+- 📣 **Call match** — one action sets the match to *Called*, web-pushes both rosters, posts to
+  Discord and writes the in-app notification feed.
+- 🪑 **Seats and check-in** — players set their own seat (editable even after the bracket locks);
+  floor staff confirm "at seat" on a shared, live marshal board.
+- 🖥️ **Marshal board** — `/marshal/dashboard`: matches needing players, sorted by urgency, with
+  seats, check-in and the match-call feed. Live over SSE.
+- 📡 **EON live-score bridge** — per-tournament token; EON on the observer machine pushes CS2
+  scores in and ApexPlay keeps them (side swaps included). Legacy GSI sources can still POST to
+  `/api/webhooks/cs2`.
+- 📺 **OBS overlays** — bracket and roster browser sources with chroma/compact flags.
+- 🔒 **Public vs staff payloads** — invite codes, steamids, user ids, server credentials and the
+  EON bridge token are never in a public response or an SSR page payload.
+- 💾 **Verified backups** — `scripts/backup.sh`: consistent SQLite snapshot + uploads archive,
+  integrity-checked, pruned.
+- 🐳 **Docker deploy** — one command, loopback bind behind the Cloudflare tunnel.
 
 ---
 
 ## Getting Started
 
-### Local Development
-
 **Prerequisites:** Node.js 22+ (the Docker image is `node:22-alpine`)
 
 ```bash
 npm install
+cp .env.example .env   # fill in at least NEXTAUTH_SECRET, ADMIN_STEAMIDS, STEAM_API_KEY
 npm run db:prepare
 npm run dev
 ```
 
-Open [http://localhost:4001](http://localhost:4001) — the landing page lists the tournaments and
-links to your dashboard (or Steam sign-in).
+Open [http://localhost:4001](http://localhost:4001). The landing page lists tournaments and links
+to your dashboard (or Steam sign-in). For local work without Steam, set `MOCK_AUTH_MODE=true` +
+`NEXT_PUBLIC_MOCK_AUTH=true` to get persona buttons on `/login`.
+
+### Checks
+
+```bash
+npx tsc --noEmit       # types
+npm run lint           # eslint
+npm run test:bracket   # bracket + match-result unit checks
+npm run test:e2e       # Playwright (starts its own dev server on :4101)
+```
 
 ### Docker
 
-Copy `.env.example` to `.env` and fill in the required values first — Compose fails fast if
-`NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `ADMIN_STEAMIDS` or `STEAM_API_KEY` are unset.
-
 ```bash
 cp .env.example .env
-docker compose up -d --build
+docker compose up -d --build     # http://localhost:4001
 ```
 
-The app will be available at [http://localhost:4001](http://localhost:4001).
+`./data` → `/app/data` and `./uploads` → `/app/public/uploads` are bind-mounted, so data survives
+rebuilds and stays readable on the host; Compose sets `DATABASE_URL` to `file:/app/data/prod.db`.
+`docker compose down` stops it; `rm -rf data/prod.db* uploads` wipes it.
 
-The SQLite database and the uploads directory are **bind-mounted** from the repo (`./data` →
-`/app/data`, `./uploads` → `/app/public/uploads`), so your data survives container rebuilds and
-stays readable on the host. `DATABASE_URL` is set by Compose to `file:/app/data/prod.db`.
-
-To stop:
-```bash
-docker compose down
-```
-
-To wipe data completely, remove the bind-mounted files (there is no named volume to prune):
-```bash
-docker compose down
-rm -rf data/prod.db* uploads
-```
-
-For the production deploy on `ash` (loopback bind on `127.0.0.1:8089` behind the Cloudflare
-tunnel at `apexplay.mortenlab.xyz`) use the prod overlay instead:
+Production on `ash` (loopback `127.0.0.1:8089` behind the Cloudflare tunnel at
+`apexplay.mortenlab.xyz`):
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-### Backups
+ApexPlay is **public with its own Steam auth** — deliberately not behind Cloudflare Access, unlike
+the other apps in `~/apps`.
 
-`scripts/backup.sh` snapshots the **production** SQLite DB and archives uploads into
-`data/backups/` (gitignored, local-only):
+### Backups
 
 ```bash
 ./scripts/backup.sh
 ```
 
-* `data/backups/prod-<ts>.db` — a consistent snapshot taken with SQLite `VACUUM INTO`, run
-  *inside* the `apexplay` container through the app's own Prisma client (neither the host nor the
-  alpine image has the `sqlite3` binary). It is read-only with respect to the live DB: writers are
-  never blocked and `data/prod.db` is not modified.
+* `data/backups/prod-<ts>.db` — consistent snapshot via SQLite `VACUUM INTO`, taken inside the
+  `apexplay` container through the app's own Prisma client (neither the host nor the alpine image
+  ships the `sqlite3` binary). Read-only with respect to the live DB: writers are never blocked.
 * `data/backups/uploads-<ts>.tar.gz` — tar-gz of `./uploads`.
-* Every snapshot is verified with `PRAGMA integrity_check` against the copy; a failed check
-  deletes the snapshot and exits non-zero.
-* Files older than `BACKUP_KEEP_DAYS` (default 30) are pruned. Other overrides: `BACKUP_DIR`,
-  `APEXPLAY_CONTAINER`, `APEXPLAY_UPLOADS_DIR`, `APEXPLAY_DB_IN_CONTAINER`.
+* Every snapshot is verified with `PRAGMA integrity_check`; a failed check deletes it and exits
+  non-zero. Files older than `BACKUP_KEEP_DAYS` (default 30) are pruned. Other overrides:
+  `BACKUP_DIR`, `APEXPLAY_CONTAINER`, `APEXPLAY_UPLOADS_DIR`, `APEXPLAY_DB_IN_CONTAINER`.
 
 Intended cron line (**not installed automatically** — add it with `crontab -e`):
 
@@ -93,123 +105,107 @@ Intended cron line (**not installed automatically** — add it with `crontab -e`
 20 3 * * * cd /home/mole/apps/ApexPlay && ./scripts/backup.sh >> data/backups/backup.log 2>&1
 ```
 
-To restore, stop the container, copy a snapshot over `data/prod.db`, and start again — the full
-step-by-step (including the WAL sidecars and the uploads archive) is in the `RESTORE` block at the
-top of `scripts/backup.sh`.
+Restore steps are in the `RESTORE` block at the top of `scripts/backup.sh`, and in the
+[runbook](docs/LAN-RUNBOOK.md#g-troubleshooting).
 
 ---
 
 ## Environment Variables
 
-| Variable | Default (dev) | Description |
-|---|---|---|
-| `DATABASE_URL` | `file:./dev.db` | Path to the SQLite database file |
-| `PORT` | `4001` | Port the server listens on |
-| `CS2_WEBHOOK_KEY` | *(required to accept score webhooks)* | Bearer key expected by `/api/webhooks/cs2` |
+Copy `.env.example` (which carries the full annotated list) to `.env` and keep it out of git.
 
-For local dev, these are set in `.env`. Docker Compose sets `DATABASE_URL` automatically to point to the persistent volume.
+**Required**
 
----
+| Variable | Description |
+|---|---|
+| `NEXTAUTH_URL` | Public origin; drives the Steam realm / return URL. Set by the prod compose file. |
+| `NEXTAUTH_SECRET` | Signs session cookies (`openssl rand -hex 32`). |
+| `STEAM_API_KEY` | Steam Web API key. Without it nobody can sign in. |
+| `ADMIN_STEAMIDS` | Comma-separated steamid64 allowlist → organizers. |
+| `DATABASE_URL` | SQLite path. Docker sets it to the mounted volume. |
 
-## Live scores (inbound webhook)
+**Operational**
 
-Live scores are pushed **into** ApexPlay over a single webhook — `POST /api/webhooks/cs2`
-(bearer-authed with `CS2_WEBHOOK_KEY`). Any source that reads the CS2 **GSI** stream can
-forward scores there; the planned **EON** integration works this way (EON already consumes the
-GSI file, so it can relay score updates to this endpoint). ApexPlay updates match state and
-broadcasts to the live UI.
+| Variable | Description |
+|---|---|
+| `MARSHAL_STEAMIDS` | Comma-separated steamid64 allowlist → floor staff (match control, no settings). |
+| `CS2_WEBHOOK_KEY` | Bearer key for `POST /api/webhooks/cs2`. Fails closed (503) if unset. |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | Web push (`npx web-push generate-vapid-keys`). Blank disables push and hides the opt-in button. |
+| `DISCORD_WEBHOOK_URL` *or* `DISCORD_BOT_TOKEN` + `DISCORD_CHANNEL_ID` | Announcements. Neither set → in-app notification log only. |
+| `PORT` | Server port (default `4001`). |
 
-> Organizers can always update scores manually from the Control view — the webhook just
-> automates it when a GSI source is wired up.
-
-### Quick local webhook test
-
-```bash
-npm run test:cs2-webhook -- match_live <matchId>
-```
+The EON bridge needs **no** env var: enable it per tournament in Control and paste the generated
+endpoint + token into EON on the observer machine.
 
 ---
 
 ## Usage
 
-### Creating a Tournament
+### 1. Create a tournament
 
-1. Go to the **Dashboard** at `/dashboard`
-2. Click **Create Tournament**
-3. Configure:
-   - **Tournament Name**
-   - **Bracket Format** — Single or Double Elimination
-   - **Team Size** — 2v2 (Duos) or 5v5 (Standard)
-   - **BO3 Starts At Round** — Stage from which matches become Best-of-3
-   - **BO5 Starts At Round** — Stage from which matches become Best-of-5
-   - **3rd Place Decider** — Enable a third place match
+`/admin` → **Create Tournament** → wizard: game, name, bracket style (single/double), team size,
+3rd-place decider, BO3/BO5 starting stage, review. Everything stays editable in **Settings**, but
+changing format / team size / best-of does not reshape matches that already exist — regenerate.
 
-### BO3 / BO5 Stage Dropdown Options
+### 2. Open registration
 
-| Option | Description |
-|---|---|
-| None | BO1 for all rounds (default) |
-| Grand Final | Only the final match is BO3/BO5 |
-| Semi-Finals | Semi-finals and the final are BO3/BO5 |
-| Quarter-Finals | From quarters onward |
-| Round of 16 | From Ro16 onward |
+**Settings → Signup Rules → Require Steam Sign-in** (off by default) turns on the self-service
+flow, and **Roster lock** must be *Editable*. Share
+`/tournaments/<id>/register`. Players sign in with Steam, create a team or join via the leader's
+invite link, and set their seat. Organizers can add, edit and remove teams, players and seats at
+any time, and import/export rosters as CSV
+(`teamName,seed,playerName,nickname,countryCode,seating,steamId,isLeader`).
 
-> BO5 will override BO3 for the same or later rounds. For example: BO3 from Semi-Finals + BO5 from Grand Final = Semis are BO3, Grand Final is BO5.
+### 3. Generate the bracket
 
-### Managing a Tournament
+Locks roster edits and seeds round 1. Double elimination needs 4/8/16/32 teams; single
+elimination handles any count and fills with byes. **Regenerating deletes all matches and
+results.**
 
-From the tournament card, click **Manage** to:
+### 4. Run the event
 
-- Add/edit teams and players
-- Generate the bracket
-- Record match scores (per-map and series scores)
-- Advance winners and manage bracket state
+Organizers work in the **Control** cockpit (`/admin/tournaments/<id>`), floor staff on the
+**marshal board** (`/marshal/dashboard`): call matches, check players in at their seat, mark live,
+enter series and map scores, record forfeits, correct results. Optionally enable the **EON live
+scores** bridge so scores arrive on their own.
+
+Step-by-step, including the failure modes: **[docs/LAN-RUNBOOK.md](docs/LAN-RUNBOOK.md)**.
 
 ---
 
 ## OBS Stream Overlay
 
-The overlay is a browser source designed for OBS Studio (or any browser-source-capable capturing tool).
-
-### Overlay URL
+Public browser sources, no login, polling every 10s:
 
 ```
-http://localhost:4001/bracket/[tournament-id]/overlay
+/bracket/<tournamentId>/overlay   # bracket + live scores
+/bracket/<tournamentId>/roster    # rosters with seats
 ```
-
-Find the tournament ID in the URL when managing a tournament.
-
-### Query String Flags
 
 | Flag | Values | Default | Description |
 |---|---|---|---|
-| `chroma` | `transparent`, any CSS colour | `transparent` | Background colour of the overlay |
-| `compact` | `true` | *(off)* | Scales the overlay to 75% for smaller displays |
+| `chroma` | `transparent`, any CSS colour | `transparent` | Overlay background (`?chroma=green`, `?chroma=%2300b140`) |
+| `compact` | `true` | *(off)* | Bracket overlay at 75% scale |
 
-### Background Examples
+In OBS: add a **Browser Source**, set 1920×1080, tick **"Refresh browser when scene becomes
+active"**, and add `body { background-color: rgba(0,0,0,0) !important; }` to Custom CSS as a
+transparency safety net.
 
-| URL | Effect |
-|---|---|
-| `/overlay` | Fully transparent (for OBS chroma key or direct compositing) |
-| `/overlay?chroma=green` | Solid green background |
-| `/overlay?chroma=%2300b140` | Custom hex green (`#00b140`) |
-| `/overlay?chroma=%23ff00ff` | Magenta/pink chroma key |
-| `/overlay?compact=true` | 75% scale, transparent background |
-| `/overlay?chroma=green&compact=true` | 75% scale, green background |
+---
 
-### OBS Setup
+## Live scores (inbound)
 
-1. Add a **Browser Source** in OBS
-2. Set the URL to your overlay (with the tournament ID)
-3. Set width/height to match your canvas (e.g. 1920×1080)
-4. Check **"Refresh browser when scene becomes active"** for reliable updates
-5. In the **Custom CSS** field, add:
-   ```css
-   body { background-color: rgba(0,0,0,0) !important; }
-   ```
-   as an extra safety net for transparency
+| Endpoint | Auth | Source |
+|---|---|---|
+| `POST /api/webhooks/eon` | per-tournament bridge token (`Authorization: Bearer eon_…`) | EON on the observer machine; identifies the match from the steamids on the server, so side swaps are handled |
+| `POST /api/webhooks/cs2` | `Authorization: Bearer $CS2_WEBHOOK_KEY` | any CS2 GSI relay |
 
-The overlay polls for score updates every **10 seconds** automatically.
+Both update match state and broadcast to the live UI over SSE. Staff can always override scores
+from Control — and always decide when a match is *Final*.
+
+```bash
+npm run test:cs2-webhook -- match_live <matchId>   # local smoke test
+```
 
 ---
 
@@ -218,16 +214,20 @@ The overlay polls for score updates every **10 seconds** automatically.
 ```
 src/
   app/
-    dashboard/          # Dashboard and tournament management UI
-    bracket/[id]/
-      overlay/          # OBS stream overlay
-    api/
-      tournaments/      # Tournament CRUD and bracket generation APIs
+    admin/                # organizer dashboard + tournament cockpit
+    marshal/dashboard/    # floor board
+    tournaments/          # public + player pages (incl. /register)
+    bracket/[id]/         # overlay/ and roster/ OBS sources
+    api/                  # route handlers (public vs staff payload shapes)
   lib/
-    bracket-utils.ts    # Bracket generation and seeding logic
-    prisma.ts           # Prisma client singleton
-prisma/
-  schema.prisma         # Database schema
+    bracket-utils.ts      # bracket generation + seeding
+    match-status.ts       # canonical match status vocabulary
+    match-result.ts       # pure score/forfeit/advance decision logic
+    api.ts                # SSR prefetch — mirrors the routes' public shapes
+    push.ts discord.ts    # notification channels
+prisma/schema.prisma
+scripts/backup.sh         # snapshot + restore instructions
+docs/LAN-RUNBOOK.md
 ```
 
 ---
@@ -236,9 +236,11 @@ prisma/
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 14 (App Router) |
-| UI | React + Tailwind CSS |
-| Bracket Visualisation | React Flow |
-| Database | SQLite via Prisma |
-| Runtime | Node.js 20 |
+| Framework | Next.js 15 (App Router) |
+| UI | React 19 + Tailwind CSS |
+| Bracket visualisation | React Flow |
+| Auth | next-auth v4 + `next-auth-steam` |
+| Database | SQLite via Prisma 6 |
+| Live updates | SSE over an in-process event bus |
+| Runtime | Node.js 22 |
 | Container | Docker + Docker Compose |
