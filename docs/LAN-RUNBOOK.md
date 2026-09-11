@@ -226,8 +226,14 @@ loading a match."
 ### Check-in at seat
 
 On the marshal board, tap a player to mark them **at seat**. It is stored on the player row, so
-it is shared between all marshals, survives a reload, and shows on the control cockpit too.
-Tap again to clear it.
+it is shared live between all marshals' phones, survives a reload, and shows on the control
+cockpit too. Tap again to clear it.
+
+Check-in is **per call**: calling a match clears both rosters' ticks, and so does completing
+it — a tick from an earlier match never carries over. The board lists called matches first
+(oldest call at the top; the "called N min ago" chip turns amber after 10 minutes), then live,
+then up next. The dot next to "Live" in the header shows whether the phone is actually
+connected; if it says "Reconnecting…" the board catches up by itself, or tap the refresh icon.
 
 ### Mark live
 
