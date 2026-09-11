@@ -64,3 +64,6 @@ massive_wingman_stats.json
 OVERNIGHT_REPORT.md
 ULTIMATE_STRESS_REPORT.md
 lan_stress.md
+
+# Claude Code agent worktrees
+.claude/worktrees/
