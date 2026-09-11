@@ -5,6 +5,9 @@ const DATABASE_URL = `file:${path.resolve(process.cwd(), 'prisma', 'e2e.db').rep
 process.env.DATABASE_URL = DATABASE_URL;
 // Admin is an identity now: the "marcus" mock persona (steamid below) resolves to admin.
 process.env.ADMIN_STEAMIDS = '76561198000000001';
+// Marshal is an identity too: the "mia" mock persona (e2e/helpers/auth.ts) is floor staff —
+// she can call matches and check players in, but is not an admin.
+process.env.MARSHAL_STEAMIDS = '76561198000000006';
 process.env.MOCK_AUTH_MODE = 'true';
 process.env.NEXT_PUBLIC_MOCK_AUTH = 'true';
 process.env.NEXT_PUBLIC_STRATEGY_3_MOCK = 'true';
