@@ -35,7 +35,11 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [userTeam, setUserTeam] = useState<any>(null);
     const sessionSteamId = (session?.user as any)?.steamId as string | undefined;
-    const requiresSteamAuth = Boolean(tournament?.steamSignupEnabled) && (!session || !sessionSteamId);
+    const isSignedIn = Boolean(session?.user);
+    // Steam-signup tournaments additionally need a Steam-linked account (invite links key off it).
+    const requiresSteamAuth = Boolean(tournament?.steamSignupEnabled) && (!isSignedIn || !sessionSteamId);
+    // Every registration is now tied to a user account — anonymous sign-up is gone.
+    const requiresSignIn = !isSignedIn || requiresSteamAuth;
 
     useEffect(() => {
         const fetchData = async () => {
@@ -55,9 +59,11 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                 if (session && sessionSteamId && current.steamSignupEnabled) {
                     const teamsRes = await fetch(`/api/tournaments/${params.id}/teams`);
                     const teams = await teamsRes.json();
-                    const myTeam = teams.find((t: any) => 
-                        t.players.some((p: any) => p.userId === (session?.user as any)?.id)
-                    );
+                    // The teams endpoint marks the viewer's own player rows with isMe (and only
+                    // then exposes that team's invite code).
+                    const myTeam = Array.isArray(teams)
+                        ? teams.find((t: any) => t.players?.some((p: any) => p.isMe))
+                        : undefined;
                     if (myTeam) setUserTeam(myTeam);
                 }
             } catch (err) {
@@ -296,15 +302,19 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                 </header>
 
                 <main>
-                    {requiresSteamAuth ? (
+                    {requiresSignIn ? (
                         <div className="mds-card p-12 text-center shadow-xl space-y-10">
                             <div className="w-16 h-16 bg-[var(--mds-action-soft)] rounded-2xl flex items-center justify-center mx-auto border border-[var(--mds-action)]/20 shadow-lg">
                                 <Gamepad2 size={32} className="text-[var(--mds-action)]" />
                             </div>
                             <div className="space-y-4">
-                                <h2 className="text-2xl font-black uppercase tracking-tight">Steam Verification Required</h2>
+                                <h2 className="text-2xl font-black uppercase tracking-tight">
+                                    {tournament?.steamSignupEnabled ? 'Steam Verification Required' : 'Sign In Required'}
+                                </h2>
                                 <p className="text-[var(--mds-text-muted)] text-[13px] font-medium max-w-md mx-auto leading-relaxed">
-                                    This tournament requires a Steam-linked login to verify player identities and enable invite links.
+                                    {tournament?.steamSignupEnabled
+                                        ? 'This tournament requires a Steam-linked login to verify player identities and enable invite links.'
+                                        : 'Registration is tied to your account, so sign in before entering a team.'}
                                 </p>
                             </div>
                             <button 

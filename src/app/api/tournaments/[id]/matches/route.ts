@@ -1,10 +1,34 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { isStaffAuthenticated } from '@/lib/route-auth';
+
+// Reads the session to decide whether player steamIds are included; never prerender.
+export const dynamic = 'force-dynamic';
+
+type PublicPlayer = { id: string; name: string; seating: string | null; isOnline: boolean };
+
+/** Player steamIds are staff-only; seating and presence stay public for the bracket. */
+function toPublicTeam<T extends { players: (PublicPlayer & { steamId: string | null })[] }>(team: T | null) {
+    if (!team) {
+        return team;
+    }
+
+    return {
+        ...team,
+        players: team.players.map(({ id, name, seating, isOnline }): PublicPlayer => ({
+            id,
+            name,
+            seating,
+            isOnline,
+        })),
+    };
+}
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
     try {
         const tournamentId = params.id;
+        const isStaff = await isStaffAuthenticated();
         const matches = await prisma.match.findMany({
             where: { tournamentId },
             select: {
@@ -52,7 +76,17 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
                 { matchOrder: 'asc' },
             ],
         });
-        return NextResponse.json(matches);
+        if (isStaff) {
+            return NextResponse.json(matches);
+        }
+
+        return NextResponse.json(
+            matches.map((match) => ({
+                ...match,
+                homeTeam: toPublicTeam(match.homeTeam),
+                awayTeam: toPublicTeam(match.awayTeam),
+            }))
+        );
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

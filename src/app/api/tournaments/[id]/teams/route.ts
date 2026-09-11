@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { resolveSteamId } from '@/lib/steam';
-import { requireAdminApi, requireSignedInUser } from '@/lib/route-auth';
+import { requireAdminApi, requireSignedInUser, getUserSession } from '@/lib/route-auth';
+import { isStaffSteamId } from '@/lib/admin-config';
 import { buildTeamsCsv, parseCsvRows } from '@/lib/csv';
 import { buildActorLabel, recordAudit } from '@/lib/audit';
 import { lockedResponse } from '@/lib/mutation-guards';
 
-export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
-    const params = await props.params;
-    const teams = await prisma.team.findMany({
-        where: { tournamentId: params.id },
+// Reads the session to decide how much of the roster to expose; never prerender.
+export const dynamic = 'force-dynamic';
+
+function findTeams(tournamentId: string) {
+    return prisma.team.findMany({
+        where: { tournamentId },
         select: {
             id: true,
             name: true,
@@ -41,8 +44,55 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
         },
         orderBy: { seed: 'asc' },
     });
+}
+
+type TeamRow = Awaited<ReturnType<typeof findTeams>>[number];
+
+/**
+ * Public roster shape: no Steam/user identifiers on any player, and no invite code unless the
+ * viewer is on that team (the code is a join credential). Seats, names, nicknames, flags and
+ * leader flags stay public — the roster/OBS pages are meant to show them.
+ */
+function toPublicTeam(team: TeamRow, viewerUserId?: string) {
+    const players = team.players.map((player) => ({
+        id: player.id,
+        name: player.name,
+        nickname: player.nickname,
+        countryCode: player.countryCode,
+        seating: player.seating,
+        isLeader: player.isLeader,
+        isMe: Boolean(viewerUserId && player.userId === viewerUserId),
+    }));
+
+    const isMyTeam = players.some((player) => player.isMe);
+
+    return {
+        id: team.id,
+        name: team.name,
+        logoUrl: team.logoUrl,
+        seed: team.seed,
+        updatedAt: team.updatedAt,
+        ...(isMyTeam ? { inviteCode: team.inviteCode } : {}),
+        players,
+    };
+}
+
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
+    // Resolve the viewer once: DB user id (for "my team") + staff flag (for the full payload).
+    const session = await getUserSession();
+    const isStaff = isStaffSteamId((session?.user as any)?.steamId);
+    const viewerUserId = (session?.user as any)?.id as string | undefined;
 
     const format = new URL(request.url).searchParams.get('format');
+
+    // The CSV export carries steamIds for every player — staff only.
+    if (format === 'csv' && !isStaff) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const teams = await findTeams(params.id);
+
     if (format === 'csv') {
         return new Response(buildTeamsCsv(teams), {
             headers: {
@@ -52,7 +102,11 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
         });
     }
 
-    return NextResponse.json(teams);
+    if (isStaff) {
+        return NextResponse.json(teams);
+    }
+
+    return NextResponse.json(teams.map((team) => toPublicTeam(team, viewerUserId)));
 }
 
 export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
@@ -78,8 +132,10 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         const isAdminRequest = !adminUnauthorized;
         const userSession = await requireSignedInUser();
 
-        if (!isAdminRequest && tournament.steamSignupEnabled && !userSession) {
-            return NextResponse.json({ error: 'Sign in required for this tournament' }, { status: 401 });
+        // Anonymous registration is gone: every non-admin write needs a signed-in user, whether or
+        // not the tournament uses Steam signup.
+        if (!isAdminRequest && !userSession) {
+            return NextResponse.json({ error: 'Sign in required to register a team' }, { status: 401 });
         }
 
         if (tournament.rosterLocked) {

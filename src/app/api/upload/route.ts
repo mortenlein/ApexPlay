@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import prisma from '@/lib/prisma';
 import { requireSignedInUser, isAdminAuthenticated } from '@/lib/route-auth';
 
 const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
@@ -19,29 +18,17 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const tournamentId = formData.get('tournamentId');
 
     if (!file) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
+    // Uploads always require an identity — there is no anonymous registration any more.
     const isAdmin = await isAdminAuthenticated();
     const session = await requireSignedInUser();
 
     if (!isAdmin && !session?.user) {
-      if (typeof tournamentId !== 'string' || !tournamentId) {
-        return NextResponse.json({ error: 'Sign in required for uploads' }, { status: 401 });
-      }
-
-      const tournament = await prisma.tournament.findUnique({
-        where: { id: tournamentId },
-        select: { steamSignupEnabled: true, rosterLocked: true },
-      });
-
-      // Anonymous uploads are only for open registration on non-Steam tournaments.
-      if (!tournament || tournament.steamSignupEnabled || tournament.rosterLocked) {
-        return NextResponse.json({ error: 'Sign in required for uploads' }, { status: 401 });
-      }
+      return NextResponse.json({ error: 'Sign in required for uploads' }, { status: 401 });
     }
 
     if (!ALLOWED_MIME_TYPES.has(file.type)) {
