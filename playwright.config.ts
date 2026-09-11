@@ -20,6 +20,14 @@ process.env.NEXTAUTH_URL = `http://127.0.0.1:${E2E_PORT}`;
 // SteamProvider throws "clientSecret is empty" on construction without this, which 500s
 // EVERY /api/auth/* request (providers, session, signin) and breaks all auth in tests.
 process.env.STEAM_API_KEY = 'e2e-placeholder';
+// Web push has to be *configured* for the player-notification specs to mean anything:
+// /api/push/public-key hands back null and sendPushToUsers() returns before touching a
+// subscription when VAPID is unset, so "delivery was attempted" would be unfalsifiable.
+// Throwaway keypair generated once with `npx web-push generate-vapid-keys` — test-only, it
+// signs pushes to nothing (the specs subscribe with an unroutable endpoint).
+process.env.VAPID_PUBLIC_KEY = 'BJEVgFRpP8GtXwHqfpwTfPVWJdA5MwqHPkhXgiXo7caRItlOoBBHAE3KZ0JBNCfEV2z-VFRagJ9zdZ8lhgAEaNw';
+process.env.VAPID_PRIVATE_KEY = 'x65aEqVjG5zvx9JMuhvrTMQmtGSs2NKwPicYayEAP0U';
+process.env.VAPID_SUBJECT = 'mailto:e2e@apexplay.local';
 
 export default defineConfig({
   testDir: './e2e',
