@@ -1,9 +1,11 @@
 const { spawn, spawnSync } = require("child_process");
 const { resolveSQLiteUrl } = require("./resolve-sqlite-url");
 
+const port = process.env.E2E_PORT || "4101";
 const env = {
   ...process.env,
-  DATABASE_URL: resolveSQLiteUrl(process.env.DATABASE_URL || "file:./e2e.db"),
+  E2E_PORT: port,
+  DATABASE_URL: resolveSQLiteUrl(process.env.DATABASE_URL || `file:./e2e-${port}.db`),
 };
 
 const nodeCommand = process.execPath;
@@ -29,11 +31,11 @@ runStep(nodeCommand, ["scripts/migrate.js"]);
 
 const devServer =
   process.platform === "win32"
-    ? spawn("powershell.exe", ["-Command", "npx next dev -p 4101"], {
+    ? spawn("powershell.exe", ["-Command", `npx next dev -p ${port}`], {
         stdio: "inherit",
         env,
       })
-    : spawn("npx next dev -p 4101", {
+    : spawn(`npx next dev -p ${port}`, {
         stdio: "inherit",
         env,
         shell: true,

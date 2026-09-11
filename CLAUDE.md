@@ -7,10 +7,11 @@ ApexPlay is **PUBLIC with its own Steam auth**, not behind Cloudflare Access (pl
 ## Run & verify
 - `npm run dev` — dev server on **4001** (migrations run first). Also `npx tsc --noEmit`,
   `npm run lint`, `npm run test:bracket` (bracket + match-result units).
-- `npm run test:e2e` — Playwright starts its own dev server on **4101**, so that port must be
+- `npm run test:e2e` — Playwright starts its own dev server on **4101** (override with `E2E_PORT=4102`
+  to run a second suite in parallel — port and SQLite file are per port), so that port must be
   free. `playwright.config.ts` injects a `STEAM_API_KEY` placeholder (without a value
   `SteamProvider` throws at construction and every `/api/auth/*` route 500s), the mock-auth flags
-  and a separate `prisma/e2e.db`. Never point tests or scripts at `data/prod.db`.
+  and a separate `prisma/e2e-<port>.db`. Never point tests or scripts at `data/prod.db`.
 
 ## Branch & deploy
 - Work on a branch, never commit straight to `main`. Commit only when asked.

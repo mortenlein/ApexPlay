@@ -1,7 +1,11 @@
 import path from 'path';
 import { defineConfig, devices } from '@playwright/test';
 
-const DATABASE_URL = `file:${path.resolve(process.cwd(), 'prisma', 'e2e.db').replace(/\\/g, '/')}`;
+// One dev server + one SQLite file per E2E_PORT, so several suites (e.g. parallel agents in
+// separate worktrees) can run on the same machine without sharing a port or a database.
+const E2E_PORT = process.env.E2E_PORT || '4101';
+process.env.E2E_PORT = E2E_PORT;
+const DATABASE_URL = `file:${path.resolve(process.cwd(), 'prisma', `e2e-${E2E_PORT}.db`).replace(/\\/g, '/')}`;
 process.env.DATABASE_URL = DATABASE_URL;
 // Admin is an identity now: the "marcus" mock persona (steamid below) resolves to admin.
 process.env.ADMIN_STEAMIDS = '76561198000000001';
@@ -12,7 +16,7 @@ process.env.MOCK_AUTH_MODE = 'true';
 process.env.NEXT_PUBLIC_MOCK_AUTH = 'true';
 process.env.NEXT_PUBLIC_STRATEGY_3_MOCK = 'true';
 process.env.NEXTAUTH_SECRET = 'test-secret';
-process.env.NEXTAUTH_URL = 'http://127.0.0.1:4101';
+process.env.NEXTAUTH_URL = `http://127.0.0.1:${E2E_PORT}`;
 // SteamProvider throws "clientSecret is empty" on construction without this, which 500s
 // EVERY /api/auth/* request (providers, session, signin) and breaks all auth in tests.
 process.env.STEAM_API_KEY = 'e2e-placeholder';
@@ -27,17 +31,18 @@ export default defineConfig({
   timeout: 90000,
   expect: { timeout: 20000 },
   use: {
-    baseURL: 'http://127.0.0.1:4101',
+    baseURL: `http://127.0.0.1:${E2E_PORT}`,
     trace: 'on-first-retry',
   },
   webServer: {
     command: 'npm run dev:e2e',
-    url: 'http://127.0.0.1:4101',
+    url: `http://127.0.0.1:${E2E_PORT}`,
     reuseExistingServer: false,
     timeout: 180000,
     env: {
       ...process.env,
       DATABASE_URL,
+      E2E_PORT,
     },
   },
   projects: [

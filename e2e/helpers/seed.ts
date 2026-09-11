@@ -1,7 +1,7 @@
 import path from 'path';
 import { PrismaClient } from '@prisma/client';
 
-const defaultDatabaseUrl = `file:${path.resolve(process.cwd(), 'prisma', 'e2e.db').replace(/\\/g, '/')}`;
+const defaultDatabaseUrl = `file:${path.resolve(process.cwd(), 'prisma', `e2e-${process.env.E2E_PORT || '4101'}.db`).replace(/\\/g, '/')}`;
 
 const prisma = new PrismaClient({
   datasources: {

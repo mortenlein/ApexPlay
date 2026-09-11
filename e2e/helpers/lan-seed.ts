@@ -9,7 +9,7 @@ import { PrismaClient } from '@prisma/client';
  * `User` rows are recreated with fresh ids. These helpers only ever *add* a tournament, so each
  * test owns its own data and tests stay independent of one another.
  */
-const defaultDatabaseUrl = `file:${path.resolve(process.cwd(), 'prisma', 'e2e.db').replace(/\\/g, '/')}`;
+const defaultDatabaseUrl = `file:${path.resolve(process.cwd(), 'prisma', `e2e-${process.env.E2E_PORT || '4101'}.db`).replace(/\\/g, '/')}`;
 
 export const prisma = new PrismaClient({
   datasources: { db: { url: process.env.DATABASE_URL || defaultDatabaseUrl } },

@@ -1,8 +1,14 @@
+import path from 'path';
 import type { Page } from '@playwright/test';
 import { encode } from 'next-auth/jwt';
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+/** Mirrors playwright.config.ts: one port + one SQLite file per suite run. */
+export const E2E_PORT = process.env.E2E_PORT || '4101';
+const databaseUrl =
+  process.env.DATABASE_URL ||
+  `file:${path.resolve(process.cwd(), 'prisma', `e2e-${E2E_PORT}.db`).replace(/\\/g, '/')}`;
+const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
 
 export type Persona = 'marcus' | 'leo' | 'sam' | 'chloe' | 'toby' | 'mia';
 
@@ -20,7 +26,7 @@ export const PERSONAS: Record<Persona, { steamId: string; email: string; name: s
 /** Must match the e2e server's NEXTAUTH_SECRET (playwright.config.ts). Hardcoded rather than
  *  read from process.env, which isn't reliably propagated into Playwright worker processes. */
 export const E2E_NEXTAUTH_SECRET = 'test-secret';
-export const E2E_BASE_URL = 'http://127.0.0.1:4101';
+export const E2E_BASE_URL = `http://127.0.0.1:${E2E_PORT}`;
 
 /**
  * Upserts the persona's user row and mints the NextAuth session-token JWT the server will
@@ -59,11 +65,11 @@ export async function loginAs(page: Page, persona: Persona) {
 
   // Set via `url` (not domain/path) — robust for the 127.0.0.1 IP host.
   await page.context().addCookies([
-    { name: 'next-auth.session-token', value: token, url: 'http://127.0.0.1:4101' },
+    { name: 'next-auth.session-token', value: token, url: E2E_BASE_URL },
   ]);
 
   // Fail fast (and informatively) if the server doesn't accept the session.
-  const res = await page.request.get('http://127.0.0.1:4101/api/auth/session');
+  const res = await page.request.get(`${E2E_BASE_URL}/api/auth/session`);
   const body = await res.text();
   let session: any = {};
   try {
