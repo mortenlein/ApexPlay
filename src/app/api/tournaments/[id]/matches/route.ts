@@ -5,7 +5,14 @@ import { isStaffAuthenticated } from '@/lib/route-auth';
 // Reads the session to decide whether player steamIds are included; never prerender.
 export const dynamic = 'force-dynamic';
 
-type PublicPlayer = { id: string; name: string; seating: string | null; isOnline: boolean };
+type PublicPlayer = {
+    id: string;
+    name: string;
+    seating: string | null;
+    isOnline: boolean;
+    /** At-seat state set by floor staff — public, the bracket shows who has arrived. */
+    checkedInAt: Date | null;
+};
 
 /** Player steamIds are staff-only; seating and presence stay public for the bracket. */
 function toPublicTeam<T extends { players: (PublicPlayer & { steamId: string | null })[] }>(team: T | null) {
@@ -15,11 +22,12 @@ function toPublicTeam<T extends { players: (PublicPlayer & { steamId: string | n
 
     return {
         ...team,
-        players: team.players.map(({ id, name, seating, isOnline }): PublicPlayer => ({
+        players: team.players.map(({ id, name, seating, isOnline, checkedInAt }): PublicPlayer => ({
             id,
             name,
             seating,
             isOnline,
+            checkedInAt,
         })),
     };
 }
@@ -55,7 +63,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
                         logoUrl: true,
                         seed: true,
                         players: {
-                            select: { id: true, name: true, seating: true, steamId: true, isOnline: true }
+                            select: { id: true, name: true, seating: true, steamId: true, isOnline: true, checkedInAt: true }
                         }
                     }
                 },
@@ -66,7 +74,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
                         logoUrl: true,
                         seed: true,
                         players: {
-                            select: { id: true, name: true, seating: true, steamId: true, isOnline: true }
+                            select: { id: true, name: true, seating: true, steamId: true, isOnline: true, checkedInAt: true }
                         }
                     }
                 }
