@@ -59,4 +59,17 @@ export const clientApi = {
     apiRequest<{ success: boolean }>("/api/auth/logout", {
       method: "POST",
     }),
+  /** Player self-service: update your own Player row (seat / nickname) in one tournament. */
+  updateMyPlayer: (payload: { tournamentId: string; seating?: string; nickname?: string }) =>
+    apiRequest<{ player: any }>("/api/me/player", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
+  /** Player self-service: leave your team (only while the roster is unlocked). */
+  leaveMyTeam: (tournamentId: string) =>
+    apiRequest<{ success: boolean; teamDeleted: boolean; promotedPlayerId: string | null }>(
+      `/api/me/player?tournamentId=${encodeURIComponent(tournamentId)}`,
+      { method: "DELETE" }
+    ),
 };

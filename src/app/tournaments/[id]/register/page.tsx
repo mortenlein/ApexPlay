@@ -1,21 +1,24 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, useCallback, use } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import Image from 'next/image';
-import { Trophy, Users, ShieldCheck, ArrowRight, CheckCircle2, AlertCircle, Loader2, Gamepad2, Upload, Share2, Copy } from 'lucide-react';
+import { Trophy, Users, ShieldCheck, ArrowRight, CheckCircle2, AlertCircle, Loader2, Gamepad2, Upload, Share2, Copy, Hash, Crown, LogOut, Lock } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { TopNav } from '@/components/ui';
 import { MockPersonaButtons } from '@/components/MockPersonaButtons';
 import { useToast } from '@/components/ToastProvider';
 import { RouteNotFoundState } from '@/components/RouteStates';
+import { SeatEditor, SEAT_HELPER_TEXT, SEAT_MAX_LENGTH } from '@/components/player/SeatEditor';
+import { clientApi } from '@/lib/client-api';
 
 const PUBLIC_NAV = [{ href: '/tournaments', label: 'Tournaments' }];
 
 export default function RegisterPage(props: { params: Promise<{ id: string }> }) {
     const params = use(props.params);
     const { data: session, status } = useSession();
+    const router = useRouter();
     const searchParams = useSearchParams();
     const inviteCode = searchParams.get('invite');
     const toast = useToast();
@@ -23,8 +26,11 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
     const [tournament, setTournament] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [leaving, setLeaving] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // Optional LAN seat the player types while signing up, sent along with the signup POST.
+    const [seating, setSeating] = useState('');
 
     const [teamData, setTeamData] = useState({
         name: '',
@@ -40,6 +46,24 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
     const requiresSteamAuth = Boolean(tournament?.steamSignupEnabled) && (!isSignedIn || !sessionSteamId);
     // Every registration is now tied to a user account — anonymous sign-up is gone.
     const requiresSignIn = !isSignedIn || requiresSteamAuth;
+
+    /**
+     * Pulls the viewer's own team out of the teams endpoint. That endpoint marks the viewer's
+     * own player rows with isMe (and only then exposes that team's invite code), so it is the
+     * canonical shape for the team panel — richer than the signup POST response.
+     */
+    const loadMyTeam = useCallback(async () => {
+        try {
+            const teams = await clientApi.getTeams(params.id);
+            const myTeam = Array.isArray(teams)
+                ? teams.find((t: any) => t.players?.some((p: any) => p.isMe))
+                : undefined;
+            if (myTeam) setUserTeam(myTeam);
+            return myTeam ?? null;
+        } catch {
+            return null;
+        }
+    }, [params.id]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -57,14 +81,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                 }
 
                 if (session && sessionSteamId && current.steamSignupEnabled) {
-                    const teamsRes = await fetch(`/api/tournaments/${params.id}/teams`);
-                    const teams = await teamsRes.json();
-                    // The teams endpoint marks the viewer's own player rows with isMe (and only
-                    // then exposes that team's invite code).
-                    const myTeam = Array.isArray(teams)
-                        ? teams.find((t: any) => t.players?.some((p: any) => p.isMe))
-                        : undefined;
-                    if (myTeam) setUserTeam(myTeam);
+                    await loadMyTeam();
                 }
             } catch (err) {
                 setError('Failed to load tournament details');
@@ -73,7 +90,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
             }
         };
         fetchData();
-    }, [params.id, session, sessionSteamId]);
+    }, [params.id, session, sessionSteamId, loadMyTeam]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -102,6 +119,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                         action: 'CREATE_TEAM',
                         teamName: teamData.name,
                         logoUrl: logoUrl,
+                        seating,
                     }),
                 });
 
@@ -111,6 +129,8 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                 }
                 const newTeam = await res.json();
                 setUserTeam(newTeam);
+                // Re-read the roster so the panel gets the isMe/inviteCode shape it renders from.
+                await loadMyTeam();
                 setSuccess(true);
             } else {
                 const cleanedPlayers = teamData.players.filter(p => p.name.trim() !== '');
@@ -151,6 +171,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                 body: JSON.stringify({
                     action: 'JOIN_TEAM',
                     inviteCode: inviteCode,
+                    seating,
                 }),
             });
 
@@ -160,6 +181,8 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
             }
             const joinedTeam = await res.json();
             setUserTeam(joinedTeam);
+            // Re-read the roster so the panel gets the isMe/inviteCode shape it renders from.
+            await loadMyTeam();
             setSuccess(true);
         } catch (err: any) {
             setError(err.message);
@@ -172,6 +195,58 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
         const newPlayers = [...teamData.players];
         newPlayers[index] = { ...newPlayers[index], [field]: value };
         setTeamData({ ...teamData, players: newPlayers });
+    };
+
+    /** Keeps the rendered roster in sync after the inline seat editor saves. */
+    const handleSeatSaved = (nextSeating: string | null) => {
+        setUserTeam((current: any) => current && ({
+            ...current,
+            players: (current.players || []).map((player: any) =>
+                player.isMe ? { ...player, seating: nextSeating } : player
+            ),
+        }));
+    };
+
+    const handleLeaveTeam = async () => {
+        if (!window.confirm('Leave this team? Your registration for this tournament is removed.')) return;
+        setLeaving(true);
+        try {
+            const result = await clientApi.leaveMyTeam(params.id);
+            setUserTeam(null);
+            setSuccess(false);
+            setSeating('');
+            toast.success(
+                'You left the team',
+                result.teamDeleted ? 'The team had no players left, so it was removed.' : undefined
+            );
+            router.refresh();
+        } catch (err: any) {
+            toast.error('Could not leave the team', err?.message || 'Please try again.');
+        } finally {
+            setLeaving(false);
+        }
+    };
+
+    const copyText = (text: string) => {
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text);
+            return;
+        }
+        // Fallback for non-HTTPS/LAN environments
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+        } catch (err) {
+            console.error('Fallback copy failed', err);
+        }
+        document.body.removeChild(textArea);
     };
 
     if (loading || status === 'loading') return (
@@ -192,6 +267,136 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
         );
     }
 
+    // A player who is already on a team keeps access to their team panel forever — including
+    // after the bracket is generated. Seats change on the LAN floor, and the invite link stays
+    // useful right up to lock, so this branch deliberately runs BEFORE the locked notice.
+    if (userTeam || success) {
+        const players: any[] = userTeam?.players || [];
+        const myPlayer = players.find((player) => player.isMe);
+        const isFull = players.length >= (tournament?.teamSize || 1);
+        const registrationLink = typeof window !== 'undefined' && userTeam?.inviteCode
+            ? `${window.location.origin}/tournaments/${params.id}/register?invite=${userTeam.inviteCode}`
+            : '';
+
+        return (
+            <div className="min-h-screen bg-[var(--mds-page)] text-[var(--mds-text-primary)]">
+                <div className="mx-auto max-w-2xl px-6 py-16 lg:py-24">
+                    <div className="mds-card p-8 lg:p-10 space-y-10 shadow-2xl">
+                        <header className="text-center space-y-4">
+                            <div className="w-16 h-16 bg-[var(--mds-action-soft)] rounded-2xl flex items-center justify-center border border-[var(--mds-action)]/20 mx-auto">
+                                <CheckCircle2 className="w-8 h-8 text-[var(--mds-action)]" />
+                            </div>
+                            <h1 className="text-3xl font-black uppercase tracking-tight">
+                                {success ? 'Registration Confirmed' : 'Your Team'}
+                            </h1>
+                            <p className="mds-uppercase-label text-[10px] opacity-50 leading-relaxed">
+                                Team <span className="text-[var(--mds-action)]">&quot;{userTeam?.name || teamData.name}&quot;</span> is registered for <span className="text-[var(--mds-text-primary)]">{tournament?.name}</span>.
+                            </p>
+                            {tournament.rosterLocked && (
+                                <p className="inline-flex items-center gap-2 rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/40 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[var(--mds-text-muted)]">
+                                    <Lock size={12} /> Bracket is live — roster locked
+                                </p>
+                            )}
+                        </header>
+
+                        {/* Your seat — editable at any time, locked bracket included. */}
+                        {myPlayer && (
+                            <section className="rounded-2xl border border-[var(--mds-border)] bg-[var(--mds-input)]/40 p-6 space-y-3">
+                                <h3 className="mds-uppercase-label text-[11px] text-[var(--mds-action)] flex items-center gap-3">
+                                    <Hash size={14} /> Your Seat
+                                </h3>
+                                <SeatEditor
+                                    tournamentId={params.id}
+                                    seating={myPlayer.seating}
+                                    onSaved={handleSeatSaved}
+                                />
+                            </section>
+                        )}
+
+                        {/* Roster + seats, so the whole team can see who is sitting where. */}
+                        {players.length > 0 && (
+                            <section className="space-y-4">
+                                <h3 className="mds-uppercase-label text-[11px] opacity-50 flex items-center gap-3">
+                                    <Users size={14} /> Roster ({players.length}/{tournament?.teamSize})
+                                </h3>
+                                <ul className="space-y-2">
+                                    {players.map((player) => (
+                                        <li
+                                            key={player.id}
+                                            className="flex items-center justify-between gap-4 rounded-lg border border-[var(--mds-border)] bg-[var(--mds-page)] px-5 py-3"
+                                        >
+                                            <div className="flex min-w-0 items-center gap-3">
+                                                <span className="truncate text-sm font-bold">
+                                                    {player.nickname || player.name}
+                                                </span>
+                                                {player.isLeader && (
+                                                    <span title="Team leader"><Crown size={13} className="text-[var(--mds-action)]" /></span>
+                                                )}
+                                                {player.isMe && (
+                                                    <span className="mds-badge bg-[var(--mds-action)]/10 text-[var(--mds-action)] text-[8px] font-black uppercase tracking-widest border-[var(--mds-action)]/20">You</span>
+                                                )}
+                                            </div>
+                                            <span className="shrink-0 font-mono text-[11px] text-[var(--mds-text-muted)]">
+                                                {player.seating || 'No seat'}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </section>
+                        )}
+
+                        {!isFull && tournament.steamSignupEnabled && registrationLink && !tournament.rosterLocked && (
+                            <section className="bg-[var(--mds-input)] border border-[var(--mds-border)] rounded-2xl p-6 space-y-5">
+                                <h3 className="mds-uppercase-label text-[11px] text-[var(--mds-action)] flex items-center gap-3">
+                                    <Share2 size={14} /> Invite Teammates
+                                </h3>
+                                <div className="bg-[var(--mds-page)] border border-[var(--mds-border)] rounded-lg px-5 py-3 font-mono text-[11px] break-all text-[var(--mds-text-muted)] text-left">
+                                    {registrationLink}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        copyText(registrationLink);
+                                        toast.success('Invite link copied', 'Share it with the rest of your team.');
+                                    }}
+                                    className="mds-btn-primary w-full h-12 text-[11px] font-black uppercase tracking-widest gap-3"
+                                >
+                                    <Copy size={14} /> Copy Invite Link
+                                </button>
+                                <p className="text-[9px] font-bold text-[var(--mds-text-subtle)] uppercase tracking-widest">
+                                    {(tournament.teamSize || 0) - players.length} slots remaining in the roster.
+                                </p>
+                            </section>
+                        )}
+
+                        <div className="flex flex-col gap-4">
+                            <Link
+                                href={`/tournaments/${params.id}`}
+                                className="mds-btn-primary h-14 w-full text-[12px] font-black uppercase tracking-widest gap-3"
+                            >
+                                Open Tournament Overview <ArrowRight size={18} />
+                            </Link>
+                            {/* Leaving is self-service only until the bracket exists; after that the
+                                API answers 423 and an organizer has to move the player. */}
+                            {!tournament.rosterLocked && myPlayer && (
+                                <button
+                                    type="button"
+                                    onClick={handleLeaveTeam}
+                                    disabled={leaving}
+                                    className="mds-btn-secondary h-12 w-full text-[11px] font-black uppercase tracking-widest gap-3 disabled:opacity-50"
+                                >
+                                    {leaving ? <Loader2 size={16} className="animate-spin" /> : <LogOut size={16} />}
+                                    Leave Team
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Only visitors who are NOT on a team hit the closed notice.
     if (tournament.rosterLocked) {
         return (
             <div className="min-h-screen bg-[var(--mds-page)] text-[var(--mds-text-primary)]">
@@ -204,78 +409,6 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                         <Link href={`/tournaments/${params.id}`} className="mds-btn-primary mt-6 h-11 px-8 text-xs font-black uppercase tracking-widest">
                             Return to Tournament
                         </Link>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (success || userTeam) {
-        const isFull = (userTeam?.players?.length || 0) >= (tournament?.teamSize || 1);
-        const registrationLink = typeof window !== 'undefined' ? `${window.location.origin}/tournaments/${params.id}/register?invite=${userTeam?.inviteCode}` : '';
-
-        return (
-            <div className="min-h-screen bg-[var(--mds-page)] flex flex-col h-screen overflow-hidden text-[var(--mds-text-primary)]">
-                <div className="flex-1 flex items-center justify-center p-6 bg-grid-pattern bg-fixed">
-                    <div className="max-w-xl w-full mds-card p-10 text-center shadow-2xl relative overflow-hidden">
-                        <div className="w-20 h-20 bg-[var(--mds-action-soft)] rounded-2xl flex items-center justify-center border border-[var(--mds-action)]/20 mx-auto mb-8 shadow-lg shadow-[var(--mds-action)]/10">
-                            <CheckCircle2 className="w-10 h-10 text-[var(--mds-action)]" />
-                        </div>
-                        
-                        <h1 className="text-3xl font-black uppercase tracking-tight mb-4">Registration Confirmed</h1>
-                        <p className="mds-uppercase-label text-[10px] opacity-50 mb-10 leading-relaxed">
-                            Team <span className="text-[var(--mds-action)]">&quot;{userTeam?.name || teamData.name}&quot;</span> is now registered for <span className="text-[var(--mds-text-primary)]">{tournament?.name}</span>.
-                        </p>
-
-                        {!isFull && tournament.steamSignupEnabled && (
-                            <div className="bg-[var(--mds-input)] border border-[var(--mds-border)] rounded-2xl p-8 space-y-6 mb-10">
-                                <h3 className="mds-uppercase-label text-[11px] text-[var(--mds-action)] flex items-center justify-center gap-3">
-                                    <Share2 size={14} /> Invite Teammates
-                                </h3>
-                                <div className="bg-[var(--mds-page)] border border-[var(--mds-border)] rounded-lg px-6 py-4 font-mono text-[11px] break-all text-[var(--mds-text-muted)] text-left">
-                                    {registrationLink}
-                                </div>
-                                <button 
-                                    onClick={() => {
-                                        if (navigator.clipboard && window.isSecureContext) {
-                                            navigator.clipboard.writeText(registrationLink);
-                                        } else {
-                                            // Fallback for non-HTTPS/LAN environments
-                                            const textArea = document.createElement("textarea");
-                                            textArea.value = registrationLink;
-                                            textArea.style.position = "fixed";
-                                            textArea.style.left = "-999999px";
-                                            textArea.style.top = "-999999px";
-                                            document.body.appendChild(textArea);
-                                            textArea.focus();
-                                            textArea.select();
-                                            try {
-                                                document.execCommand('copy');
-                                            } catch (err) {
-                                                console.error('Fallback copy failed', err);
-                                            }
-                                            document.body.removeChild(textArea);
-                                        }
-                                        toast.success('Invite link copied', 'Share it with the rest of your team.');
-                                    }}
-                                    className="mds-btn-primary w-full h-12 text-[11px] font-black uppercase tracking-widest gap-3"
-                                >
-                                    <Copy size={14} /> Copy Invite Link
-                                </button>
-                                <p className="text-[9px] font-bold text-[var(--mds-text-subtle)] uppercase tracking-widest">
-                                    {tournament.teamSize - (userTeam?.players?.length || 0)} slots remaining in the roster.
-                                </p>
-                            </div>
-                        )}
-
-                        <div className="flex flex-col gap-4">
-                            <Link 
-                                href={`/tournaments/${params.id}`}
-                                className="mds-btn-primary h-14 w-full text-[12px] font-black uppercase tracking-widest gap-3"
-                            >
-                                Open Tournament Overview <ArrowRight size={18} />
-                            </Link>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -346,7 +479,25 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                                     You have been invited to join a team with code: <span className="text-[var(--mds-action)] font-mono">{inviteCode}</span>
                                 </p>
                             </div>
-                            <button 
+
+                            {/* Optional, but strongly prompted: the seat is how marshals find you. */}
+                            <div className="mx-auto max-w-xs space-y-3 text-left">
+                                <label htmlFor="join-seating" className="mds-uppercase-label text-[10px] opacity-50">
+                                    Your Seat (Optional)
+                                </label>
+                                <input
+                                    id="join-seating"
+                                    type="text"
+                                    value={seating}
+                                    maxLength={SEAT_MAX_LENGTH}
+                                    onChange={(e) => setSeating(e.target.value)}
+                                    className="mds-input h-12 px-5 text-sm font-bold uppercase tracking-wide"
+                                    placeholder="e.g. B12"
+                                />
+                                <p className="text-[11px] text-[var(--mds-text-subtle)]">{SEAT_HELPER_TEXT}</p>
+                            </div>
+
+                            <button
                                 onClick={handleJoinTeam}
                                 disabled={submitting}
                                 className="mds-btn-primary h-14 px-10 text-[12px] font-black uppercase tracking-widest gap-3 disabled:opacity-50"
@@ -399,6 +550,26 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Seat for the registering player. Optional, but the LAN runs on it:
+                                    the signup route stores it on this player's own row. */}
+                                {tournament?.steamSignupEnabled && (
+                                    <div className="max-w-xs space-y-3">
+                                        <label htmlFor="create-seating" className="mds-uppercase-label text-[10px] opacity-50">
+                                            Your Seat (Optional)
+                                        </label>
+                                        <input
+                                            id="create-seating"
+                                            type="text"
+                                            value={seating}
+                                            maxLength={SEAT_MAX_LENGTH}
+                                            onChange={(e) => setSeating(e.target.value)}
+                                            className="mds-input h-14 px-6 text-sm font-bold uppercase tracking-wide"
+                                            placeholder="e.g. B12"
+                                        />
+                                        <p className="text-[11px] text-[var(--mds-text-subtle)]">{SEAT_HELPER_TEXT}</p>
+                                    </div>
+                                )}
 
                                 {(teamData.name || logoPreview) && (
                                     <div className="p-8 bg-[var(--mds-input)] rounded-xl border border-[var(--mds-border)] flex items-center gap-8">

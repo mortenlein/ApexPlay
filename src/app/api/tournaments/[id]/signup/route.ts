@@ -39,6 +39,12 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     const body = await request.json();
     const { action, teamName, logoUrl, inviteCode } = body;
 
+    // Optional LAN seat label the player types at registration ("B12"). Marshals use it to find
+    // people on the floor; it stays editable afterwards via PATCH /api/me/player.
+    const seating = typeof body?.seating === 'string' && body.seating.trim()
+        ? body.seating.trim().slice(0, 16)
+        : null;
+
     const sessionSteamId = ((session.user as any)?.steamId as string | undefined)?.trim();
     let user = await prisma.user.findUnique({
         where: { id: session.user.id },
@@ -93,6 +99,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
                                 isLeader: true,
                                 userId: user.id,
                                 tournamentId,
+                                seating,
                             }
                         }
                     },
@@ -159,6 +166,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
                         teamId: teamRecord.id,
                         tournamentId,
                         userId: user.id,
+                        seating,
                     }
                 });
 
