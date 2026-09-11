@@ -53,6 +53,35 @@ To wipe data completely:
 docker compose down -v
 ```
 
+### Backups
+
+`scripts/backup.sh` snapshots the **production** SQLite DB and archives uploads into
+`data/backups/` (gitignored, local-only):
+
+```bash
+./scripts/backup.sh
+```
+
+* `data/backups/prod-<ts>.db` — a consistent snapshot taken with SQLite `VACUUM INTO`, run
+  *inside* the `apexplay` container through the app's own Prisma client (neither the host nor the
+  alpine image has the `sqlite3` binary). It is read-only with respect to the live DB: writers are
+  never blocked and `data/prod.db` is not modified.
+* `data/backups/uploads-<ts>.tar.gz` — tar-gz of `./uploads`.
+* Every snapshot is verified with `PRAGMA integrity_check` against the copy; a failed check
+  deletes the snapshot and exits non-zero.
+* Files older than `BACKUP_KEEP_DAYS` (default 30) are pruned. Other overrides: `BACKUP_DIR`,
+  `APEXPLAY_CONTAINER`, `APEXPLAY_UPLOADS_DIR`, `APEXPLAY_DB_IN_CONTAINER`.
+
+Intended cron line (**not installed automatically** — add it with `crontab -e`):
+
+```cron
+20 3 * * * cd /home/mole/apps/ApexPlay && ./scripts/backup.sh >> data/backups/backup.log 2>&1
+```
+
+To restore, stop the container, copy a snapshot over `data/prod.db`, and start again — the full
+step-by-step (including the WAL sidecars and the uploads archive) is in the `RESTORE` block at the
+top of `scripts/backup.sh`.
+
 ---
 
 ## Environment Variables

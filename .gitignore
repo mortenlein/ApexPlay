@@ -46,6 +46,9 @@ dev.db
 *.db
 *.db-journal
 
+# local backups (scripts/backup.sh) — snapshots + uploads archives + its log
+data/backups/
+
 # build artifacts
 build.log
 bin/
