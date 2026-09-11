@@ -1,5 +1,49 @@
 import prisma from '@/lib/prisma';
 import { eventBus } from '@/lib/eventBus';
+import { isStaffAuthenticated } from '@/lib/route-auth';
+
+// Reads the session to decide whether server credentials are streamed; never prerender.
+export const dynamic = 'force-dynamic';
+
+/**
+ * Strips the staff-only fields from a match payload: the game server endpoint/password and
+ * player steamIds. Applied to both the DB-poll payloads and the eventBus payloads (which carry
+ * full Prisma rows straight from the mutation routes).
+ */
+function toPublicMatch(match: any) {
+    if (!match || typeof match !== 'object') {
+        return match;
+    }
+
+    const publicMatch: Record<string, any> = { ...match };
+    delete publicMatch.serverIp;
+    delete publicMatch.serverPort;
+    delete publicMatch.serverPassword;
+
+    for (const side of ['homeTeam', 'awayTeam'] as const) {
+        const team = publicMatch[side];
+        if (team && Array.isArray(team.players)) {
+            publicMatch[side] = {
+                ...team,
+                players: team.players.map((player: any) => {
+                    const publicPlayer = { ...player };
+                    delete publicPlayer.steamId;
+                    return publicPlayer;
+                }),
+            };
+        }
+    }
+
+    return publicMatch;
+}
+
+function toPublicPayload(payload: any) {
+    if (!payload || typeof payload !== 'object' || !payload.match) {
+        return payload;
+    }
+
+    return { ...payload, match: toPublicMatch(payload.match) };
+}
 
 async function getTournamentMatches(tournamentId: string) {
     return prisma.match.findMany({
@@ -59,6 +103,8 @@ async function getTournamentMatches(tournamentId: string) {
  */
 export async function GET(request: Request, { params }: { params: { id: string } }) {
     const tournamentId = params.id;
+    // Resolved once at connection time; the stream itself has no request context.
+    const isStaff = await isStaffAuthenticated();
 
     const stream = new ReadableStream({
         start(controller) {
@@ -67,7 +113,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
             const enqueuePayload = (payload: any) => {
                 try {
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
+                    const safePayload = isStaff ? payload : toPublicPayload(payload);
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify(safePayload)}\n\n`));
                 } catch {
                     // Client disconnected
                 }
