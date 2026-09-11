@@ -103,13 +103,13 @@ test('teams tab lists every roster and its players', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Seed 7', exact: true })).toBeVisible();
 });
 
-// BUG (IA gap, not a crash): the teams tab never shows where a player is sitting, which is the
-// one thing a LAN spectator needs from a roster. TeamRegistry prints only the nickname/first
-// name (src/components/tournament/TeamRegistry.tsx:79-82) and the team modal repeats that
-// (src/components/TournamentView.tsx:556) — `seating` comes down in the public payload
-// (src/app/api/tournaments/[id]/teams/route.ts:58) but is rendered only on the Players tab
-// (src/components/tournament/StatsTable.tsx:64) and the OBS roster board.
-test.fixme('teams tab shows each player’s seat', async ({ page }) => {
+// Regression (IA gap, not a crash): the teams tab never showed where a player is sitting, which
+// is the one thing a LAN spectator needs from a roster. TeamRegistry printed only the
+// nickname/first name and the team modal repeated that — `seating` comes down in the public
+// payload (src/app/api/tournaments/[id]/teams/route.ts:58) but was rendered only on the Players
+// tab (src/components/tournament/StatsTable.tsx:64) and the OBS roster board. Both now carry the
+// marshal board's mono seat chip.
+test('teams tab shows each player’s seat', async ({ page }) => {
   const { tournamentId } = await seedPlayedBracket({ teams: 4, completed: 1 });
 
   await page.goto(`/tournaments/${tournamentId}?tab=teams`);

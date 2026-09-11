@@ -539,6 +539,15 @@ function TeamDetailsModal({ team, onClose, matches, getFlagUrl, modalRef }: any)
                      <div key={idx} className="p-4 rounded-md bg-[var(--mds-input)] border border-[var(--mds-border)] flex items-center justify-between group transition-all hover:border-[var(--mds-action)]/40">
                         <div className="flex items-center gap-4">
                             <span className="text-[10px] font-black text-[var(--mds-text-subtle)]">{(idx + 1).toString().padStart(2, '0')}</span>
+                            <span
+                              className={`shrink-0 rounded-sm px-1.5 py-0.5 text-center font-mono text-[11px] font-bold tabular-nums ${
+                                p.seating
+                                  ? 'bg-[var(--mds-action-soft)] text-[var(--mds-action)]'
+                                  : 'bg-[var(--mds-border)] text-[var(--mds-text-subtle)]'
+                              }`}
+                            >
+                              {p.seating || '—'}
+                            </span>
                             <div className="flex items-center gap-2">
                                 {getFlagUrl(p.countryCode) && (
                                     <Image
