@@ -2,12 +2,14 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useQueryClient } from '@tanstack/react-query';
 import { Trophy, Zap, ArrowRight, Gamepad2, Radio, Activity, Shield, Hash } from 'lucide-react';
 import { buildSteamConnectUrl } from '@/lib/match-links';
 import { isCalled, isLive } from '@/lib/match-status';
 import { Button, Card, Badge, StatusBadge, EmptyState, TopNav } from '@/components/ui';
 import { MyQueue } from '@/components/player/MyQueue';
 import { EnableAlertsButton } from '@/components/player/EnableAlertsButton';
+import { SeatEditor } from '@/components/player/SeatEditor';
 
 const PLAYER_NAV = [
   { href: '/dashboard', label: 'My desk' },
@@ -21,6 +23,7 @@ const PLAYER_NAV = [
  * /api/user/profile payload; `user` is the session user.
  */
 export function PlayerHome({ user, profile }: { user: any; profile: any }) {
+  const queryClient = useQueryClient();
   const { registrations = [], stats, activeMatches = [] } = profile || {};
   const nextMatch = activeMatches[0];
   const connectUrl = nextMatch
@@ -128,24 +131,41 @@ export function PlayerHome({ user, profile }: { user: any; profile: any }) {
           {registrations.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {registrations.map((reg: any) => (
-                <Link key={reg.id} href={`/tournaments/${reg.team.tournament.id}`}>
-                  <Card interactive className="flex h-full flex-col justify-between gap-4">
+                // The card is not one big link any more: the seat editor is interactive, and
+                // a button inside an anchor is both invalid markup and a click trap.
+                <Card key={reg.id} className="flex h-full flex-col justify-between gap-4">
+                  <Link href={`/tournaments/${reg.team.tournament.id}`} className="group block">
                     <div className="flex items-start justify-between">
                       <div>
                         <Badge tone="neutral">{reg.team.tournament.game}</Badge>
-                        <h3 className="mt-2 font-brand text-lg font-bold">{reg.team.tournament.name}</h3>
+                        <h3 className="mt-2 font-brand text-lg font-bold group-hover:text-brand">
+                          {reg.team.tournament.name}
+                        </h3>
                       </div>
                       <Trophy size={18} className="text-fg-subtle" />
                     </div>
-                    <div className="flex items-center justify-between border-t border-line pt-3">
+                  </Link>
+                  <div className="space-y-3 border-t border-line pt-3">
+                    <div className="flex items-center justify-between">
                       <div>
                         <p className="mds-uppercase-label text-fg-subtle">Team</p>
                         <p className="text-sm font-semibold text-brand">{reg.team.name}</p>
                       </div>
-                      <ArrowRight size={16} className="text-fg-subtle" />
+                      <Link href={`/tournaments/${reg.team.tournament.id}`} aria-label={`Open ${reg.team.tournament.name}`}>
+                        <ArrowRight size={16} className="text-fg-subtle hover:text-brand" />
+                      </Link>
                     </div>
-                  </Card>
-                </Link>
+                    <div>
+                      <p className="mds-uppercase-label text-fg-subtle">Your seat</p>
+                      <SeatEditor
+                        className="mt-1"
+                        tournamentId={reg.team.tournament.id}
+                        seating={reg.seating}
+                        onSaved={() => queryClient.invalidateQueries({ queryKey: ['profile'] })}
+                      />
+                    </div>
+                  </div>
+                </Card>
               ))}
             </div>
           ) : (

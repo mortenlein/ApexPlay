@@ -1,14 +1,16 @@
 'use client';
 
 import { useSession, signIn, signOut } from 'next-auth/react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ShieldCheck, Loader2, Gamepad2, Star, ArrowRight, Shield, Activity, Zap, Hash, Users, Link2, Settings2, LogOut } from 'lucide-react';
 import { MockPersonaButtons } from '@/components/MockPersonaButtons';
+import { SeatEditor } from '@/components/player/SeatEditor';
 
 export default function ProfilePage() {
     const { data: session, status } = useSession();
+    const queryClient = useQueryClient();
 
     const { data: profile, isLoading } = useQuery({
         queryKey: ['profile'],
@@ -156,11 +158,16 @@ export default function ProfilePage() {
 
                         <div className="space-y-4">
                             {registrations?.length > 0 ? registrations.map((reg: any) => (
-                                <Link
+                                // A div, not a link: the seat editor below is interactive, and a
+                                // button nested in an anchor is invalid markup and a click trap.
+                                <div
                                     key={reg.id}
-                                    href={`/tournaments/${reg.team.tournament.id}`}
-                                    className="group mds-card p-6 flex flex-col md:flex-row items-center justify-between gap-6 hover:border-[var(--mds-action)]/40 transition-all duration-500 bg-[var(--mds-input)]/20 shadow-mds-whisper"
+                                    className="group mds-card p-6 hover:border-[var(--mds-action)]/40 transition-all duration-500 bg-[var(--mds-input)]/20 shadow-mds-whisper"
                                 >
+                                  <Link
+                                    href={`/tournaments/${reg.team.tournament.id}`}
+                                    className="flex flex-col md:flex-row items-center justify-between gap-6"
+                                  >
                                     <div className="flex items-center gap-6 flex-1 min-w-0">
                                         <div className="h-14 w-14 rounded-mds-comfortable bg-[var(--mds-page)] border border-[var(--mds-border)] group-hover:border-[var(--mds-action)]/30 transition-all flex items-center justify-center p-3 shadow-mds-inner shrink-0 overflow-hidden relative">
                                             <Gamepad2 size={24} className="text-[var(--mds-action)] opacity-40 group-hover:opacity-100 transition-opacity" />
@@ -189,7 +196,18 @@ export default function ProfilePage() {
                                             <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
                                         </div>
                                     </div>
-                                </Link>
+                                  </Link>
+
+                                  {/* Seat per tournament — editable here as well as on the desk. */}
+                                  <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-[var(--mds-border)]/60 pt-4">
+                                    <p className="mds-uppercase-label text-[8px] opacity-40">Your seat</p>
+                                    <SeatEditor
+                                        tournamentId={reg.team.tournament.id}
+                                        seating={reg.seating}
+                                        onSaved={() => queryClient.invalidateQueries({ queryKey: ['profile'] })}
+                                    />
+                                  </div>
+                                </div>
                             )) : (
                                 <div className="mds-card p-24 text-center border-dashed border-2 border-[var(--mds-border)] bg-[var(--mds-input)]/20 shadow-none">
                                     <div className="h-16 w-16 mx-auto mb-8 bg-[var(--mds-border)]/20 flex items-center justify-center rounded-xl text-[var(--mds-text-muted)]">
