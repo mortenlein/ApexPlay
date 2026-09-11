@@ -74,7 +74,7 @@ async function getTournamentMatches(tournamentId: string) {
                     logoUrl: true,
                     seed: true,
                     players: {
-                        select: { id: true, name: true, nickname: true, seating: true, steamId: true, isOnline: true }
+                        select: { id: true, name: true, nickname: true, seating: true, steamId: true, isOnline: true, checkedInAt: true }
                     }
                 }
             },
@@ -85,7 +85,7 @@ async function getTournamentMatches(tournamentId: string) {
                     logoUrl: true,
                     seed: true,
                     players: {
-                        select: { id: true, name: true, nickname: true, seating: true, steamId: true, isOnline: true }
+                        select: { id: true, name: true, nickname: true, seating: true, steamId: true, isOnline: true, checkedInAt: true }
                     }
                 }
             }
