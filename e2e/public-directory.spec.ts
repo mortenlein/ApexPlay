@@ -185,8 +185,8 @@ test('staff doors stay shut for spectators and players, and dead routes 404', as
 
   await loginAs(page, 'leo');
   await page.goto('/marshal/dashboard');
-  // Redirected to login with the destination kept — never a 500 and never the board itself.
-  await expect(page).toHaveURL(/\/login\?callbackUrl=%2Fmarshal%2Fdashboard$/);
+  // A signed-in player is sent home (bouncing to /login would loop) — never a 500 and never the board.
+  await expect(page).toHaveURL(new RegExp(`^${new URL(page.url()).origin}/$`));
 
   const dead = await page.goto('/dashboard/tournaments/anything');
   expect(dead?.status()).toBe(404);

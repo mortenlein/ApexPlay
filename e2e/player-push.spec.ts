@@ -141,10 +141,10 @@ test('calling a match attempts delivery to a dead endpoint without breaking the 
     await mia.get(`/api/notifications/log?tournamentId=${tournament.id}`)
   );
   expect(notifications).toHaveLength(1);
-  expect(notifications[0]).toMatchObject({
-    type: 'MATCH',
-    embed: { title: 'Match ready for players', description: `**${tournament.name}** · Round 1` },
-  });
+  expect(notifications[0]).toMatchObject({ type: 'MATCH', embed: { title: 'Match ready for players' } });
+  // The description names the teams (so two calls in one round both reach the marshal feed).
+  expect(notifications[0].embed.description).toContain(tournament.name);
+  expect(notifications[0].embed.description).toContain('Round 1');
 });
 
 test('the player desk offers to turn match alerts on', async ({ page }) => {
