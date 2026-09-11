@@ -16,19 +16,20 @@ const ALLOWED_MIME_TYPES = new Set(Object.keys(EXT_BY_MIME));
 
 export async function POST(request: Request) {
   try {
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-
-    if (!file) {
-      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
-    }
-
     // Uploads always require an identity — there is no anonymous registration any more.
+    // Checked before the body is parsed so anonymous callers never make us buffer a file.
     const isAdmin = await isAdminAuthenticated();
     const session = await requireSignedInUser();
 
     if (!isAdmin && !session?.user) {
       return NextResponse.json({ error: 'Sign in required for uploads' }, { status: 401 });
+    }
+
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+
+    if (!file) {
+      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
     if (!ALLOWED_MIME_TYPES.has(file.type)) {

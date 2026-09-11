@@ -59,6 +59,9 @@ export async function POST(request: Request) {
         const bo3LastRounds = coerceLastRounds(data.bo3LastRounds);
         const bo5LastRounds = coerceLastRounds(data.bo5LastRounds);
         const hasThirdPlace = Boolean(data.hasThirdPlace);
+        // Players self-register via Steam by default (anonymous registration no longer exists);
+        // organizers can switch a tournament to manual rosters in Settings.
+        const steamSignupEnabled = typeof data.steamSignupEnabled === 'boolean' ? data.steamSignupEnabled : true;
         const gameMeta = SUPPORTED_GAMES.find(g => g.id === game);
 
         if (!gameMeta) {
@@ -88,7 +91,8 @@ export async function POST(request: Request) {
                 teamSize,
                 bo3LastRounds,
                 bo5LastRounds,
-                hasThirdPlace
+                hasThirdPlace,
+                steamSignupEnabled,
             },
         });
 
