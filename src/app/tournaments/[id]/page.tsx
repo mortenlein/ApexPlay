@@ -6,6 +6,10 @@ import TournamentView from "@/components/TournamentView";
 import TournamentSkeleton from "@/components/TournamentSkeleton";
 import { notFound } from "next/navigation";
 
+// The prefetched payload embedded in this HTML is session-dependent (staff see steamIds, invite
+// codes, etc.), so this page must be rendered per request and never cached/shared.
+export const dynamic = 'force-dynamic';
+
 export default async function TournamentPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const queryClient = getQueryClient();
