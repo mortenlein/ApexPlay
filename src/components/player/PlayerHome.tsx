@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Trophy, Zap, ArrowRight, Gamepad2, Radio, Activity, Shield, Hash } from 'lucide-react';
 import { buildSteamConnectUrl } from '@/lib/match-links';
+import { isCalled, isLive } from '@/lib/match-status';
 import { Button, Card, Badge, StatusBadge, EmptyState, TopNav } from '@/components/ui';
 import { MyQueue } from '@/components/player/MyQueue';
 import { EnableAlertsButton } from '@/components/player/EnableAlertsButton';
@@ -56,6 +57,18 @@ export function PlayerHome({ user, profile }: { user: any; profile: any }) {
                     <div className="flex items-center gap-3">
                       <Badge tone="info">Round {nextMatch.round}</Badge>
                       <StatusBadge status={nextMatch.status} />
+                      {/* Called and live both mean "move now" — say so instead of leaving the
+                          player to decode a status chip. */}
+                      {isLive(nextMatch.status) ? (
+                        <span className="flex items-center gap-1.5 text-xs font-bold text-danger">
+                          <Radio size={13} className="animate-pulse" />
+                          Live — get to your station
+                        </span>
+                      ) : isCalled(nextMatch.status) ? (
+                        <span className="text-xs font-bold text-success">
+                          You&apos;re up — go to your station
+                        </span>
+                      ) : null}
                     </div>
                     <h2 className="font-brand text-2xl font-bold">
                       {nextMatch.homeTeam?.name || 'TBD'} <span className="text-fg-subtle">vs</span> {nextMatch.awayTeam?.name || 'TBD'}

@@ -2,8 +2,9 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { Radio, Swords, Clock, Hourglass, Flag } from 'lucide-react';
-import { Card, StatusBadge } from '@/components/ui';
+import { Radio, Swords, Clock, Hourglass, Flag, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Button, Card, StatusBadge } from '@/components/ui';
+import { isCalled, isLive } from '@/lib/match-status';
 import { clientApi } from '@/lib/client-api';
 
 interface NextMatch {
@@ -41,15 +42,26 @@ function stageLabel(bracketType: string, round: number) {
   }
 }
 
-const isLive = (status: string) => ['LIVE', 'IN_PROGRESS'].includes((status || '').toUpperCase());
-
+/**
+ * What the player should actually do, in priority order: a live or called match always wins
+ * over the queue position — "3 matches ahead" is wrong and alarming once you've been called.
+ */
 function QueuePosition({ entry }: { entry: QueueEntry }) {
   const m = entry.nextMatch!;
-  if (isLive(m.status)) {
+  const status = (m.status || '').toUpperCase();
+  if (isLive(status)) {
     return (
       <div className="flex items-center gap-2 text-danger font-bold">
         <Radio size={16} className="animate-pulse" />
         Live now — get to your station
+      </div>
+    );
+  }
+  if (isCalled(status)) {
+    return (
+      <div className="flex items-center gap-2 text-success font-bold">
+        <Flag size={16} />
+        You&apos;re up — go to your station
       </div>
     );
   }
@@ -70,24 +82,66 @@ function QueuePosition({ entry }: { entry: QueueEntry }) {
   );
 }
 
+function QueueHeading() {
+  return (
+    <div className="flex items-center gap-2">
+      <Swords size={16} className="text-brand" />
+      <h2 className="text-sm font-brand font-bold uppercase tracking-wide">Your queue</h2>
+    </div>
+  );
+}
+
 export function MyQueue() {
-  const { data, isLoading, error } = useQuery<{ queue: QueueEntry[] }>({
+  const { data, isLoading, error, refetch, isFetching } = useQuery<{ queue: QueueEntry[] }>({
     queryKey: ['me-queue'],
     queryFn: () => clientApi.getQueue(),
     refetchInterval: 15000,
   });
 
+  // A silently missing queue reads as "you have no matches", which is the one thing it must
+  // never imply. Say it failed and offer a retry instead.
+  if (error) {
+    return (
+      <section className="space-y-4">
+        <QueueHeading />
+        <Card className="flex flex-wrap items-center justify-between gap-3 border-danger/30">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-danger" />
+            <p className="text-sm font-semibold">Couldn&apos;t load your queue</p>
+          </div>
+          <Button variant="secondary" size="sm" onClick={() => void refetch()} disabled={isFetching}>
+            <RefreshCw size={14} className={isFetching ? 'animate-spin' : undefined} />
+            Retry
+          </Button>
+        </Card>
+      </section>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <section className="space-y-4">
+        <QueueHeading />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Card className="space-y-3" aria-busy="true">
+            <p className="text-xs text-fg-subtle">Loading…</p>
+            <div className="h-3 w-1/3 animate-pulse rounded-sm bg-white/5" />
+            <div className="h-5 w-2/3 animate-pulse rounded-sm bg-white/5" />
+            <div className="h-3 w-1/2 animate-pulse rounded-sm bg-white/5" />
+          </Card>
+        </div>
+      </section>
+    );
+  }
+
   const scheduled = (data?.queue ?? []).filter((q) => q.state === 'SCHEDULED');
-  if (isLoading || error || scheduled.length === 0) {
-    return null; // The dashboard's own sections cover the empty/error cases.
+  if (scheduled.length === 0) {
+    return null; // The dashboard's own sections cover the empty case.
   }
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Swords size={16} className="text-brand" />
-        <h2 className="text-sm font-brand font-bold uppercase tracking-wide">Your queue</h2>
-      </div>
+      <QueueHeading />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {scheduled.map((entry) => {
           const m = entry.nextMatch!;
