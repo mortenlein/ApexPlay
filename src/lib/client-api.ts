@@ -49,6 +49,32 @@ export const clientApi = {
     apiRequest<any>(`/api/notifications/log${tournamentId ? `?tournamentId=${tournamentId}` : ""}`),
   getAuditLog: (tournamentId?: string) =>
     apiRequest<any>(`/api/audit-log${tournamentId ? `?tournamentId=${tournamentId}` : ""}`),
+  updateTeam: (teamId: string, payload: unknown) =>
+    apiRequest<any>(`/api/teams/${teamId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
+  // `force` pulls the team out of any match it is placed in; required while the roster is locked.
+  deleteTeam: (teamId: string, options?: { force?: boolean }) =>
+    apiRequest<{ success: boolean; matchesAffected: number }>(
+      `/api/teams/${teamId}${options?.force ? "?force=1" : ""}`,
+      { method: "DELETE" }
+    ),
+  addTeamPlayer: (teamId: string, payload: unknown) =>
+    apiRequest<any>(`/api/teams/${teamId}/players`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
+  updatePlayer: (playerId: string, payload: unknown) =>
+    apiRequest<any>(`/api/players/${playerId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
+  deletePlayer: (playerId: string) =>
+    apiRequest<{ success: boolean }>(`/api/players/${playerId}`, { method: "DELETE" }),
   createTournament: (payload: unknown) =>
     apiRequest<any>("/api/tournaments", {
       method: "POST",
