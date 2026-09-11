@@ -43,18 +43,17 @@ test('overlay renders the bracket chrome-free with stage labels, names, seats an
   await expect(page.getByRole('link', { name: 'Tournaments' })).toHaveCount(0);
 });
 
-// BUG: the stream overlay never marks the live match in a best-of-1 event, and mislabels
-// everything that has not started. The status footer — the only place the overlay prints
-// FINAL / LIVE (with the pulsing dot) — is rendered only when
-// `data.bestOf > 1 || isCenter || isThirdPlace` (src/app/bracket/[id]/overlay/page.tsx:118),
-// so in a BO1 bracket (the default: `bestOf: 1` unless bo3LastRounds is set) every match except
-// the grand final shows scores with no state at all: the observed node text for a COMPLETED
-// quarter-final is "Quarter-FinalsSeed 1S01:Player 11Seed 8S08:Player 80" — no FINAL, and the
-// LIVE match renders identically.
-// And where the footer IS rendered, PENDING is printed as "IN PROGRESS"
-// (same file, line 122: `status === 'COMPLETED' ? 'FINAL' : status === 'LIVE' ? … : 'IN PROGRESS'`),
-// so an unplayed grand final goes out on stream as in progress.
-test.fixme('overlay marks the live match and never calls a pending match in progress', async ({ page }) => {
+// Regression: the stream overlay never marked the live match in a best-of-1 event, and
+// mislabelled everything that had not started. The status footer — the only place the overlay
+// prints FINAL / LIVE (with the pulsing dot) — was rendered only when
+// `data.bestOf > 1 || isCenter || isThirdPlace`, so in a BO1 bracket (the default: `bestOf: 1`
+// unless bo3LastRounds is set) every match except the grand final showed scores with no state at
+// all: the observed node text for a COMPLETED quarter-final was
+// "Quarter-FinalsSeed 1S01:Player 11Seed 8S08:Player 80" — no FINAL, and the LIVE match rendered
+// identically. And where the footer WAS rendered, PENDING was printed as "IN PROGRESS", so an
+// unplayed grand final went out on stream as in progress. The footer is now unconditional and
+// its state comes from the shared helpers in src/lib/match-status.ts.
+test('overlay marks the live match and never calls a pending match in progress', async ({ page }) => {
   const { tournamentId, matches, playedMatches, liveMatch } = await seedPlayedBracket({ teams: 8, completed: 2 });
   const grandFinal = matches.find((m) => m.round === 3)!;
   expect(grandFinal.status).toBe('PENDING');
@@ -171,16 +170,16 @@ test('roster board lays 16 teams out inside 1920x1080 without sideways scroll', 
   expect(metrics.scrollWidth, JSON.stringify(metrics)).toBeLessThanOrEqual(metrics.clientWidth);
 });
 
-// BUG: the roster board silently loses teams once there are more than 12. The grid is hardcoded
-// to four columns (`grid grid-cols-4 gap-8`, src/app/bracket/[id]/roster/page.tsx:62) inside a
-// `w-screen h-screen overflow-hidden p-12` frame (line 58), so a 16-team LAN spills into a
-// fourth row that is clipped away — and because the frame cannot scroll (and an OBS browser
-// source has nobody to scroll it), those teams are simply not on the stream. Measured at
-// 1920x1080 with 16 teams of 2 players:
-//   Roster Squad 13-16 have bottom=1280 against an innerHeight of 1080.
-// The width is fine (no horizontal overflow — the previous test passes), so the fix is a
-// responsive/auto-fitting grid or pagination, not a wider container.
-test.fixme('every team on a 16-team roster board is actually on screen', async ({ page }) => {
+// Regression: the roster board silently lost teams once there were more than 12. The grid was
+// hardcoded to four columns (`grid grid-cols-4 gap-8`) inside a `w-screen h-screen
+// overflow-hidden p-12` frame, so a 16-team LAN spilled into a fourth row that was clipped away
+// — and because the frame cannot scroll (and an OBS browser source has nobody to scroll it),
+// those teams were simply not on the stream. Measured at 1920x1080 with 16 teams of 2 players:
+//   Roster Squad 13-16 had bottom=1280 against an innerHeight of 1080.
+// The width was fine (no horizontal overflow — the previous test passes), so the fix is the
+// auto-fitting, height-owning grid (columns from the team count, `1fr` rows, type scaled off
+// `--rows`), not a wider container.
+test('every team on a 16-team roster board is actually on screen', async ({ page }) => {
   const tournament = await createTournament({ name: `Roster Fold ${Date.now().toString(36)}`, teamSize: 2 });
   await createRosterTeams(tournament.id, 16, 2);
   await page.setViewportSize({ width: 1920, height: 1080 });
@@ -199,4 +198,67 @@ test.fixme('every team on a 16-team roster board is actually on screen', async (
   );
 
   expect(offScreen, `clipped by the h-screen/overflow-hidden board: ${JSON.stringify(offScreen)}`).toEqual([]);
+});
+
+/**
+ * Beyond one screenful the board pages itself rather than clipping: 32 teams of 5 cannot be
+ * legible at 1920x1080 at once, so the teams that do not fit belong on a rotating second page —
+ * `?page=` pins one for a fixed source, `?rotate=0` freezes it.
+ */
+test('a 32-team roster board pages itself instead of clipping', async ({ page }) => {
+  const tournament = await createTournament({ name: `Roster Paged ${Date.now().toString(36)}`, teamSize: 5 });
+  await createRosterTeams(tournament.id, 32, 5);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+
+  const board = page.locator('[data-testid="roster-board"]');
+
+  // rotate=0 freezes the board, so it can be measured a page at a time.
+  await page.goto(`/bracket/${tournament.id}/roster?rotate=0`);
+  await expect(board).toHaveAttribute('data-page', '1');
+  const pageCount = Number(await board.getAttribute('data-pages'));
+  expect(pageCount, '32 teams of 5 do not fit one 1080p screen').toBeGreaterThan(1);
+
+  const seen = new Set<string>();
+  for (let index = 1; index <= pageCount; index++) {
+    await page.goto(`/bracket/${tournament.id}/roster?rotate=0&page=${index}`);
+    await expect(board).toHaveAttribute('data-page', String(index));
+    await expect(page.locator('div.rounded-3xl').first()).toBeVisible();
+
+    const boxes = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('div.rounded-3xl')).map((el) => {
+        const rect = el.getBoundingClientRect();
+        return {
+          name: el.querySelector('h2')?.textContent || '?',
+          bottom: Math.round(rect.bottom),
+          right: Math.round(rect.right),
+          offScreen: rect.bottom > window.innerHeight || rect.right > window.innerWidth,
+        };
+      })
+    );
+
+    expect(boxes.length).toBeGreaterThan(0);
+    expect(
+      boxes.filter((box) => box.offScreen),
+      `page ${index} spills out of the 1920x1080 board: ${JSON.stringify(boxes.filter((b) => b.offScreen))}`
+    ).toEqual([]);
+    for (const box of boxes) seen.add(box.name);
+
+    // An OBS source has no scrollbars to offer, on any page.
+    const metrics = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+      scrollHeight: document.documentElement.scrollHeight,
+      clientHeight: document.documentElement.clientHeight,
+    }));
+    expect(metrics.scrollWidth, JSON.stringify(metrics)).toBeLessThanOrEqual(metrics.clientWidth);
+    expect(metrics.scrollHeight, JSON.stringify(metrics)).toBeLessThanOrEqual(metrics.clientHeight);
+  }
+
+  // Every team reached the stream on some page — none was dropped.
+  expect(seen.size).toBe(32);
+
+  // Left to itself the board rotates, so the later pages are not stranded.
+  await page.goto(`/bracket/${tournament.id}/roster`);
+  await expect(board).toHaveAttribute('data-page', '1');
+  await expect(board).toHaveAttribute('data-page', '2', { timeout: 20000 });
 });

@@ -111,14 +111,14 @@ test('directory filter narrows the list and survives reload through the URL', as
   await expect(page.getByText('No results found')).toBeVisible();
 });
 
-// BUG: the directory never tells a spectator which tournaments are actually running. The
-// landing page badges every card via getTournamentStage (src/app/page.tsx:110 — it selects
-// `teams` + `matches.status` for exactly that), but the directory card only prints the game
-// badge and the roster size (src/components/TournamentsOverviewClient.tsx:100-119), and the
-// list API it reads cannot derive a stage anyway: GET /api/tournaments selects `_count` of
-// teams/matches but no match statuses (src/app/api/tournaments/route.ts:18-32), so LIVE and
-// COMPLETE are indistinguishable from there.
-test.fixme('directory cards carry the lifecycle stage badge', async ({ page }) => {
+// Regression: the directory never told a spectator which tournaments were actually running. The
+// landing page badges every card via getTournamentStage (src/app/page.tsx — it selects `teams` +
+// `matches.status` for exactly that), but the directory card only printed the game badge and the
+// roster size, and the list API it reads could not derive a stage anyway: GET /api/tournaments
+// selected `_count` of teams/matches but no match statuses, so LIVE and COMPLETE were
+// indistinguishable from there. The route (and the SSR prefetch that mirrors it) now returns a
+// server-computed `stage`.
+test('directory cards carry the lifecycle stage badge', async ({ page }) => {
   const live = await seedPlayedBracket({ name: `Directory Live ${Date.now().toString(36)}`, teams: 4, completed: 1 });
 
   await page.goto('/tournaments');

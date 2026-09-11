@@ -6,6 +6,26 @@ import ReactFlow, { Background, Edge, Node, Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useMatchStream } from '@/hooks/useMatchStream';
 import { clientApi } from '@/lib/client-api';
+import { isCalled, isDone, isLive } from '@/lib/match-status';
+
+/**
+ * The one place the overlay prints a match's state, so it is derived from the canonical
+ * status vocabulary (src/lib/match-status.ts) rather than from string comparisons: a status
+ * added there shows up on stream without another edit here.
+ */
+const StreamState = ({ status }: { status?: string | null }) => {
+    if (isDone(status)) return <span className="text-green-500">FINAL</span>;
+    if (isLive(status)) {
+        return (
+            <span className="text-red-500 flex items-center gap-2">
+                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]"></span>
+                LIVE
+            </span>
+        );
+    }
+    if (isCalled(status)) return <span className="text-blue-400">CALLED</span>;
+    return <span className="text-gray-500">UPCOMING</span>;
+};
 
 // A custom high-contrast node for the overlay
 const StreamMatchNode = ({ data }: any) => {
@@ -98,19 +118,12 @@ const StreamMatchNode = ({ data }: any) => {
                 </div>
             </div>
 
-            {(data.bestOf > 1 || isCenter || isThirdPlace) && (
-                <div className="mt-4 pt-3 border-t border-gray-800 flex justify-between items-center text-[10px] text-gray-600 font-bold uppercase tracking-widest">
-                    <span>{data.bestOf > 1 ? `BEST OF ${data.bestOf}` : 'BEST OF 1'}</span>
-                    <span className={data.status === 'COMPLETED' ? 'text-green-500' : data.status === 'LIVE' ? 'text-red-500' : 'text-blue-500'}>
-                        {data.status === 'COMPLETED' ? 'FINAL' : data.status === 'LIVE' ? (
-                            <span className="flex items-center gap-2">
-                                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]"></span>
-                                LIVE
-                            </span>
-                        ) : 'IN PROGRESS'}
-                    </span>
-                </div>
-            )}
+            {/* The state line is unconditional: a BO1 quarter-final needs LIVE/FINAL on stream
+                just as much as the grand final does. */}
+            <div className="mt-4 pt-3 border-t border-gray-800 flex justify-between items-center text-[10px] text-gray-600 font-bold uppercase tracking-widest">
+                <span>{`BEST OF ${data.bestOf > 1 ? data.bestOf : 1}`}</span>
+                <StreamState status={data.status} />
+            </div>
         </div>
     );
 };

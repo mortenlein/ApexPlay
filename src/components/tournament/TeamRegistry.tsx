@@ -72,8 +72,19 @@ export function TeamRegistry({ teams, onViewTeam }: TeamRegistryProps) {
               {team.players?.slice(0, 4).map((p: any, idx: number) => (
                 <div 
                   key={idx} 
-                  className="rounded-md bg-[var(--mds-input)] border border-[var(--mds-border)] p-3 flex items-center justify-between"
+                  className="rounded-md bg-[var(--mds-input)] border border-[var(--mds-border)] p-3 flex items-center gap-2"
                 >
+                  {/* Seat first, same chip as the marshal board — on a LAN, "where do they sit"
+                      is the thing a spectator came to the roster for. */}
+                  <span
+                    className={`shrink-0 rounded-sm px-1.5 py-0.5 text-center font-mono text-[10px] font-bold tabular-nums ${
+                      p.seating
+                        ? "bg-[var(--mds-action-soft)] text-[var(--mds-action)]"
+                        : "bg-[var(--mds-border)] text-[var(--mds-text-subtle)]"
+                    }`}
+                  >
+                    {p.seating || "—"}
+                  </span>
                   <span className="text-[11px] font-bold text-[var(--mds-text-muted)] truncate uppercase tracking-tight">
                     {p.nickname || p.name.split(' ')[0]}
                   </span>
