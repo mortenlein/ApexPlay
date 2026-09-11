@@ -49,6 +49,20 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
 }) => {
   const sortedTeams = [...teams].sort((a, b) => (Number(a.seed) || 999) - (Number(b.seed) || 999));
   const isLocked = tournament.rosterLocked;
+  const teamSize = Number(tournament.teamSize) || 5;
+
+  // The registration form always shows `teamSize` roster rows so an admin-created team gets a real
+  // roster (blank rows are dropped before the POST — admins may register a partial team).
+  const rosterRows: any[] = Array.from({ length: teamSize }, (_, index) =>
+    newTeam.players?.[index] ?? { name: '', nickname: '', seating: '', steamId: '' }
+  );
+
+  const setRosterRow = (index: number, patch: Record<string, string>) => {
+    const next = rosterRows.map((row, rowIndex) => (rowIndex === index ? { ...row, ...patch } : row));
+    setNewTeam({ ...newTeam, players: next });
+  };
+
+  const filledRosterCount = rosterRows.filter((row) => (row.name || '').trim() || (row.nickname || '').trim()).length;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 animate-in fade-in duration-500">
@@ -88,6 +102,59 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                 className="mds-input h-12 px-4 text-sm font-bold uppercase tracking-tight"
                 placeholder="Seed position"
               />
+            </div>
+            <div className="space-y-3 border-t border-[var(--mds-border)] pt-6">
+              <div className="flex items-baseline justify-between">
+                <label className="mds-uppercase-label text-[9px] opacity-40">Roster ({filledRosterCount}/{teamSize})</label>
+                <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--mds-text-subtle)]">Blank rows are skipped</span>
+              </div>
+              {rosterRows.map((row, index) => (
+                <div key={index} className="rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/20 p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 shrink-0 font-mono text-[10px] font-black text-[var(--mds-action)] opacity-60">
+                      {(index + 1).toString().padStart(2, '0')}
+                    </span>
+                    <input
+                      type="text"
+                      maxLength={64}
+                      disabled={isLocked}
+                      value={row.name || ''}
+                      onChange={(e) => setRosterRow(index, { name: e.target.value })}
+                      className="mds-input h-10 px-3 text-xs font-bold tracking-tight"
+                      placeholder={index === 0 ? 'Player name (captain)' : 'Player name'}
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 pl-7">
+                    <input
+                      type="text"
+                      maxLength={64}
+                      disabled={isLocked}
+                      value={row.nickname || ''}
+                      onChange={(e) => setRosterRow(index, { nickname: e.target.value })}
+                      className="mds-input h-9 px-2 text-[11px] font-bold"
+                      placeholder="Nick"
+                    />
+                    <input
+                      type="text"
+                      maxLength={16}
+                      disabled={isLocked}
+                      value={row.seating || ''}
+                      onChange={(e) => setRosterRow(index, { seating: e.target.value })}
+                      className="mds-input h-9 px-2 text-[11px] font-mono uppercase"
+                      placeholder="Seat"
+                    />
+                    <input
+                      type="text"
+                      maxLength={64}
+                      disabled={isLocked}
+                      value={row.steamId || ''}
+                      onChange={(e) => setRosterRow(index, { steamId: e.target.value })}
+                      className="mds-input h-9 px-2 text-[11px] font-mono"
+                      placeholder="SteamID"
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
             <button type="submit" disabled={isLocked} className="mds-btn-primary w-full h-12 text-xs font-black uppercase tracking-widest gap-2 disabled:opacity-40">
               <Plus size={16} /> Add Team
@@ -190,17 +257,21 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                  {/* Both stay live while the roster is locked: the modal still allows name/seat
+                      corrections, and removal falls back to a forced pull-out (confirmed upstream). */}
                   <button
-                    disabled={isLocked}
                     onClick={() => onEditTeam(team)}
-                    className="h-10 w-10 flex items-center justify-center rounded-lg bg-[var(--mds-input)] border border-[var(--mds-border)] hover:border-[var(--mds-action)]/40 hover:text-[var(--mds-action)] transition-all shadow-sm disabled:opacity-30"
+                    title={`Edit ${team.name}`}
+                    aria-label={`Edit ${team.name}`}
+                    className="h-10 w-10 flex items-center justify-center rounded-lg bg-[var(--mds-input)] border border-[var(--mds-border)] hover:border-[var(--mds-action)]/40 hover:text-[var(--mds-action)] transition-all shadow-sm"
                   >
                     <Settings2 size={16} />
                   </button>
                   <button
-                    disabled={isLocked}
-                    onClick={() => { if (confirm(`Remove team ${team.name}?`)) onDeleteTeam(team.id); }}
-                    className="h-10 w-10 flex items-center justify-center rounded-lg bg-[var(--mds-input)] border border-[var(--mds-border)] hover:border-[var(--mds-red)]/40 hover:text-[var(--mds-red)] transition-all shadow-sm disabled:opacity-30"
+                    onClick={() => onDeleteTeam(team.id)}
+                    title={`Remove ${team.name}`}
+                    aria-label={`Remove ${team.name}`}
+                    className="h-10 w-10 flex items-center justify-center rounded-lg bg-[var(--mds-input)] border border-[var(--mds-border)] hover:border-[var(--mds-red)]/40 hover:text-[var(--mds-red)] transition-all shadow-sm"
                   >
                     <Trash2 size={16} />
                   </button>
