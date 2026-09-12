@@ -5,8 +5,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
-import { LogOut, Menu, X } from 'lucide-react';
+import { Command, LogOut, Menu, X } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
+import { openCommandPalette } from '@/components/CommandPalette';
 
 export interface NavLink {
   href: string;
@@ -50,17 +51,24 @@ export function TopNav() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-page/80 backdrop-blur">
-      <div className="mds-container flex h-14 items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="font-brand text-lg font-bold tracking-tight">
+      <a
+        href="#main"
+        className="sr-only rounded-sm bg-brand px-3 py-2 text-meta font-bold text-white focus:not-sr-only focus:absolute focus:left-3 focus:top-2 focus:z-50"
+      >
+        Skip to content
+      </a>
+      <div className="mds-container flex h-14 items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-6">
+          <Link href="/" className="shrink-0 rounded-sm font-brand text-title font-bold tracking-tight">
             Apex<span className="text-brand">Play</span>
           </Link>
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
             {links.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
-                className={`rounded-sm px-3 py-1.5 text-sm font-semibold transition-colors ${
+                aria-current={isActive(l.href) ? 'page' : undefined}
+                className={`rounded-sm px-3 py-1.5 text-body font-semibold transition-colors ${
                   isActive(l.href) ? 'bg-brand-soft text-brand' : 'text-fg-muted hover:text-fg'
                 }`}
               >
@@ -69,7 +77,7 @@ export function TopNav() {
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {signedIn ? (
             <>
               <div className="hidden items-center gap-2 sm:flex">
@@ -82,51 +90,70 @@ export function TopNav() {
                     className="h-6 w-6 rounded-full border border-line"
                   />
                 ) : null}
-                <span className="hidden text-xs font-semibold text-fg-muted lg:block">{user?.name}</span>
+                <span className="mds-name hidden text-meta text-fg-muted lg:block">{user?.name}</span>
               </div>
               <button
                 type="button"
                 onClick={() => void handleSignOut()}
-                className="hidden items-center gap-1.5 text-xs font-semibold text-fg-muted transition-colors hover:text-fg lg:flex"
+                className="hidden items-center gap-1.5 rounded-sm px-1 text-meta font-semibold text-fg-muted transition-colors hover:text-fg lg:flex"
               >
-                <LogOut size={14} />
+                <LogOut size={14} aria-hidden />
                 Sign out
               </button>
             </>
           ) : (
             <Link
               href="/login"
-              className="hidden text-xs font-semibold text-fg-muted transition-colors hover:text-fg sm:block"
+              className="hidden rounded-sm px-1 text-meta font-semibold text-fg-muted transition-colors hover:text-fg sm:block"
             >
               Sign in
             </Link>
           )}
+          {/* The palette is the fast path (⌘K / "/"), but it needs a visible door too —
+              a phone has no keyboard, and nothing else in the chrome announces it exists. */}
+          <button
+            type="button"
+            aria-label="Open command palette"
+            title="Command palette (⌘K)"
+            data-testid="open-command-palette"
+            onClick={openCommandPalette}
+            className="mds-tap flex items-center justify-center rounded-sm p-2 text-fg-muted transition-colors hover:bg-tint hover:text-fg"
+          >
+            <Command size={17} aria-hidden />
+          </button>
           <ThemeToggle />
           <button
             type="button"
             aria-label="Toggle menu"
             aria-expanded={menuOpen}
+            aria-controls="mobile-nav-panel"
             data-testid="mobile-nav-toggle"
             onClick={() => setMenuOpen((v) => !v)}
-            className="flex items-center justify-center rounded-sm p-1.5 text-fg-muted transition-colors hover:text-fg md:hidden"
+            className="mds-tap flex items-center justify-center rounded-sm p-2 text-fg-muted transition-colors hover:bg-tint hover:text-fg md:hidden"
           >
-            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+            {menuOpen ? <X size={20} aria-hidden /> : <Menu size={20} aria-hidden />}
           </button>
         </div>
       </div>
 
       {menuOpen && (
-        <nav data-testid="mobile-nav-panel" className="border-t border-line bg-page md:hidden">
+        <nav
+          id="mobile-nav-panel"
+          aria-label="Primary"
+          data-testid="mobile-nav-panel"
+          className="border-t border-line bg-page md:hidden"
+        >
           <div className="mds-container flex flex-col gap-1 py-3">
             {links.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
                 onClick={() => setMenuOpen(false)}
-                className={`rounded-sm px-3 py-2.5 text-sm font-semibold transition-colors ${
+                aria-current={isActive(l.href) ? 'page' : undefined}
+                className={`mds-tap flex items-center rounded-sm px-3 py-3 text-body font-semibold transition-colors ${
                   isActive(l.href)
                     ? 'bg-brand-soft text-brand'
-                    : 'text-fg-muted hover:bg-white/5 hover:text-fg'
+                    : 'text-fg-muted hover:bg-tint hover:text-fg'
                 }`}
               >
                 {l.label}
@@ -136,16 +163,16 @@ export function TopNav() {
               <button
                 type="button"
                 onClick={() => void handleSignOut()}
-                className="mt-1 flex items-center gap-2 rounded-sm px-3 py-2.5 text-left text-sm font-semibold text-fg-muted transition-colors hover:bg-white/5 hover:text-fg"
+                className="mds-tap mt-1 flex items-center gap-2 rounded-sm px-3 py-3 text-left text-body font-semibold text-fg-muted transition-colors hover:bg-tint hover:text-fg"
               >
-                <LogOut size={15} />
+                <LogOut size={15} aria-hidden />
                 Sign out
               </button>
             ) : (
               <Link
                 href="/login"
                 onClick={() => setMenuOpen(false)}
-                className="rounded-sm px-3 py-2.5 text-sm font-semibold text-fg-muted transition-colors hover:bg-white/5 hover:text-fg"
+                className="mds-tap flex items-center rounded-sm px-3 py-3 text-body font-semibold text-fg-muted transition-colors hover:bg-tint hover:text-fg"
               >
                 Sign in
               </Link>

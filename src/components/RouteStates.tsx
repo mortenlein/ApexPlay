@@ -3,12 +3,24 @@
 import Link from "next/link";
 import { AlertTriangle, RefreshCw, SearchX } from "lucide-react";
 
+/**
+ * The three things a route can be instead of itself: loading, broken, or missing.
+ *
+ * They share one shape — a single centred panel on the page surface — so a visitor who hits
+ * one recognises it as the app rather than as a crash. All three are built from tokens; none
+ * of them invents a size or a colour.
+ */
+
 export function RouteLoadingState({ label }: { label: string }) {
   return (
-    <div className="min-h-screen bg-[var(--mds-page)] flex items-center justify-center p-6">
-      <div className="flex flex-col items-center gap-5 rounded-xl border border-[var(--mds-border)] bg-[var(--mds-card)] px-8 py-10 text-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--mds-action)] border-t-transparent" />
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--mds-text-muted)]">Loading {label}</p>
+    <div className="flex min-h-[70vh] items-center justify-center bg-page p-6">
+      <div
+        role="status"
+        aria-live="polite"
+        className="flex flex-col items-center gap-5 rounded-lg border border-line bg-card px-8 py-10 text-center"
+      >
+        <div className="h-9 w-9 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+        <p className="mds-uppercase-label text-fg-muted">Loading {label}</p>
       </div>
     </div>
   );
@@ -24,19 +36,20 @@ export function RouteErrorState({
   retryLabel?: string;
 }) {
   return (
-    <div className="min-h-screen bg-[var(--mds-page)] flex items-center justify-center p-6">
-      <div className="w-full max-w-xl rounded-xl border border-[var(--mds-border)] bg-[var(--mds-card)] p-8">
-        <div className="flex items-center gap-3 text-[var(--mds-red)]">
-          <AlertTriangle size={18} />
-          <p className="text-xs font-black uppercase tracking-[0.16em]">{title}</p>
+    <div className="flex min-h-[70vh] items-center justify-center bg-page p-6">
+      <div role="alert" className="w-full max-w-xl rounded-lg border border-line bg-card p-8">
+        <div className="flex items-center gap-2.5 text-danger">
+          <AlertTriangle size={18} aria-hidden />
+          <p className="mds-uppercase-label text-danger">Something went wrong</p>
         </div>
-        <p className="mt-3 text-sm text-[var(--mds-text-muted)]">{description}</p>
+        <h1 className="mds-name-lg mt-3">{title}</h1>
+        <p className="mt-2 text-body text-fg-muted">{description}</p>
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="mds-btn-primary mt-6 h-10 px-5 text-[10px] font-black uppercase tracking-widest"
+          className="mds-btn-primary mds-tap mt-6 h-10 px-5 text-label font-bold uppercase tracking-widest"
         >
-          <RefreshCw size={14} />
+          <RefreshCw size={14} aria-hidden />
           {retryLabel}
         </button>
       </div>
@@ -60,19 +73,25 @@ export function RouteNotFoundState({
   secondaryLabel?: string;
 }) {
   return (
-    <div className="min-h-screen bg-[var(--mds-page)] flex items-center justify-center p-6">
-      <div className="w-full max-w-xl rounded-xl border border-[var(--mds-border)] bg-[var(--mds-card)] p-8 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--mds-border)] bg-[var(--mds-input)] text-[var(--mds-text-subtle)]">
-          <SearchX size={20} />
+    <div className="flex min-h-[70vh] items-center justify-center bg-page p-6">
+      <div className="w-full max-w-xl rounded-lg border border-line bg-card p-8 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg border border-line bg-tint text-fg-subtle">
+          <SearchX size={20} aria-hidden />
         </div>
-        <h1 className="mt-5 text-2xl font-black uppercase tracking-tight">{title}</h1>
-        <p className="mt-3 text-sm text-[var(--mds-text-muted)]">{description}</p>
+        <h1 className="mds-name-lg mt-5">{title}</h1>
+        <p className="mt-2 text-body text-fg-muted">{description}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link href={primaryHref} className="mds-btn-primary h-10 px-5 text-[10px] font-black uppercase tracking-widest">
+          <Link
+            href={primaryHref}
+            className="mds-btn-primary mds-tap h-10 px-5 text-label font-bold uppercase tracking-widest"
+          >
             {primaryLabel}
           </Link>
           {secondaryHref && secondaryLabel ? (
-            <Link href={secondaryHref} className="mds-btn-secondary h-10 px-5 text-[10px] font-black uppercase tracking-widest">
+            <Link
+              href={secondaryHref}
+              className="mds-btn-secondary mds-tap h-10 px-5 text-label font-bold uppercase tracking-widest"
+            >
               {secondaryLabel}
             </Link>
           ) : null}

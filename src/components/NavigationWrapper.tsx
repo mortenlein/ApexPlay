@@ -18,10 +18,14 @@ export default function NavigationWrapper({ children }: { children: React.ReactN
   }
 
   // One persistent header for the whole app — it stays mounted across navigations.
+  // `#main` is the target of the header's skip link, so it has to exist on every chromed
+  // page, not just the ones that happen to remember it.
   return (
     <>
       <TopNav />
-      {children}
+      <div id="main" tabIndex={-1}>
+        {children}
+      </div>
     </>
   );
 }

@@ -13,15 +13,19 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mds-empty-state flex flex-col items-center gap-3">
-      {icon && <div className="text-fg-subtle">{icon}</div>}
-      <div className="space-y-1">
-        <h3 className="text-base font-bold text-fg">{title}</h3>
+    <div className="mds-empty-state flex flex-col items-center justify-center gap-4">
+      {icon && (
+        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-line bg-tint text-fg-subtle">
+          {icon}
+        </div>
+      )}
+      <div className="space-y-1.5">
+        <h3 className="mds-card-title">{title}</h3>
         {description && (
-          <p className="text-sm text-fg-muted max-w-md mx-auto">{description}</p>
+          <p className="mx-auto max-w-md text-body text-fg-muted">{description}</p>
         )}
       </div>
-      {action && <div className="mt-2">{action}</div>}
+      {action && <div className="mt-1">{action}</div>}
     </div>
   );
 }

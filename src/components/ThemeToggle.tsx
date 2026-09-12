@@ -4,29 +4,37 @@ import React, { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
 
+/**
+ * Dark ↔ light. Both themes are real (globals.css defines the full token set for each), so
+ * this is a supported switch rather than a decoration — an organizer working next to a window
+ * at 11:00 gets a readable screen, the room gets the dark one at 21:00.
+ */
 export default function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
 
+  // The server can't know the stored theme, so render a same-sized placeholder until mount
+  // rather than guessing and flashing the wrong icon.
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) return (
-    <div className="h-9 w-9 rounded-mds-comfortable bg-[var(--mds-action-soft)] animate-pulse" />
-  );
+  if (!mounted) {
+    return <div className="mds-tap h-9 w-9 rounded-sm border border-line bg-tint" aria-hidden />;
+  }
+
+  const isDark = resolvedTheme !== "light";
 
   return (
     <button
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      className="flex h-9 w-9 items-center justify-center rounded-mds-comfortable border border-[var(--mds-border)] bg-[var(--mds-page)] text-[var(--mds-text-muted)] transition-all hover:bg-[var(--mds-action-soft)] hover:text-[var(--mds-action)] shadow-mds-whisper"
+      type="button"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className="mds-tap flex h-9 w-9 items-center justify-center rounded-sm border border-line bg-tint text-fg-muted transition-colors hover:border-line-hover hover:text-fg"
       aria-label="Toggle Theme"
+      aria-pressed={!isDark}
+      title={isDark ? "Switch to light theme" : "Switch to dark theme"}
     >
-      {theme === "dark" ? (
-        <Sun size={18} strokeWidth={2.5} className="animate-in zoom-in-50 duration-300" />
-      ) : (
-        <Moon size={18} strokeWidth={2.5} className="animate-in zoom-in-50 duration-300" />
-      )}
+      {isDark ? <Sun size={17} aria-hidden /> : <Moon size={17} aria-hidden />}
     </button>
   );
 }

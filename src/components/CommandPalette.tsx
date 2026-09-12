@@ -237,43 +237,115 @@ export default function CommandPalette() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [filtered, open, selectedIndex]);
 
+  // --- Modal behaviour: trap Tab inside the dialog, lock the page behind it, and give the
+  // caller's focus back when it closes. Without this, tabbing out of the palette lands on the
+  // page underneath while the overlay still covers it. ---
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+  const returnFocusRef = React.useRef<HTMLElement | null>(null);
+
+  React.useEffect(() => {
+    if (!open) {
+      returnFocusRef.current?.focus?.();
+      returnFocusRef.current = null;
+      return;
+    }
+
+    returnFocusRef.current = document.activeElement as HTMLElement | null;
+
+    const { overflow } = document.body.style;
+    document.body.style.overflow = "hidden";
+
+    const onTab = (event: KeyboardEvent) => {
+      if (event.key !== "Tab" || !dialogRef.current) return;
+
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((el) => el.offsetParent !== null || el === document.activeElement);
+
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onTab);
+    return () => {
+      document.removeEventListener("keydown", onTab);
+      document.body.style.overflow = overflow;
+    };
+  }, [open]);
+
   if (!open) {
     return null;
   }
 
   return (
-    <div data-testid="command-palette-overlay" className="fixed inset-0 z-[300] flex items-start justify-center bg-black/50 p-4 pt-[12vh] backdrop-blur-sm" onClick={() => setOpen(false)}>
-      <div data-testid="command-palette" className="w-full max-w-2xl overflow-hidden rounded-xl border border-[var(--mds-border)] bg-[var(--mds-card)] shadow-2xl" onClick={(event) => event.stopPropagation()}>
-        <div className="flex items-center gap-3 border-b border-[var(--mds-border)] px-4 py-3">
-          <Search size={16} className="text-[var(--mds-text-subtle)]" />
+    <div
+      data-testid="command-palette-overlay"
+      className="fixed inset-0 z-[300] flex items-start justify-center bg-scrim p-4 pt-[12vh] backdrop-blur-sm"
+      onClick={() => setOpen(false)}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
+        data-testid="command-palette"
+        className="flex w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-line-hover bg-card shadow-lg"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-center gap-3 border-b border-line px-4 py-3">
+          <Search size={16} aria-hidden className="text-fg-subtle" />
           <input
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search commands..."
+            placeholder="Search commands…"
+            aria-label="Search commands"
+            role="combobox"
+            aria-expanded
+            aria-controls="command-palette-list"
+            aria-activedescendant={filtered[selectedIndex] ? `command-option-${filtered[selectedIndex].id}` : undefined}
             data-testid="command-palette-input"
-            className="h-10 flex-1 bg-transparent text-sm text-[var(--mds-text-primary)] outline-none placeholder:text-[var(--mds-text-subtle)]"
+            className="h-10 flex-1 bg-transparent text-body text-fg outline-none placeholder:text-fg-subtle"
           />
+          <kbd className="mds-numeric hidden rounded-sm border border-line px-1.5 py-0.5 text-label text-fg-subtle sm:block">
+            ESC
+          </kbd>
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="flex h-8 w-8 items-center justify-center rounded border border-[var(--mds-border)] text-[var(--mds-text-muted)] hover:text-[var(--mds-text-primary)]"
+            className="mds-tap flex h-8 w-8 items-center justify-center rounded-sm border border-line text-fg-muted transition-colors hover:bg-tint hover:text-fg"
             aria-label="Close command palette"
           >
-            <X size={14} />
+            <X size={14} aria-hidden />
           </button>
         </div>
 
-        <div className="max-h-[50vh] overflow-y-auto p-2">
+        <div id="command-palette-list" role="listbox" aria-label="Commands" className="max-h-[50vh] overflow-y-auto p-2">
           {filtered.length === 0 ? (
-            <div className="p-6 text-center text-sm text-[var(--mds-text-muted)]">No matching command.</div>
+            <div className="p-6 text-center text-body text-fg-muted">No matching command.</div>
           ) : (
             filtered.map((command, index) => (
               <button
                 type="button"
                 key={command.id}
+                id={`command-option-${command.id}`}
+                role="option"
+                aria-selected={index === selectedIndex}
                 data-testid={`command-palette-item-${command.id}`}
-                className={`flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm transition ${index === selectedIndex ? "bg-[var(--mds-action-soft)] text-[var(--mds-action)]" : "text-[var(--mds-text-primary)] hover:bg-[var(--mds-input)]"}`}
+                className={`mds-tap flex w-full items-center justify-between rounded-sm px-3 py-3 text-left text-body transition-colors ${
+                  index === selectedIndex ? "bg-brand-soft text-brand" : "text-fg hover:bg-tint"
+                }`}
                 onMouseEnter={() => setSelectedIndex(index)}
                 onClick={() => {
                   void command.run();
@@ -281,11 +353,15 @@ export default function CommandPalette() {
                 }}
               >
                 <span>{command.label}</span>
-                {index === selectedIndex ? <Command size={14} /> : null}
+                {index === selectedIndex ? <Command size={14} aria-hidden /> : null}
               </button>
             ))
           )}
         </div>
+
+        <p className="border-t border-line px-4 py-2 text-label uppercase tracking-[0.1em] text-fg-subtle">
+          ↑↓ to move · ↵ to run · esc to close
+        </p>
       </div>
     </div>
   );

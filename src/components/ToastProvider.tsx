@@ -38,25 +38,32 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed right-4 top-24 z-[300] flex w-[min(420px,calc(100vw-2rem))] flex-col gap-3">
+      {/* Announced politely: a marshal is looking at the floor, not at the corner of a screen. */}
+      <div
+        role="status"
+        aria-live="polite"
+        className="pointer-events-none fixed right-4 top-20 z-[300] flex w-[min(420px,calc(100vw-2rem))] flex-col gap-3"
+      >
         {toasts.map((toast) => {
           const Icon = toast.tone === 'success' ? CheckCircle2 : toast.tone === 'error' ? AlertCircle : Info;
+          const iconTone =
+            toast.tone === 'success' ? 'text-success' : toast.tone === 'error' ? 'text-danger' : 'text-brand';
           return (
             <div key={toast.id} className={`mds-toast pointer-events-auto ${toast.tone}`}>
               <div className="flex items-start gap-3">
-                <div className="mt-0.5 shrink-0">
-                  <Icon size={18} />
+                <div className={`mt-0.5 shrink-0 ${iconTone}`}>
+                  <Icon size={18} aria-hidden />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-black tracking-tight">{toast.title}</p>
+                  <p className="mds-name text-body font-bold">{toast.title}</p>
                   {toast.description ? (
-                    <p className="mt-1 text-xs leading-relaxed text-[var(--mds-text-muted)]">{toast.description}</p>
+                    <p className="mds-name mt-1 text-meta leading-relaxed text-fg-muted">{toast.description}</p>
                   ) : null}
                   {toast.actionLabel && toast.onAction ? (
                     <button
                       type="button"
                       onClick={toast.onAction}
-                      className="mt-2 text-[10px] font-black uppercase tracking-widest text-[var(--mds-action)] hover:underline"
+                      className="mt-2 rounded-sm text-label font-bold uppercase tracking-widest text-brand hover:underline"
                     >
                       {toast.actionLabel}
                     </button>
@@ -66,9 +73,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   type="button"
                   aria-label="Dismiss notification"
                   onClick={() => removeToast(toast.id)}
-                  className="rounded-md p-1 text-[var(--mds-text-subtle)] transition-colors hover:text-[var(--mds-text-primary)]"
+                  className="mds-tap rounded-sm p-1 text-fg-subtle transition-colors hover:text-fg"
                 >
-                  <X size={14} />
+                  <X size={14} aria-hidden />
                 </button>
               </div>
             </div>
