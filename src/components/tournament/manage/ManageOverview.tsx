@@ -1,9 +1,11 @@
 'use client';
 
-import { isCalled, isDone, isLive } from '@/lib/match-status';
-import React from 'react';
-import { Users, Sword, Shield, Zap, RefreshCw, BarChart3, Copy, Share2, ArrowRight, Clock3, Bell } from 'lucide-react';
+import { byPlayOrder, isCalled, isDone, isLive } from '@/lib/match-status';
+import React, { useState } from 'react';
+import { Users, Sword, Zap, RefreshCw, Copy, Check, ArrowRight, Bell } from 'lucide-react';
 import { InlineNotice } from '@/components/workspace/WorkspaceChrome';
+import { Badge, StatusBadge } from '@/components/ui';
+import { stageLabel, totalRoundsOf } from './ManageControl';
 
 interface ManageOverviewProps {
   tournament: any;
@@ -16,6 +18,32 @@ interface ManageOverviewProps {
   onOpenMatchModal: (match: any) => void;
   onSetTab: (tab: string) => void;
   onCopyPublicLink: () => void;
+}
+
+/** A copyable URL row: label, the link itself, and one button that confirms it copied. */
+function LinkField({ label, url, onCopy }: { label: string; url: string; onCopy?: () => void }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div>
+      <p className="mds-uppercase-label">{label}</p>
+      <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-[var(--mds-border)] bg-[var(--mds-page)] px-3 py-2">
+        <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-[var(--mds-action)]">{url}</code>
+        <button
+          type="button"
+          aria-label={`Copy ${label.toLowerCase()}`}
+          onClick={() => {
+            if (onCopy) onCopy();
+            else navigator.clipboard?.writeText(url);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          }}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-[var(--mds-border)] bg-white/5 text-[var(--mds-text-primary)] transition-colors hover:bg-white/10"
+        >
+          {copied ? <Check size={14} className="text-[var(--mds-green)]" /> : <Copy size={14} />}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export const ManageOverview: React.FC<ManageOverviewProps> = ({
@@ -33,6 +61,7 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
   const liveMatches = matches.filter((match) => isLive(match.status)).length;
   const waitingMatches = matches.filter((match) => isCalled(match.status)).length;
   const completedMatches = matches.filter((match) => isDone(match.status)).length;
+  const totalRounds = totalRoundsOf(matches);
   const bracketStatus =
     matches.length === 0
       ? 'Not generated'
@@ -43,31 +72,39 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
           : 'Ready for the next round';
 
   const stats = [
-    { label: 'Registered Teams', value: teams.length, icon: Users, color: 'var(--mds-action)' },
-    { label: 'Total Matches', value: matches.length, icon: Sword, color: 'var(--mds-red)' },
-    { label: 'Bracket State', value: bracketStatus, icon: Shield, color: tournament.rosterLocked ? 'var(--mds-amber)' : 'var(--mds-green)' },
+    { label: 'Teams', value: teams.length, icon: Users, color: 'var(--mds-action)' },
+    { label: 'Matches', value: matches.length, icon: Sword, color: 'var(--mds-red)' },
+    { label: 'Live', value: liveMatches, icon: Zap, color: 'var(--mds-red)' },
+    { label: 'Waiting', value: waitingMatches, icon: Bell, color: 'var(--mds-amber)' },
+    { label: 'Played', value: completedMatches, icon: Check, color: 'var(--mds-green)' },
   ];
 
   const timeline = [...activity, ...notifications]
     .sort((a: any, b: any) => new Date(b.createdAt || b.timestamp).getTime() - new Date(a.createdAt || a.timestamp).getTime())
-    .slice(0, 5);
+    .slice(0, 6);
+
+  // What the organizer would actually look at here: the games in play order, not "first four rows".
+  // Whatever is still to play comes first; once everything is played, the last results stand in.
+  const ordered = [...matches].sort(byPlayOrder);
+  const unplayed = ordered.filter((match) => !isDone(match.status));
+  const recent = (unplayed.length > 0 ? unplayed : ordered.reverse()).slice(0, 4);
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 animate-in fade-in duration-500">
-      <div className="space-y-8 lg:col-span-8">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="space-y-6 lg:col-span-8">
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           {stats.map((stat) => (
-            <div key={stat.label} className="mds-card p-6 flex items-center justify-between group hover:border-[var(--mds-action)]/20 transition-all">
-              <div>
-                <p className="mds-uppercase-label text-[8px] opacity-40 mb-1">{stat.label}</p>
-                <p className="text-2xl font-black tracking-tight">{stat.value}</p>
+            <div key={stat.label} className="mds-card flex items-center justify-between gap-3 p-4">
+              <div className="min-w-0">
+                <p className="mds-uppercase-label">{stat.label}</p>
+                <p className="mds-numeric mt-1 text-xl font-bold">{stat.value}</p>
               </div>
-              <div className="h-10 w-10 rounded-lg bg-[var(--mds-input)] border border-[var(--mds-border)] flex items-center justify-center opacity-40 group-hover:opacity-100 transition-opacity" style={{ color: stat.color }}>
-                <stat.icon size={18} />
-              </div>
+              <stat.icon size={16} className="shrink-0 opacity-50" style={{ color: stat.color }} />
             </div>
           ))}
-        </div>
+        </section>
 
         {tournament.rosterLocked ? (
           <InlineNotice
@@ -77,11 +114,15 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
           />
         ) : null}
 
-        <div className="mds-card p-8">
-          <div className="mb-8 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <BarChart3 size={20} className="text-[var(--mds-action)]" />
-              <h2 className="text-lg font-black uppercase tracking-tight">Tournament Progress</h2>
+        <div className="mds-card p-6">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold tracking-tight">Tournament Progress</h2>
+              <p className="mt-0.5 text-xs text-[var(--mds-text-muted)]">
+                {matches.length === 0
+                  ? 'No bracket generated yet.'
+                  : `${completedMatches} of ${matches.length} matches played · ${bracketStatus}`}
+              </p>
             </div>
             <button
               onClick={() => {
@@ -94,7 +135,7 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
                 onGenerateMatches();
               }}
               disabled={generating || teams.length < 2 || (matches.length > 0 && tournament.rosterLocked)}
-              className="mds-btn-primary h-10 px-6 text-xs gap-2 disabled:opacity-30"
+              className="mds-btn-primary h-10 gap-2 px-5 text-sm font-bold disabled:opacity-30"
             >
               {generating ? <RefreshCw size={14} className="animate-spin" /> : <Zap size={14} />}
               {matches.length > 0 ? 'Regenerate Bracket' : 'Generate Bracket'}
@@ -102,35 +143,35 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
           </div>
 
           {matches.length === 0 ? (
-            <div className="py-20 text-center border-2 border-dashed border-[var(--mds-border)] rounded-xl bg-[var(--mds-input)]/10">
-              <p className="mds-uppercase-label opacity-40 mb-2">Bracket not generated yet</p>
-              <p className="text-sm font-medium text-[var(--mds-text-muted)]">Register at least 2 teams to generate the first round.</p>
+            <div className="rounded-lg border border-dashed border-[var(--mds-border)] py-14 text-center">
+              <p className="text-sm font-bold">Bracket not generated yet</p>
+              <p className="mt-1 text-sm text-[var(--mds-text-muted)]">Register at least 2 teams to generate the first round.</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="mds-uppercase-label text-[9px] opacity-30 tracking-[0.2em] mb-4">Recent Match Updates</div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {matches.slice(0, 4).map((match: any) => (
+            <div className="space-y-3">
+              <p className="mds-uppercase-label">{unplayed.length > 0 ? 'Next up' : 'Last results'}</p>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {recent.map((match: any) => (
                   <button
                     key={match.id}
                     onClick={() => onOpenMatchModal(match)}
-                    className="flex items-center justify-between p-4 mds-card bg-[var(--mds-input)]/20 hover:border-[var(--mds-action)]/30 text-left transition-all group"
+                    className="group flex items-start justify-between gap-3 rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/20 p-4 text-left transition-all hover:border-[var(--mds-action)]/40"
                   >
-                    <div className="flex items-center gap-3 overflow-hidden">
-                      <div className={`shrink-0 h-2 w-2 rounded-full ${
-                        isLive(match.status) ? 'bg-[var(--mds-red)] animate-pulse shadow-[0_0_8px_var(--mds-red)]' :
-                        isDone(match.status) ? 'bg-[var(--mds-green)]' :
-                        isCalled(match.status) ? 'bg-[var(--mds-amber)]' :
-                        'bg-[var(--mds-text-muted)]'
-                      }`} />
-                      <div className="truncate">
-                        <p className="text-xs font-black uppercase truncate">{match.homeTeam?.name || 'TBD'} vs {match.awayTeam?.name || 'TBD'}</p>
-                        <p className="mds-uppercase-label text-[8px] opacity-40">Match ID: {match.id.split('-')[0].toUpperCase()}</p>
+                    <div className="min-w-0">
+                      <div className="mb-1.5 flex items-center gap-2">
+                        <span className="mds-uppercase-label text-[var(--mds-text-subtle)]">
+                          {stageLabel(match, totalRounds)}
+                        </span>
+                        <StatusBadge status={match.status} />
                       </div>
+                      <p className="mds-name text-sm">{match.homeTeam?.name || 'TBD'}</p>
+                      <p className="mds-name text-sm">{match.awayTeam?.name || 'TBD'}</p>
                     </div>
-                    <div className="flex items-center gap-4 shrink-0">
-                      <span className="font-mono text-sm font-bold opacity-60 group-hover:opacity-100 tabular-nums">{match.homeScore}:{match.awayScore}</span>
-                      <ArrowRight size={14} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-[var(--mds-action)]" />
+                    <div className="flex shrink-0 items-center gap-3">
+                      <span className="mds-numeric text-sm font-bold text-[var(--mds-text-muted)]">
+                        {match.homeScore}:{match.awayScore}
+                      </span>
+                      <ArrowRight size={14} className="text-[var(--mds-action)] opacity-0 transition-opacity group-hover:opacity-100" />
                     </div>
                   </button>
                 ))}
@@ -140,122 +181,61 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
         </div>
       </div>
 
-      <div className="space-y-8 lg:col-span-4">
-        <div className="mds-card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-black uppercase tracking-tight">Operations Pulse</h3>
-              <p className="mt-1 text-xs text-[var(--mds-text-muted)]">What the floor and admin team need next.</p>
-            </div>
-            <Clock3 size={16} className="text-[var(--mds-action)]" />
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/30 px-4 py-3">
-              <span className="text-xs font-bold text-[var(--mds-text-muted)]">Live matches</span>
-              <span className="text-sm font-black text-[var(--mds-red)]">{liveMatches}</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/30 px-4 py-3">
-              <span className="text-xs font-bold text-[var(--mds-text-muted)]">Waiting for players</span>
-              <span className="text-sm font-black text-[var(--mds-amber)]">{waitingMatches}</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/30 px-4 py-3">
-              <span className="text-xs font-bold text-[var(--mds-text-muted)]">Results posted</span>
-              <span className="text-sm font-black text-[var(--mds-green)]">{completedMatches}</span>
-            </div>
-          </div>
+      <div className="space-y-6 lg:col-span-4">
+        <div className="mds-card space-y-4 p-5">
+          <h3 className="text-sm font-bold tracking-tight">Share</h3>
+          <LinkField label="Public tournament page" url={`${origin}/tournaments/${tournament.id}`} onCopy={onCopyPublicLink} />
+          <LinkField label="OBS stream overlay" url={`${origin}/bracket/${tournament.id}/overlay`} />
         </div>
 
-        <div className="mds-card p-6 bg-[var(--mds-action-soft)] border-[var(--mds-action)]/20">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="mds-uppercase-label text-[var(--mds-action)]">Public tournament page</h3>
-            <Share2 size={16} className="text-[var(--mds-action)] opacity-40" />
-          </div>
-          <div className="relative group">
-            <div className="bg-[var(--mds-card)] border border-[var(--mds-border)] rounded-lg px-4 py-3 flex items-center justify-between overflow-hidden shadow-inner">
-              <span className="font-mono text-[10px] text-[var(--mds-action)] font-bold truncate opacity-80 group-hover:opacity-100 transition-opacity">
-                {typeof window !== 'undefined' ? `${window.location.origin}/tournaments/${tournament.id}` : ''}
-              </span>
+        <div className="mds-card p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h3 className="text-sm font-bold tracking-tight">Top seeds</h3>
+            {teams.length > 5 ? (
               <button
-                onClick={onCopyPublicLink}
-                className="mds-btn-secondary h-8 w-8 p-0 shrink-0 text-[var(--mds-action)] hover:bg-[var(--mds-action)]/10"
+                onClick={() => onSetTab('participants')}
+                className="text-xs font-semibold text-[var(--mds-action)] hover:underline"
               >
-                <Copy size={14} />
+                All {teams.length} teams
               </button>
-            </div>
+            ) : null}
           </div>
-        </div>
-
-        <div className="mds-card p-6 bg-[var(--mds-red)]/5 border-[var(--mds-red)]/20">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="mds-uppercase-label text-[var(--mds-red)]">OBS Stream Overlay</h3>
-            <Zap size={16} className="text-[var(--mds-red)] opacity-40" />
-          </div>
-          <div className="relative group">
-            <div className="bg-[var(--mds-card)] border border-[var(--mds-border)] rounded-lg px-4 py-3 flex items-center justify-between overflow-hidden shadow-inner">
-              <span className="font-mono text-[10px] text-[var(--mds-red)] font-bold truncate opacity-80 group-hover:opacity-100 transition-opacity">
-                {typeof window !== 'undefined' ? `${window.location.origin}/bracket/${tournament.id}/overlay` : ''}
-              </span>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/bracket/${tournament.id}/overlay`);
-                  alert('Overlay link copied for OBS!');
-                }}
-                className="mds-btn-secondary h-8 w-8 p-0 shrink-0 text-[var(--mds-red)] hover:bg-[var(--mds-red)]/10"
-              >
-                <Copy size={14} />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="mds-card p-6">
-          <h3 className="mds-uppercase-label mb-6">Top Seeds</h3>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             {teams.slice(0, 5).map((team: any, index: number) => (
-              <div key={team.id} className="flex items-center justify-between group">
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-mono opacity-20">{(index + 1).toString().padStart(2, '0')}</span>
-                  <span className="text-sm font-black uppercase truncate max-w-[150px] group-hover:text-[var(--mds-action)] transition-colors">{team.name}</span>
+              <div key={team.id} className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-start gap-3">
+                  <span className="mds-numeric text-xs text-[var(--mds-text-subtle)]">
+                    {(index + 1).toString().padStart(2, '0')}
+                  </span>
+                  <span className="mds-name text-sm">{team.name}</span>
                 </div>
-                <span className="mds-badge bg-[var(--mds-input)] text-[9px] opacity-60">Seed {team.seed || index + 1}</span>
+                <Badge tone="neutral">Seed {team.seed || index + 1}</Badge>
               </div>
             ))}
-            {teams.length > 5 ? (
-              <button onClick={() => onSetTab('participants')} className="w-full pt-4 mt-4 border-t border-[var(--mds-border)] text-center text-[10px] font-black mds-uppercase-label text-[var(--mds-action)] hover:tracking-widest transition-all">
-                View all teams ({teams.length})
-              </button>
-            ) : null}
             {teams.length === 0 ? (
-              <div className="py-10 text-center opacity-30">
-                <p className="mds-uppercase-label text-[9px]">No teams registered</p>
-              </div>
+              <p className="py-6 text-center text-sm text-[var(--mds-text-subtle)]">No teams registered</p>
             ) : null}
           </div>
         </div>
 
-        <div className="mds-card p-6">
-          <div className="mb-5 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-black uppercase tracking-tight">Activity Timeline</h3>
-              <p className="mt-1 text-xs text-[var(--mds-text-muted)]">Recent admin actions and alerts.</p>
-            </div>
-            <Bell size={16} className="text-[var(--mds-action)]" />
+        <div className="mds-card p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-bold tracking-tight">Activity</h3>
+            <Bell size={15} className="text-[var(--mds-action)] opacity-60" />
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {timeline.map((entry: any, index: number) => (
-              <div key={`${entry.id}-${index}`} className="rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/30 px-4 py-3">
-                <p className="text-[11px] font-black tracking-tight text-[var(--mds-text-primary)]">
-                  {entry.summary || entry.embed?.title}
-                </p>
-                <p className="mt-1 text-[11px] text-[var(--mds-text-muted)]">
+              <div key={`${entry.id}-${index}`} className="rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/30 px-3 py-2.5">
+                <p className="text-[13px] font-semibold leading-snug">{entry.summary || entry.embed?.title}</p>
+                <p className="mt-1 text-xs text-[var(--mds-text-muted)]">
                   {entry.actor ? `${entry.actor} · ` : ''}{new Date(entry.createdAt || entry.timestamp).toLocaleTimeString()}
                 </p>
               </div>
             ))}
             {timeline.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-[var(--mds-border)] px-4 py-6 text-center">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--mds-text-subtle)]">No activity yet</p>
-              </div>
+              <p className="rounded-lg border border-dashed border-[var(--mds-border)] px-3 py-5 text-center text-sm text-[var(--mds-text-subtle)]">
+                No activity yet
+              </p>
             ) : null}
           </div>
         </div>

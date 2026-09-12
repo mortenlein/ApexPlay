@@ -30,21 +30,21 @@ export const ManageSidebar: React.FC<ManageSidebarProps> = ({
   ];
 
   return (
-    <aside className={`fixed inset-y-0 left-0 z-[100] w-72 bg-[var(--mds-card)] border-r border-[var(--mds-border)] backdrop-blur-xl transition-transform duration-300 md:relative md:translate-x-0 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-      <div className="flex flex-col h-full py-8 px-6 gap-10">
+    <aside className={`fixed inset-y-0 left-0 z-[100] w-64 bg-[var(--mds-card)] border-r border-[var(--mds-border)] backdrop-blur-xl transition-transform duration-300 md:relative md:translate-x-0 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className="flex h-full flex-col gap-8 px-4 py-6">
         <div className="flex items-center justify-between mb-2">
-          <Link href="/admin" className="flex items-center gap-4 group">
-            <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-[var(--mds-input)] border border-[var(--mds-border)] group-hover:border-[var(--mds-action)]/40 transition-all shadow-sm">
+          <Link href="/admin" className="group flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)] transition-all group-hover:border-[var(--mds-action)]/40">
               <ArrowLeft size={16} className="group-hover:text-[var(--mds-action)]" />
             </div>
-            <span className="mds-uppercase-label opacity-40 group-hover:opacity-100 transition-opacity">All tournaments</span>
+            <span className="mds-uppercase-label transition-colors group-hover:text-[var(--mds-text-primary)]">All tournaments</span>
           </Link>
           <button onClick={() => setIsMenuOpen(false)} className="md:hidden p-2 hover:bg-[var(--mds-border)]/20 rounded-lg">
             <X size={20} />
           </button>
         </div>
 
-        <nav className="flex flex-col gap-2">
+        <nav className="flex flex-col gap-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -52,7 +52,7 @@ export const ManageSidebar: React.FC<ManageSidebarProps> = ({
                 onTabChange(tab.id);
                 setIsMenuOpen(false);
               }}
-              className={`flex items-center gap-4 px-4 py-3.5 rounded-lg transition-all font-bold text-sm ${
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all ${
                 activeTab === tab.id 
                   ? 'bg-[var(--mds-action-soft)] text-[var(--mds-action)] border border-[var(--mds-action)]/20 shadow-sm' 
                   : 'text-[var(--mds-text-muted)] hover:text-[var(--mds-text-primary)] hover:bg-[var(--mds-input)]'
@@ -68,7 +68,7 @@ export const ManageSidebar: React.FC<ManageSidebarProps> = ({
           <Link 
             href={`/tournaments/${tournamentId}`} 
             target="_blank" 
-            className="flex items-center gap-4 px-4 py-3.5 rounded-lg text-[var(--mds-text-muted)] hover:text-[var(--mds-text-primary)] transition-all font-bold text-sm group"
+            className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--mds-text-muted)] transition-all hover:text-[var(--mds-text-primary)]"
           >
             <ExternalLink size={18} className="group-hover:translate-x-0.5 transition-transform" />
             <span>Open Public Page</span>

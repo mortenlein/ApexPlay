@@ -79,7 +79,7 @@ test('registering a team through the form stores the roster with its seats', asy
       .map((player) => [player.name, player.nick, player.seat])
   );
   // The list picks the new team up, and the form is cleared for the next one.
-  await expect(page.getByText('1 Teams Registered')).toBeVisible();
+  await expect(page.getByText('1 registered')).toBeVisible();
   await expect(page.getByPlaceholder('Enter team name')).toHaveValue('');
 });
 
@@ -188,13 +188,13 @@ test('removing a team from the list takes it out of the tournament', async ({ pa
     void dialog.accept();
   });
 
-  await expect(page.getByText('2 Teams Registered')).toBeVisible();
+  await expect(page.getByText('2 registered')).toBeVisible();
   await page.getByRole('button', { name: `Remove ${teams[1].name}` }).click();
 
   await expect(page.getByText('Team removed')).toBeVisible();
   expect(dialogs.join('\n')).toContain(`Remove ${teams[1].name} from this tournament?`);
   await expect.poll(async () => (await readTeams(tournament.id)).map((t) => t.name)).toEqual([teams[0].name]);
-  await expect(page.getByText('1 Teams Registered')).toBeVisible();
+  await expect(page.getByText('1 registered')).toBeVisible();
 });
 
 test('a locked roster still takes seat fixes but closes Steam ID and leader edits', async ({ page }) => {

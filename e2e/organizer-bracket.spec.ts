@@ -69,7 +69,7 @@ test('generating from the stage stepper fills the matches and control views', as
   await expect(page.getByRole('heading', { name: 'Tournament Matches' })).toBeVisible();
   await expect(page.locator('[data-testid^="match-card-"]')).toHaveCount(7);
   // With a bracket in place, deploying again from here is closed off.
-  await expect(page.getByRole('button', { name: 'Deploy Brackets' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Generate bracket', exact: true })).toBeDisabled();
 });
 
 test('regenerating waits for the roster lock to come off and then rebuilds every match', async ({ page }) => {
