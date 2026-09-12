@@ -350,17 +350,17 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
         return (
             <RegisterShell tournament={tournament}>
                 <Card className="space-y-6">
-                    <div className="flex items-start gap-3">
-                        <CheckCircle2 className="mt-0.5 shrink-0 text-success" size={22} />
-                        <div className="space-y-1">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                            <CheckCircle2 className="shrink-0 text-success" size={22} />
                             <h1 className="font-brand text-xl font-bold">
                                 {success ? 'Registration Confirmed' : 'Your Team'}
                             </h1>
-                            <p className="text-sm text-fg-muted">
-                                You&apos;re registered with{' '}
-                                <span className="mds-name text-fg">{userTeam?.name || teamData.name}</span>.
-                            </p>
                         </div>
+                        <p className="text-sm text-fg-muted">
+                            You&apos;re registered with{' '}
+                            <span className="mds-name text-fg">{userTeam?.name || teamData.name}</span>.
+                        </p>
                     </div>
 
                     {tournament.rosterLocked && (
@@ -500,8 +500,8 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
         return (
             <RegisterShell tournament={tournament}>
                 <Card className="space-y-3">
-                    <div className="flex items-center gap-2 text-warning">
-                        <Lock size={16} />
+                    <div className="flex items-start gap-3 text-warning">
+                        <Lock size={18} className="mt-1 shrink-0" />
                         <h1 className="font-brand text-xl font-bold text-fg">Registration Closed</h1>
                     </div>
                     <p className="text-sm text-fg-muted">

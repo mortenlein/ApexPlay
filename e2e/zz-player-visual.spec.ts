@@ -108,6 +108,9 @@ async function seed() {
 }
 
 async function shoot(page: Page, name: string, viewport: string) {
+  // The desk paints from the profile payload and then folds in the queue poll; wait for both so
+  // a screenshot never catches a half-loaded state.
+  await page.waitForLoadState('networkidle').catch(() => {});
   await page.waitForTimeout(1200);
   await page.screenshot({ path: `${OUT}/${viewport}-${name}.png`, fullPage: true });
 }

@@ -151,7 +151,9 @@ function CallCard({
   return (
     <Card className={`overflow-hidden !p-0 ${FRAME[tone]}`}>
       {/* The shout. Status is the loudest thing on the desk — nothing else competes. */}
-      <div className={`flex items-start gap-3 px-4 py-3 sm:px-5 ${STRIP[tone]}`}>
+      {/* role=status: the queue polls, so this line changes under the player's eyes — a screen
+          reader should announce "you're up" the moment a marshal calls the match. */}
+      <div role="status" className={`flex items-start gap-3 px-4 py-3 sm:px-5 ${STRIP[tone]}`}>
         <span className="mt-0.5 shrink-0">{icon}</span>
         <p
           className={`font-brand font-bold leading-tight [text-wrap:balance] ${onNow ? 'text-2xl sm:text-3xl' : 'text-base sm:text-lg'}`}

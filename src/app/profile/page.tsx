@@ -82,12 +82,14 @@ export default function ProfilePage() {
                         {/* The player's own casing — never shouted back at them. */}
                         <h1 className="mds-name-lg text-2xl">{session?.user?.name}</h1>
                         <p className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-fg-muted">
-                            {facts.map((f) => (
-                                <span key={f.one}>
-                                    <span className="mds-numeric font-bold text-fg">{f.n}</span>{' '}
-                                    {f.n === 1 ? f.one : f.many}
-                                </span>
-                            ))}
+                            {/* Counts of nothing are noise — the empty state below says it better. */}
+                            {registrations.length > 0 &&
+                                facts.map((f) => (
+                                    <span key={f.one}>
+                                        <span className="mds-numeric font-bold text-fg">{f.n}</span>{' '}
+                                        {f.n === 1 ? f.one : f.many}
+                                    </span>
+                                ))}
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -133,7 +135,7 @@ export default function ProfilePage() {
                         />
                     )}
 
-                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                         {registrations.map((reg: any) => (
                             // Not one big link: the seat editor inside is interactive, and a button
                             // nested in an anchor is invalid markup and a click trap.
