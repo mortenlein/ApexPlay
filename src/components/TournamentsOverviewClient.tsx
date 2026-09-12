@@ -1,15 +1,13 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
-import { Users, ArrowRight, Loader2, Search, Gamepad2 } from "lucide-react";
-import Link from "next/link";
-import { getGameMetadata } from "@/lib/games";
+import { Loader2, Search, Gamepad2 } from "lucide-react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { getGameMetadata, teamSizeLabel } from "@/lib/games";
 import { clientApi } from "@/lib/client-api";
-import { STAGE_META, type TournamentStage } from "@/lib/tournament-stage";
-import { Card, Badge, EmptyState } from "@/components/ui";
+import { STAGE_META, STAGE_ORDER, type TournamentStage } from "@/lib/tournament-stage";
+import { Badge, EmptyState, PageHeader, TournamentCard } from "@/components/ui";
 
 // Same tone map the landing page uses for its stage badges (src/app/page.tsx), so a
 // tournament reads identically on both boards.
@@ -20,11 +18,22 @@ const STAGE_TONE: Record<TournamentStage, "neutral" | "info" | "live" | "done"> 
   COMPLETE: "done",
 };
 
+interface DirectoryRow {
+  id: string;
+  name: string;
+  game: string;
+  format?: string | null;
+  teamSize: number;
+  stage?: string | null;
+  _count?: { teams?: number; matches?: number };
+}
+
 export default function TournamentsOverviewClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const searchQuery = searchParams.get("search") || "";
+  const stageFilter = (searchParams.get("stage") || "").toUpperCase();
 
   const { data, isLoading } = useQuery({
     queryKey: ["tournaments"],
@@ -32,125 +41,185 @@ export default function TournamentsOverviewClient() {
     staleTime: 60 * 1000,
   });
 
-  const tournaments = data?.tournaments || [];
+  const tournaments: DirectoryRow[] = data?.tournaments || [];
 
-  const handleSearch = (term: string) => {
+  const setParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
-    if (term) params.set("search", term);
-    else params.delete("search");
+    if (value) params.set(key, value);
+    else params.delete(key);
     router.replace(`${pathname}?${params.toString()}`);
   };
 
-  const filtered = tournaments.filter(
-    (t: any) =>
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.game.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const matchesSearch = (t: DirectoryRow) =>
+    t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.game.toLowerCase().includes(searchQuery.toLowerCase());
+
+  const searched = tournaments.filter(matchesSearch);
+  const filtered = stageFilter
+    ? searched.filter((t) => String(t.stage || "").toUpperCase() === stageFilter)
+    : searched;
+
+  // Counts come from the data, so a filter is never offered for a bucket that is empty.
+  const stageCounts = STAGE_ORDER.map((stage) => ({
+    stage,
+    count: searched.filter((t) => String(t.stage || "").toUpperCase() === stage).length,
+  })).filter((s) => s.count > 0);
+
+  const liveCount = stageCounts.find((s) => s.stage === "LIVE")?.count ?? 0;
+
+  // Board order, not lifecycle order: what is being played outranks what someone might sign up
+  // for, which outranks a draft nobody can enter, which outranks a tournament already decided.
+  const BOARD_ORDER: TournamentStage[] = ["LIVE", "REGISTRATION", "DRAFT", "COMPLETE"];
+  const rank = (t: DirectoryRow) => {
+    const i = BOARD_ORDER.indexOf(String(t.stage || "DRAFT").toUpperCase() as TournamentStage);
+    return i === -1 ? BOARD_ORDER.length : i;
+  };
+  const cards = [...filtered].sort((a, b) => rank(a) - rank(b));
 
   return (
-    <div className="min-h-screen bg-page text-fg">
-      <main className="mds-container space-y-8 py-10">
-        {/* Header */}
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
-            <p className="mds-uppercase-label text-brand">Tournament directory</p>
-            <h1 className="mt-2 font-brand text-4xl font-bold tracking-tight md:text-5xl">
-              Discover <span className="text-brand">tournaments</span>
-            </h1>
-            <p className="mt-3 text-base text-fg-muted">
-              Browse live and upcoming events, track brackets in real time, and jump into the ones you care about.
-            </p>
-          </div>
-          <div className="relative w-full lg:w-80">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-subtle" />
+    <div className="flex min-h-screen flex-col bg-page text-fg">
+      <PageHeader
+        eyebrow="Directory"
+        title="Tournaments"
+        subtitle="Every tournament on this server: what is being played now, what is open for sign-up, and what is already decided."
+        meta={
+          liveCount > 0 ? (
+            <span className="inline-flex items-center gap-2 text-body font-semibold text-live">
+              <span className="mds-dot is-live" aria-hidden />
+              <span className="mds-tabular">{liveCount}</span>
+              &nbsp;{liveCount === 1 ? "tournament is running right now" : "tournaments are running right now"}
+            </span>
+          ) : undefined
+        }
+        actions={
+          <div className="relative w-full sm:w-72">
+            <label htmlFor="directory-filter" className="sr-only">
+              Filter tournaments
+            </label>
+            <Search
+              size={15}
+              aria-hidden
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle"
+            />
             <input
-              type="text"
+              id="directory-filter"
+              type="search"
               placeholder="Filter tournaments…"
               value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => setParam("search", e.target.value)}
               className="mds-input pl-9"
             />
           </div>
+        }
+      />
+
+      <main className="mds-container flex-1 space-y-6 py-8">
+        <div className="mds-section-head">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="mds-uppercase-label mr-1 text-fg">Board</h2>
+            <FilterChip label="All" count={searched.length} active={!stageFilter} onClick={() => setParam("stage", "")} />
+            {stageCounts.map(({ stage, count }) => (
+              <FilterChip
+                key={stage}
+                label={STAGE_META[stage].label}
+                count={count}
+                tone={stage === "LIVE" ? "live" : undefined}
+                active={stageFilter === stage}
+                onClick={() => setParam("stage", stageFilter === stage ? "" : stage)}
+              />
+            ))}
+          </div>
+          <Badge tone="neutral">
+            {isLoading ? "…" : (
+              <>
+                <span className="mds-tabular">{filtered.length}</span>&nbsp;listed
+              </>
+            )}
+          </Badge>
         </div>
 
-        {/* Count */}
-        <div className="flex items-center gap-3 border-b border-line pb-4">
-          <h2 className="mds-uppercase-label text-fg-subtle">Active tournaments</h2>
-          <Badge tone="neutral">{isLoading ? "…" : `${filtered.length} listed`}</Badge>
-        </div>
-
-        {/* Grid */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center gap-4 py-32">
-            <Loader2 className="h-8 w-8 animate-spin text-brand" />
+            <Loader2 className="h-8 w-8 animate-spin text-brand" aria-hidden />
             <p className="mds-uppercase-label text-fg-subtle">Loading tournaments…</p>
           </div>
-        ) : filtered.length === 0 ? (
+        ) : cards.length === 0 ? (
           <EmptyState
-            icon={<Gamepad2 size={26} />}
-            title={searchQuery ? "No results found" : "No active tournaments"}
-            description={searchQuery ? "No tournament matched your search." : "No tournaments are available yet."}
+            icon={<Gamepad2 size={24} />}
+            title={searchQuery || stageFilter ? "No results found" : "No tournaments yet"}
+            description={
+              searchQuery || stageFilter
+                ? "No tournament matched that filter. Clear it to see the whole board."
+                : "Nothing has been created on this server yet."
+            }
           />
         ) : (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((t: any, index: number) => {
+          <ul className="mds-card-grid">
+            {cards.map((t) => {
               const gameMeta = getGameMetadata(t.game);
               // `stage` is derived server-side (GET /api/tournaments and the SSR prefetch).
-              const stage: TournamentStage | null = t.stage && t.stage in STAGE_META ? t.stage : null;
+              const stage: TournamentStage | null =
+                t.stage && t.stage in STAGE_META ? (t.stage as TournamentStage) : null;
               return (
-                <Link key={t.id} href={`/tournaments/${t.id}`}>
-                  <Card interactive className="flex h-full flex-col overflow-hidden p-0">
-                    <div className="relative h-40 w-full overflow-hidden border-b border-line">
-                      {gameMeta?.bannerUrl && (
-                        <Image
-                          src={gameMeta.bannerUrl}
-                          alt={t.game}
-                          fill
-                          className="object-cover opacity-50 transition-all duration-500 hover:opacity-90"
-                          style={{ objectPosition: gameMeta?.bannerPosition || "center" }}
-                          priority={index < 3}
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        />
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
-                      <div className="absolute left-4 top-4">
-                        <Badge tone="neutral">{gameMeta?.name || t.game}</Badge>
-                      </div>
-                      {stage && (
-                        <div className="absolute right-4 top-4">
-                          <Badge tone={STAGE_TONE[stage]}>{STAGE_META[stage].label}</Badge>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex flex-1 flex-col justify-between gap-5 p-5">
-                      <div>
-                        <h3 className="font-brand text-xl font-bold leading-tight">{t.name}</h3>
-                        <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-fg-muted">
-                          <Users size={13} className="text-brand" />
-                          {t.teamSize}v{t.teamSize} roster
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between border-t border-line pt-4">
-                        <span className="text-sm font-semibold">Open tournament</span>
-                        <ArrowRight size={16} className="text-fg-subtle" />
-                      </div>
-                    </div>
-                  </Card>
-                </Link>
+                <li key={t.id}>
+                  <TournamentCard
+                    href={`/tournaments/${t.id}`}
+                    name={t.name}
+                    game={gameMeta?.name || t.game}
+                    format={t.format === "DOUBLE_ELIMINATION" ? "Double elim" : "Single elim"}
+                    roster={teamSizeLabel(gameMeta, t.teamSize)}
+                    teamCount={t._count?.teams ?? 0}
+                    stageLabel={stage ? STAGE_META[stage].label : "Draft"}
+                    stageTone={stage ? STAGE_TONE[stage] : "neutral"}
+                  />
+                </li>
               );
             })}
-          </div>
+          </ul>
         )}
       </main>
 
-      <footer className="mt-8 border-t border-line py-8">
+      <footer className="border-t border-line py-6">
         <div className="mds-container flex items-center justify-between">
-          <span className="font-brand text-sm font-bold">
+          <span className="font-brand text-body font-bold">
             Apex<span className="text-brand">Play</span>
           </span>
           <p className="mds-uppercase-label text-fg-subtle">Tournament directory</p>
         </div>
       </footer>
     </div>
+  );
+}
+
+/** A stage filter. Only rendered for stages that actually have tournaments in them. */
+function FilterChip({
+  label,
+  count,
+  active,
+  tone,
+  onClick,
+}: {
+  label: string;
+  count: number;
+  active: boolean;
+  tone?: "live";
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`mds-badge border transition-colors ${
+        active
+          ? "border-brand-line bg-brand-soft text-brand"
+          : tone === "live"
+            ? "border-live/40 bg-tint text-live hover:bg-tint-strong"
+            : "border-line bg-tint text-fg-muted hover:bg-tint-strong hover:text-fg"
+      }`}
+    >
+      {label}
+      <span className="mds-tabular opacity-60">{count}</span>
+    </button>
   );
 }

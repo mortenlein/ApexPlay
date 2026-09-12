@@ -4,7 +4,7 @@ import { getQueryClient } from "@/lib/query-client";
 import TournamentsOverviewClient from "@/components/TournamentsOverviewClient";
 import prisma from "@/lib/prisma";
 import { getTournamentStage } from "@/lib/tournament-stage";
-import { Loader2 } from "lucide-react";
+import { RouteLoadingState } from "@/components/RouteStates";
 
 export default async function TournamentsOverview() {
   const queryClient = getQueryClient();
@@ -26,7 +26,11 @@ export default async function TournamentsOverview() {
               format: true,
               createdAt: true,
               teams: { select: { id: true } },
-              matches: { select: { status: true } }
+              matches: { select: { status: true } },
+              // The route returns `_count`, and the directory card prints the team count from
+              // it. Without it here the hydrated board said "0 teams" for every tournament
+              // until something invalidated the query — a wrong number, not a missing one.
+              _count: { select: { teams: true, matches: true } },
           }
       });
       const tournaments = rows.map(({ teams, matches, ...tournament }) => ({
@@ -38,11 +42,7 @@ export default async function TournamentsOverview() {
   });
 
   return (
-    <Suspense fallback={
-        <div className="min-h-screen bg-[#0d0f12] flex items-center justify-center">
-            <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
-        </div>
-    }>
+    <Suspense fallback={<RouteLoadingState label="tournaments" />}>
       <HydrationBoundary state={dehydrate(queryClient)}>
         <TournamentsOverviewClient />
       </HydrationBoundary>

@@ -78,7 +78,9 @@ test('directory lists tournaments and links into the detail page', async ({ page
 
   await page.goto('/tournaments');
 
-  await expect(page.getByRole('heading', { name: /Discover/i })).toBeVisible();
+  // The directory's own title (the marketing "Discover tournaments" headline was dropped when
+  // the board was rebuilt — the page says what it is, and the rest of the width is data).
+  await expect(page.getByRole('heading', { level: 1, name: 'Tournaments' })).toBeVisible();
   await expect(page.getByRole('heading', { name: first.name, exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: second.name, exact: true })).toBeVisible();
   // Roster size is part of the card, so a spectator knows what they are signing up for.
