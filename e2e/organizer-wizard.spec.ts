@@ -73,7 +73,9 @@ test('the wizard walks all six steps and stores exactly the setup it reviewed', 
   // Step 5 — review. This is the organizer's last look at the setup, so it must be right.
   await expect(page.getByRole('heading', { name: 'Review Setup' })).toBeVisible();
   await expect(page.getByRole('heading', { name })).toBeVisible();
-  await expect(page.getByText('DOUBLE ELIMINATION')).toBeVisible();
+  // The review shows the format's human name, never the stored enum.
+  await expect(page.getByText('Double Elimination')).toBeVisible();
+  await expect(page.getByText('DOUBLE_ELIMINATION')).toHaveCount(0);
   for (const [label, value] of [
     ['Format Style', 'Double'],
     ['Decider Match', 'Active'],
