@@ -200,6 +200,11 @@ the full value is also shown elsewhere. Never set a fixed `max-w-[…px]` on a n
 keep one brand accent per view; let names wrap; design for a dim room.
 
 **Don't** write `var(--mds-*)` or a hex in a component; don't invent a font size (§2.2); don't
-use `font-black`; don't add an accent colour; don't style status ad-hoc; don't add motion beyond
-hover + the LIVE pulse; don't uppercase or letter-space a name; don't render a raw enum
-(`SINGLE_ELIMINATION`) or an id fragment; don't ship a control — or a number — the data can't back.
+use `font-black`; don't add an accent colour; don't style status ad-hoc; don't uppercase or
+letter-space a name; don't render a raw enum (`SINGLE_ELIMINATION`) or an id fragment; don't
+ship a control — or a number — the data can't back.
+
+**Motion** is hover plus the LIVE pulse, and the pulse means *this is being played right now*.
+Tailwind's `animate-pulse` is currently on things that are not live — a "Save seeds" button, a
+queue icon, a "live tournament page" dot — which spends the one signal the room reads fastest.
+If something is live, use `StatusBadge`/`StatusDot`; if it is merely important, it can be still.
