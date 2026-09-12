@@ -2,8 +2,9 @@
 
 import React from "react";
 import Image from "next/image";
-import { Users, Layout, Share2, ArrowRight } from "lucide-react";
+import { Share2, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { formatName } from "./match-labels";
 
 interface TournamentHeroProps {
   tournament: any;
@@ -14,6 +15,11 @@ interface TournamentHeroProps {
   onShare: () => void;
 }
 
+/**
+ * One compact identification bar, not a poster. The spectator came for the live match, so the
+ * hero's job is to say which tournament this is and get out of the way — on a phone it is a
+ * single band above the tabs instead of the ~700px of stock key art it used to be.
+ */
 export function TournamentHero({
   tournament,
   teamsCount,
@@ -23,65 +29,72 @@ export function TournamentHero({
   onShare,
 }: TournamentHeroProps) {
   const canRegister = Boolean(tournament?.steamSignupEnabled) && !Boolean(tournament?.rosterLocked);
+  const format = formatName(tournament?.format || tournament?.type);
 
   return (
-    <header className="relative w-full overflow-hidden shrink-0 border-b border-[var(--mds-border)] bg-[var(--mds-card)]">
-      {/* Banner Background */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src={gameMeta?.bannerUrl || ''}
-          fill
-          className="object-cover opacity-10 contrast-125 grayscale"
-          alt=""
-          style={{ objectPosition: gameMeta?.bannerPosition || 'center' }}
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[var(--mds-page)]" />
-      </div>
+    <header className="relative w-full shrink-0 overflow-hidden border-b border-line bg-card">
+      {/* Game art as texture only, and only where there is room for it. */}
+      {gameMeta?.bannerUrl ? (
+        <div className="absolute inset-0 z-0 hidden lg:block" aria-hidden>
+          <Image
+            src={gameMeta.bannerUrl}
+            fill
+            className="object-cover opacity-[0.07] grayscale"
+            alt=""
+            style={{ objectPosition: gameMeta?.bannerPosition || "center" }}
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-card via-card to-transparent" />
+        </div>
+      ) : null}
 
-      <div className="relative z-10 px-6 lg:px-12 py-10 lg:py-16 flex flex-col lg:flex-row lg:items-center justify-between gap-8 max-w-[var(--mds-max-content)] mx-auto">
-        <div className="flex items-center gap-6 lg:gap-10">
-          <div className="flex h-24 w-24 items-center justify-center rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)] p-4 shadow-lg">
-            <Image src={gameMeta?.logoUrl || ''} width={64} height={64} className="object-contain" alt={tournament.game} />
-          </div>
+      <div className="relative z-10 mx-auto flex max-w-content flex-col gap-3 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:gap-8 lg:px-10 lg:py-5">
+        <div className="flex min-w-0 items-center gap-3 lg:gap-4">
+          {gameMeta?.logoUrl ? (
+            <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded border border-line bg-field p-1.5 sm:flex">
+              <Image
+                src={gameMeta.logoUrl}
+                width={32}
+                height={32}
+                className="h-full w-full object-contain"
+                alt={gameMeta?.name || tournament.game}
+              />
+            </div>
+          ) : null}
 
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <span className="mds-badge bg-[var(--mds-action-soft)] text-[var(--mds-action)]">
-                {tournament.game} • {tournament.type}
-              </span>
-              {liveMatchesCount > 0 && (
-                <span className="flex items-center gap-2 rounded-full border border-[var(--mds-red)]/20 bg-[var(--mds-red)]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[var(--mds-red)]">
-                  <div className="h-1.5 w-1.5 rounded-full bg-[var(--mds-red)] animate-pulse" />
-                  Live Now
-                </span>
-              )}
-            </div>
-            <h1 className="text-4xl lg:text-6xl font-black tracking-tight leading-none m-0 uppercase">
-              {tournament.name}
-            </h1>
-            <div className="flex flex-wrap items-center gap-8 text-[11px] font-bold mds-uppercase-label mb-0">
-              <div className="flex items-center gap-2">
-                <Users size={14} className="text-[var(--mds-action)]" />
-                <span>{teamsCount} Teams Registered</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Layout size={14} className="text-[var(--mds-action)]" />
-                <span>{matchesCount} Total Matches</span>
-              </div>
-            </div>
+          <div className="min-w-0">
+            <h1 className="mds-name-lg m-0 text-xl leading-tight lg:text-[28px]">{tournament.name}</h1>
+            <p className="m-0 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-fg-subtle">
+              <span>{gameMeta?.name || tournament.game}</span>
+              {format ? (
+                <>
+                  <span aria-hidden>·</span>
+                  <span>{format}</span>
+                </>
+              ) : null}
+              <span aria-hidden>·</span>
+              <span className="mds-numeric">{teamsCount} teams</span>
+              <span aria-hidden>·</span>
+              <span className="mds-numeric">{matchesCount} matches</span>
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <button onClick={onShare} className="mds-btn-secondary h-12 px-6">
-            <Share2 size={16} />
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {liveMatchesCount > 0 && (
+            <span className="mds-uppercase-label flex items-center gap-2 rounded-full border border-danger px-3 py-1 text-[10px] text-danger">
+              <span className="h-1.5 w-1.5 rounded-full bg-danger animate-pulse" />
+              Live now
+            </span>
+          )}
+          <button onClick={onShare} className="mds-btn-secondary h-9 px-4 text-xs">
+            <Share2 size={14} />
             Share
           </button>
           {canRegister && (
-            <Link href={`/tournaments/${tournament.id}/register`} className="mds-btn-primary h-12 px-8">
-              Register Team
-              <ArrowRight size={16} />
+            <Link href={`/tournaments/${tournament.id}/register`} className="mds-btn-primary h-9 px-4 text-xs">
+              Register team
+              <ArrowRight size={14} />
             </Link>
           )}
         </div>
