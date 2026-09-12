@@ -13,7 +13,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 // Modular Components
 import { ManageSidebar } from './tournament/manage/ManageSidebar';
 import { StageStepper } from './tournament/manage/StageStepper';
-import { ManageControl } from './tournament/manage/ManageControl';
+import { ManageControl, stageLabel, totalRoundsOf } from './tournament/manage/ManageControl';
 import { ManageOverview } from './tournament/manage/ManageOverview';
 import { ManageParticipants } from './tournament/manage/ManageParticipants';
 import { ManageMatches } from './tournament/manage/ManageMatches';
@@ -514,7 +514,7 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
     if (loading && !tournament) return (
         <div className="min-h-screen bg-[var(--mds-page)] flex flex-col items-center justify-center gap-4">
             <Loader2 className="w-12 h-12 animate-spin text-[var(--mds-action)]" />
-            <span className="mds-uppercase-label opacity-40">Loading tournament workspace...</span>
+            <span className="mds-uppercase-label opacity-60">Loading tournament workspace…</span>
         </div>
     );
 
@@ -522,16 +522,16 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
         return (
             <div className="min-h-screen bg-[var(--mds-page)] p-8 text-[var(--mds-text-primary)]">
                 <div className="mx-auto mt-20 max-w-xl rounded-xl border border-[var(--mds-border)] bg-[var(--mds-card)] p-8 text-center">
-                    <h1 className="text-2xl font-black uppercase tracking-tight">Tournament Not Found</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">Tournament not found</h1>
                     <p className="mt-3 text-sm text-[var(--mds-text-muted)]">
                         This workspace can no longer find the requested tournament.
                     </p>
                     <button
                         type="button"
                         onClick={() => router.push("/admin")}
-                        className="mds-btn-primary mt-6 h-11 px-8 text-xs font-black uppercase tracking-widest"
+                        className="mds-btn-primary mt-6 h-11 px-8 text-sm font-bold"
                     >
-                        Back to Admin
+                        Back to admin
                     </button>
                 </div>
             </div>
@@ -541,7 +541,7 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
     const gameMeta = getGameMetadata(tournament.game);
 
     return (
-        <div className="flex flex-col h-[calc(100vh-3.5rem)] bg-[var(--mds-page)] font-sans antialiased text-[var(--mds-text-primary)] overflow-hidden">
+        <div className="flex h-[calc(100vh-3.5rem)] flex-col overflow-hidden bg-[var(--mds-page)] text-[var(--mds-text-primary)] antialiased">
             <div className="flex flex-1 overflow-hidden">
                 <ManageSidebar 
                     tournamentId={tournamentId} 
@@ -553,47 +553,44 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
                 />
 
                 <main className="flex-1 flex flex-col min-w-0 relative h-full overflow-hidden">
-                    {/* ADMIN HEADER */}
-                    <header className="h-40 shrink-0 relative overflow-hidden border-b border-[var(--mds-border)] bg-[var(--mds-card)]">
+                    {/* WORKSPACE HEADER — the label shouts, the tournament's own name never does. */}
+                    <header className="shrink-0 relative overflow-hidden border-b border-[var(--mds-border)] bg-[var(--mds-card)]">
                         <div className="absolute inset-0 z-0">
                             {gameMeta?.bannerUrl && (
                                 <Image
-                                    src={gameMeta.bannerUrl} 
+                                    src={gameMeta.bannerUrl}
                                     alt=""
                                     fill
                                     sizes="100vw"
-                                    className="object-cover opacity-10 grayscale brightness-50"
+                                    className="object-cover opacity-[0.07] grayscale brightness-50"
                                     priority={false}
                                 />
                             )}
                             <div className="absolute inset-0 bg-gradient-to-r from-[var(--mds-page)] via-transparent to-transparent" />
                         </div>
 
-                        <div className="relative z-10 h-full flex items-center px-10 gap-6">
-                            <button 
+                        <div className="relative z-10 flex items-center gap-4 px-6 py-5 lg:px-10">
+                            <button
                                 onClick={() => setIsMenuOpen(true)}
-                                className="md:hidden h-12 w-12 flex items-center justify-center rounded-xl bg-[var(--mds-input)] border border-[var(--mds-border)] text-[var(--mds-text-primary)] hover:border-[var(--mds-action)]/40 transition-all shadow-sm active:scale-95"
+                                aria-label="Open workspace menu"
+                                className="md:hidden h-10 w-10 shrink-0 flex items-center justify-center rounded-lg bg-[var(--mds-input)] border border-[var(--mds-border)] text-[var(--mds-text-primary)] hover:border-[var(--mds-action)]/40 transition-all"
                             >
-                                <Menu size={24} />
+                                <Menu size={20} />
                             </button>
-                            
-                            <div className="flex flex-col justify-center gap-2">
-                            <div className="flex items-center gap-3">
-                                <span className="mds-badge bg-[var(--mds-action-soft)] text-[var(--mds-action)] border border-[var(--mds-action)]/20 font-black text-[9px] tracking-widest uppercase">
-                                    Admin Workspace // {tournament.game}
-                                </span>
-                                <div className="h-1.5 w-1.5 rounded-full bg-[var(--mds-green)] shadow-[0_0_8px_var(--mds-green)]" />
-                                <span className="mds-uppercase-label text-[8px] opacity-40 uppercase tracking-widest">Ready</span>
+
+                            <div className="min-w-0 flex-1">
+                                <p className="mds-uppercase-label text-[var(--mds-action)]">
+                                    Organizer workspace · {gameMeta?.name || tournament.game}
+                                </p>
+                                <h1 className="mds-name-lg mt-1 text-2xl leading-tight md:text-3xl">
+                                    {tournament.name}
+                                </h1>
                             </div>
-                            <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-[var(--mds-text-primary)] uppercase leading-none truncate">
-                                {tournament.name}
-                            </h1>
                         </div>
-                    </div>
                     </header>
 
                     {/* VIEWPORT AREA */}
-                    <div className="flex-1 overflow-y-auto p-10 lg:p-12 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto px-6 py-6 lg:px-10 lg:py-8 custom-scrollbar">
                         <div className="max-w-[1400px] mx-auto space-y-6">
                             <StageStepper
                                 teams={teams}
@@ -765,6 +762,7 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
                     }}
                     isSaving={saveMatchMutation.isPending}
                     isLoadingMatch={loadMatchMutation.isPending}
+                    stageName={stageLabel(editingMatch, totalRoundsOf(matches))}
                 />
             )}
         </div>
