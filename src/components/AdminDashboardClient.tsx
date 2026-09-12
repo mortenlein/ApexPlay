@@ -9,6 +9,7 @@ import TournamentWizard from '@/components/TournamentWizard';
 import { EmptyState } from '@/components/workspace/WorkspaceChrome';
 import { Badge } from '@/components/ui';
 import { isActive, isDone } from '@/lib/match-status';
+import { getGameMetadata } from '@/lib/games';
 import { ApiError, apiRequest, clientApi } from '@/lib/client-api';
 import { useToast } from '@/components/ToastProvider';
 import FirstRunCoach from '@/components/FirstRunCoach';
@@ -326,7 +327,7 @@ export default function AdminDashboardClient() {
                           {tournament.rosterLocked ? <Badge tone="pending">Locked</Badge> : null}
                         </div>
                         <p className="mt-1 text-sm text-fg-muted">
-                          {tournament._count?.teams || 0} teams, {tournament._count?.matches || 0} matches, {tournament.game}
+                          {tournament._count?.teams || 0} teams, {tournament._count?.matches || 0} matches, {getGameMetadata(tournament.game)?.name || tournament.game}
                           {' · '}
                           {tournament.steamSignupEnabled ? 'Steam sign-up open' : 'Sign-up closed'}
                         </p>
