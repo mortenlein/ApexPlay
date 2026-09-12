@@ -350,7 +350,9 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
           <button
             type="button"
             onClick={handleDelete}
-            className="mds-btn-primary h-11 shrink-0 bg-[var(--mds-red)] px-6 text-sm font-bold text-white hover:bg-[var(--mds-red)]/80"
+            /* Not `.mds-btn-primary`: that class sets `background` in plain CSS and wins over a
+               Tailwind bg utility, which rendered the destructive action in brand blue. */
+            className="inline-flex h-11 shrink-0 items-center justify-center rounded-sm bg-[var(--mds-red)] px-6 text-sm font-bold text-white transition-opacity hover:opacity-90"
           >
             Delete Tournament
           </button>

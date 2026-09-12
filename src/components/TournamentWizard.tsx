@@ -370,9 +370,7 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
 
                 {/* FOOTER CONTROLS */}
                 {step < 6 && (
-                    <div className="flex shrink-0 items-center justify-between gap-4 border-t border-[var(--mds-border)] bg-[var(--mds-input)]/30 px-6 py-4">
-                        <span className="mds-uppercase-label hidden sm:block">{STEP_TITLES[step - 1]}</span>
-
+                    <div className="flex shrink-0 items-center justify-end gap-4 border-t border-[var(--mds-border)] bg-[var(--mds-input)]/30 px-6 py-4">
                         <div className="flex w-full gap-3 sm:w-auto">
                             {step > 1 && (
                                 <button onClick={prevStep} className="mds-btn-secondary h-11 flex-1 gap-2 px-6 text-sm font-bold sm:flex-initial">

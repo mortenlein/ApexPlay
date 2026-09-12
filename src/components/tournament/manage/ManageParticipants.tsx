@@ -95,10 +95,10 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                 onDragStart={(e) => onDragStart(e, index)}
                 onDragOver={(e) => onDragOver(e, index)}
                 onDragEnd={onDragEnd}
-                className={`group flex items-center justify-between gap-4 px-6 py-3 transition-colors ${isLocked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'} hover:bg-[var(--mds-input)]/40 ${draggedItemIndex === index ? 'opacity-20' : ''}`}
+                className={`group flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 transition-colors sm:flex-nowrap sm:px-6 ${isLocked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'} hover:bg-[var(--mds-input)]/40 ${draggedItemIndex === index ? 'opacity-20' : ''}`}
               >
-                <div className="flex min-w-0 flex-1 items-center gap-4">
-                  <GripVertical size={15} className="shrink-0 text-[var(--mds-text-subtle)] opacity-40 group-hover:opacity-100" />
+                <div className="flex min-w-[10rem] flex-1 items-center gap-3">
+                  <GripVertical size={15} className="hidden shrink-0 text-[var(--mds-text-subtle)] opacity-40 group-hover:opacity-100 sm:block" />
                   {/* `.mds-input` is width:100%, so the seed box needs a sized wrapper or it eats
                       the row and squeezes the team name into a one-character column. */}
                   <div className="w-14 shrink-0">
@@ -115,7 +115,7 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                       className="mds-input mds-numeric h-9 border-[var(--mds-border)] bg-transparent px-0 text-center font-bold text-[var(--mds-action)]"
                     />
                   </div>
-                  <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--mds-border)] bg-[var(--mds-page)]">
+                  <div className="relative hidden h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--mds-border)] bg-[var(--mds-page)] sm:flex">
                     {team.logoUrl ? (
                       <Image src={team.logoUrl} fill alt="" className="object-contain p-1.5" />
                     ) : (
@@ -132,7 +132,7 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
 
                 {/* Both stay live while the roster is locked: the modal still allows name/seat
                     corrections, and removal falls back to a forced pull-out (confirmed upstream). */}
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="ml-auto flex shrink-0 items-center gap-2">
                   <button
                     onClick={() => onEditTeam(team)}
                     title={`Edit ${team.name}`}

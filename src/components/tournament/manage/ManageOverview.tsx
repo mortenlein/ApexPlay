@@ -223,7 +223,9 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
             <h3 className="text-sm font-bold tracking-tight">Activity</h3>
             <Bell size={15} className="text-[var(--mds-action)] opacity-60" />
           </div>
-          <div className="space-y-2.5">
+          {/* Scrolls in place: the activity feed is unbounded and would otherwise run hundreds of
+              pixels past everything beside it. */}
+          <div className="custom-scrollbar max-h-[320px] space-y-2.5 overflow-y-auto pr-1">
             {timeline.map((entry: any, index: number) => (
               <div key={`${entry.id}-${index}`} className="rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/30 px-3 py-2.5">
                 <p className="text-[13px] font-semibold leading-snug">{entry.summary || entry.embed?.title}</p>

@@ -29,7 +29,7 @@ export function StageStepper({
   return (
     <Card className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       {/* Wraps rather than overflowing: at 390px the four stages do not fit on one line. */}
-      <ol className="flex flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+      <ol className="flex flex-1 flex-wrap items-center gap-x-2 gap-y-1 sm:flex-nowrap">
         {STAGE_ORDER.map((s, i) => {
           const done = i < currentIndex;
           const current = i === currentIndex;
