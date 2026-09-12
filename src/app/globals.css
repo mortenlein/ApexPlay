@@ -279,8 +279,14 @@ h3 { font-size: var(--fs-title); margin-bottom: 0.75rem; }
 :where(a, button, input, select, textarea):focus:not(:focus-visible) { outline: none; }
 
 /* ============================================================
-   UTILITY CLASSES (MDS REFINED)
+   COMPONENT CLASSES
+   ------------------------------------------------------------
+   Everything below lives in Tailwind's `components` layer on purpose: the utilities layer
+   is emitted after it, so `className="mds-input pl-9"` or `className="mds-card p-0"` now
+   does what it reads like. Unlayered, `.mds-input { padding: 10px 12px }` silently beat
+   `pl-9` and the search icon sat on top of the placeholder.
    ============================================================ */
+@layer components {
 
 /* ============================================================
    TYPOGRAPHY CONTRACT — shout on labels, never on content.
@@ -742,6 +748,8 @@ body.obs-mode {
 
 .obs-chroma-key {
   background-color: #00ff00 !important; /* Classic Green Screen if needed */
+}
+
 }
 
 /* ============================================================

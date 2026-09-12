@@ -113,7 +113,7 @@ export default function TournamentsOverviewClient() {
         }
       />
 
-      <main className="mds-container flex-1 space-y-6 py-8">
+      <main className="mds-container flex flex-1 flex-col gap-6 py-8">
         <div className="mds-section-head">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="mds-uppercase-label mr-1 text-fg">Board</h2>
@@ -145,6 +145,7 @@ export default function TournamentsOverviewClient() {
           </div>
         ) : cards.length === 0 ? (
           <EmptyState
+            className="flex-1"
             icon={<Gamepad2 size={24} />}
             title={searchQuery || stageFilter ? "No results found" : "No tournaments yet"}
             description={

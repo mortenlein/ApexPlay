@@ -255,7 +255,7 @@ export default async function Home() {
         }
       />
 
-      <main className="mds-container flex-1 space-y-12 py-10">
+      <main id="board" className="mds-container flex flex-1 flex-col gap-12 py-10">
         {/* ---- What is happening right now. Never rendered when nothing is. ---- */}
         {(liveMatches.length > 0 || calledMatches.length > 0) && (
           <section aria-labelledby="floor-heading" className="space-y-4">
@@ -292,7 +292,7 @@ export default async function Home() {
         )}
 
         {/* ---- The tournament board. ---- */}
-        <section aria-labelledby="board-heading" className="space-y-4">
+        <section aria-labelledby="board-heading" className="flex flex-1 flex-col gap-4">
           <div className="mds-section-head">
             <div className="flex items-center gap-3">
               <h2 id="board-heading" className="mds-uppercase-label text-fg">
@@ -312,6 +312,7 @@ export default async function Home() {
 
           {cards.length === 0 ? (
             <EmptyState
+              className="flex-1"
               icon={<Gamepad2 size={24} />}
               title="No tournaments yet"
               description={

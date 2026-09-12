@@ -6,14 +6,17 @@ export function EmptyState({
   title,
   description,
   action,
+  className = "",
 }: {
   icon?: React.ReactNode;
   title: string;
   description?: string;
   action?: React.ReactNode;
+  /** e.g. `flex-1` so the panel fills a board column that has nothing in it yet. */
+  className?: string;
 }) {
   return (
-    <div className="mds-empty-state flex flex-col items-center justify-center gap-4">
+    <div className={`mds-empty-state flex flex-col items-center justify-center gap-4 ${className}`}>
       {icon && (
         <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-line bg-tint text-fg-subtle">
           {icon}
