@@ -1,6 +1,6 @@
-// Visual audit only — not part of the suite (zz- prefix, run explicitly).
+// Visual audit only — not part of the suite (zz- prefix; playwright.config.ts skips it).
 //
-//   SHOT_DIR=/tmp/shots E2E_PORT=4106 npx playwright test e2e/zz-chrome-visual.spec.ts
+//   VISUAL_AUDIT=1 SHOT_DIR=/tmp/shots E2E_PORT=4106 npx playwright test e2e/zz-chrome-visual.spec.ts
 //
 // Covers the shared-foundation surfaces: the landing board (anonymous / player / admin), the
 // /tournaments directory at 0, 2 and 20 tournaments, /login, the command palette, a toast, the
