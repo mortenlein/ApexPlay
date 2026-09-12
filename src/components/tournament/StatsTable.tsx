@@ -27,12 +27,14 @@ export function StatsTable({ players, onViewPlayer }: StatsTableProps) {
       </header>
 
       <div className="custom-scrollbar overflow-x-auto">
+        {/* On a phone the team moves under the player's name and country drops out, so the
+            seat — the column a LAN spectator came for — stays on screen without scrolling. */}
         <table className="mds-table w-full">
           <thead>
             <tr>
               <th>Player</th>
-              <th>Team</th>
-              <th className="text-center">Country</th>
+              <th className="hidden sm:table-cell">Team</th>
+              <th className="hidden text-center sm:table-cell">Country</th>
               <th className="text-right">Seat</th>
             </tr>
           </thead>
@@ -45,16 +47,19 @@ export function StatsTable({ players, onViewPlayer }: StatsTableProps) {
               >
                 <td>
                   {/* Names get the column, not 40px and an ellipsis. */}
-                  <span className="mds-name text-[13px] text-fg">
+                  <span className="mds-name block text-[13px] text-fg">
                     {player.nickname || player.name}
                   </span>
+                  <span className="mds-name mt-0.5 block text-[11px] text-fg-subtle sm:hidden">
+                    {player.teamName}
+                  </span>
                 </td>
-                <td>
+                <td className="hidden sm:table-cell">
                   <span className="mds-name text-[13px] text-fg-muted">
                     {player.teamName}
                   </span>
                 </td>
-                <td className="text-center">
+                <td className="hidden text-center sm:table-cell">
                   {/* Text, not a flag sprite: the flags are fetched from a third-party CDN and a
                       LAN venue is often offline. */}
                   <span className="mds-numeric text-[12px] text-fg-muted">

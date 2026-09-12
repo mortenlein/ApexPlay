@@ -157,7 +157,7 @@ test('deep links open the requested tab straight from the URL', async ({ page })
 
   // An unknown tab falls back to the overview rather than rendering nothing.
   await page.goto(`/tournaments/${tournamentId}?tab=not-a-tab`);
-  await expect(page.getByRole('heading', { name: 'Tournament Overview' })).toBeVisible();
+  await expect(page.getByTestId('tournament-overview')).toBeVisible();
 });
 
 test('a missing tournament id renders the not-found state with a way back', async ({ page }) => {

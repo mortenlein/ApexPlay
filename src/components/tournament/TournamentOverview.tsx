@@ -101,10 +101,11 @@ export function TournamentOverview({
         </section>
       )}
 
-      <section className="mds-card p-6 lg:p-8">
+      <section data-testid="tournament-overview" className="mds-card p-6 lg:p-8">
         <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div className="min-w-0">
-            <h2 className="m-0 text-xl font-bold tracking-tight">Tournament Overview</h2>
+            {/* Named for what it holds. A card titled after the page it sits on says nothing. */}
+            <h2 className="m-0 text-xl font-bold tracking-tight">The field</h2>
             {/* Where the bracket actually is, instead of a decorative "29%" progress bar. */}
             <p className="m-0 mt-1 text-sm text-fg-muted">{stageLine}</p>
           </div>
