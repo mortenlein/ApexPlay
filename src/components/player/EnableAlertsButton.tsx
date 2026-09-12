@@ -82,15 +82,19 @@ export function EnableAlertsButton() {
     );
   }
 
+  // Push is how a player who has wandered off finds out they have been called, so the button
+  // says what it buys you rather than naming a browser feature.
   return (
-    <Button
-      variant="secondary"
-      size="sm"
-      onClick={enable}
-      disabled={state === 'enabling'}
-    >
-      {state === 'error' ? <BellOff size={14} /> : <Bell size={14} />}
-      {state === 'enabling' ? 'Enabling…' : state === 'error' ? 'Try again' : 'Enable match alerts'}
-    </Button>
+    <div className="flex flex-col items-start gap-1 sm:items-end">
+      <Button variant="secondary" size="sm" onClick={enable} disabled={state === 'enabling'}>
+        {state === 'error' ? <BellOff size={14} /> : <Bell size={14} />}
+        <span className="whitespace-nowrap">
+          {state === 'enabling' ? 'Enabling…' : state === 'error' ? 'Try again' : 'Enable match alerts'}
+        </span>
+      </Button>
+      <p className="text-xs text-fg-subtle">
+        {state === 'error' ? 'Alerts could not be turned on.' : 'Get a push when you are called.'}
+      </p>
+    </div>
   );
 }

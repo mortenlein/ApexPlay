@@ -1,183 +1,196 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { useQueryClient } from '@tanstack/react-query';
-import { Trophy, Zap, ArrowRight, Gamepad2, Radio, Activity, Shield, Hash } from 'lucide-react';
-import { buildSteamConnectUrl } from '@/lib/match-links';
+import { ArrowRight } from 'lucide-react';
 import { isCalled, isLive } from '@/lib/match-status';
-import { Button, Card, Badge, StatusBadge, EmptyState, TopNav } from '@/components/ui';
-import { MyQueue } from '@/components/player/MyQueue';
+import { Button, Card, Badge } from '@/components/ui';
+import { MyQueue, useMyQueue, type QueueEntry } from '@/components/player/MyQueue';
 import { EnableAlertsButton } from '@/components/player/EnableAlertsButton';
 import { SeatEditor } from '@/components/player/SeatEditor';
 
-const PLAYER_NAV = [
-  { href: '/dashboard', label: 'My desk' },
-  { href: '/tournaments', label: 'Tournaments' },
-  { href: '/profile', label: 'Profile' },
-];
-
 /**
- * Redesigned Player surface (exemplar for the new IA). Self-contained shell + content built
- * entirely on the design-system tokens and the ui/ kit. `profile` is the existing
- * /api/user/profile payload; `user` is the session user.
+ * The player desk. One question, answered at the top: am I playing, when, and where do I sit?
+ *
+ * `profile` is the /api/user/profile payload (registrations + the player's own active matches);
+ * `user` is the session user. The queue position comes from /api/me/queue inside MyQueue, but the
+ * match itself is already in `profile`, so the desk hands that down as a fallback and paints the
+ * answer on the first frame instead of a skeleton.
  */
-export function PlayerHome({ user, profile }: { user: any; profile: any }) {
+export function PlayerHome({
+  user,
+  profile,
+  loading = false,
+}: {
+  user: any;
+  profile: any;
+  loading?: boolean;
+}) {
   const queryClient = useQueryClient();
-  const { registrations = [], stats, activeMatches = [] } = profile || {};
-  const nextMatch = activeMatches[0];
-  const connectUrl = nextMatch
-    ? buildSteamConnectUrl(nextMatch.serverIp, nextMatch.serverPort, nextMatch.serverPassword)
-    : null;
+  const { registrations = [], activeMatches = [] } = profile || {};
+  const refreshProfile = () => queryClient.invalidateQueries({ queryKey: ['profile'] });
 
-  const statRow = [
-    { label: 'Tournaments', value: stats?.tournamentsJoined ?? 0, icon: Trophy },
-    { label: 'Active matches', value: stats?.activeMatches ?? 0, icon: Activity },
-    { label: 'Teams led', value: stats?.teamsLed ?? 0, icon: Shield },
-    { label: 'Seats', value: stats?.seatAssignments ?? 0, icon: Hash },
-  ];
+  // Seat per tournament, straight off the player's own registration rows.
+  const seats: Record<string, string | null> = {};
+  for (const reg of registrations) {
+    if (reg?.team?.tournament?.id) seats[reg.team.tournament.id] = reg.seating ?? null;
+  }
+
+  // Server details, where a match actually has them. Nothing writes them today, so the
+  // one-click-join button simply doesn't exist rather than sitting there as "Server pending".
+  const servers: Record<string, { ip?: string | null; port?: string | null; password?: string | null }> = {};
+  for (const match of activeMatches) {
+    if (match?.serverIp) {
+      servers[match.id] = { ip: match.serverIp, port: match.serverPort, password: match.serverPassword };
+    }
+  }
+
+  // The same shape /api/me/queue returns, built from what the page already has. Everything but
+  // the queue position is known here, so the card can render before that request comes back.
+  const fallback: QueueEntry[] = [];
+  for (const match of activeMatches) {
+    const tournamentId = match?.tournament?.id;
+    if (!tournamentId || fallback.some((e) => e.tournamentId === tournamentId)) continue;
+    const youAreHome = match.playerTeamId === match.homeTeamId;
+    const mine = youAreHome ? match.homeTeam : match.awayTeam;
+    const opponent = youAreHome ? match.awayTeam : match.homeTeam;
+    fallback.push({
+      tournamentId,
+      tournamentName: match.tournament.name,
+      game: match.tournament.game,
+      teamName: mine?.name ?? 'Your team',
+      state: 'SCHEDULED',
+      matchesAhead: null,
+      totalPending: 0,
+      nextMatch: {
+        id: match.id,
+        round: match.round,
+        status: match.status,
+        bracketType: match.bracketType,
+        bestOf: match.bestOf ?? 1,
+        opponent: opponent?.name ?? 'TBD',
+        youAreHome,
+        hasOpponent: Boolean(opponent?.name),
+      },
+    });
+  }
 
   return (
     <div className="min-h-screen bg-page text-fg">
-      <main className="mds-container space-y-8 py-8">
-        {/* Hero: next match */}
-        <section>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="mds-uppercase-label text-fg-subtle">Player desk</p>
-              <h1 className="mt-1 font-brand text-3xl font-bold tracking-tight">
-                Welcome back{user?.name ? `, ${user.name}` : ''}
-              </h1>
-            </div>
-            <EnableAlertsButton />
+      <main className="mds-container space-y-6 py-6 sm:py-8">
+        <header className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
+          <div>
+            <p className="mds-uppercase-label text-fg-subtle">Player desk</p>
+            {user?.name && <h1 className="mds-name-lg mt-0.5 text-2xl">{user.name}</h1>}
           </div>
+          <EnableAlertsButton />
+        </header>
 
-          <div className="mt-5">
-            {nextMatch ? (
-              <Card className="overflow-hidden p-0">
-                <div className="flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <Badge tone="info">Round {nextMatch.round}</Badge>
-                      <StatusBadge status={nextMatch.status} />
-                      {/* Called and live both mean "move now" — say so instead of leaving the
-                          player to decode a status chip. */}
-                      {isLive(nextMatch.status) ? (
-                        <span className="flex items-center gap-1.5 text-xs font-bold text-danger">
-                          <Radio size={13} className="animate-pulse" />
-                          Live — get to your station
-                        </span>
-                      ) : isCalled(nextMatch.status) ? (
-                        <span className="text-xs font-bold text-success">
-                          You&apos;re up — go to your station
-                        </span>
-                      ) : null}
-                    </div>
-                    <h2 className="font-brand text-2xl font-bold">
-                      {nextMatch.homeTeam?.name || 'TBD'} <span className="text-fg-subtle">vs</span> {nextMatch.awayTeam?.name || 'TBD'}
-                    </h2>
-                    <p className="text-sm text-fg-muted">{nextMatch.tournament?.name}</p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-3">
-                    {connectUrl ? (
-                      <a href={connectUrl} data-testid={`join-match-${nextMatch.id}`}>
-                        <Button>
-                          <Zap size={15} />
-                          One-click join
-                        </Button>
-                      </a>
-                    ) : (
-                      <Badge tone="pending">Server pending</Badge>
-                    )}
-                    <Link href={`/tournaments/${nextMatch.tournamentId}`}>
-                      <Button variant="secondary">View bracket</Button>
-                    </Link>
-                  </div>
-                </div>
-              </Card>
-            ) : (
-              <EmptyState
-                icon={<Radio size={26} />}
-                title="No match assigned yet"
-                description="When your team is scheduled, your match, seat, and one-click join link show up right here."
-                action={<Link href="/tournaments"><Button>Browse tournaments</Button></Link>}
-              />
-            )}
-          </div>
-        </section>
+        <MyQueue
+          enabled={!loading}
+          registered={registrations.length > 0}
+          fallback={fallback}
+          seats={seats}
+          servers={servers}
+          profileLoading={loading}
+          onSeatSaved={refreshProfile}
+        />
 
-        {/* Queue */}
-        <MyQueue />
-
-        {/* Stats */}
-        <section className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {statRow.map((s) => (
-            <Card key={s.label} className="flex items-center justify-between">
-              <div>
-                <p className="mds-uppercase-label text-fg-subtle">{s.label}</p>
-                <p className="mt-1 font-brand text-2xl font-bold">{s.value}</p>
-              </div>
-              <s.icon size={18} className="text-brand/50" />
-            </Card>
-          ))}
-        </section>
-
-        {/* Joined tournaments */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-brand text-lg font-bold">Your tournaments</h2>
-            <Link href="/tournaments" className="text-sm font-semibold text-brand hover:underline">Browse all</Link>
-          </div>
-          {registrations.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {registrations.map((reg: any) => (
-                // The card is not one big link any more: the seat editor is interactive, and
-                // a button inside an anchor is both invalid markup and a click trap.
-                <Card key={reg.id} className="flex h-full flex-col justify-between gap-4">
-                  <Link href={`/tournaments/${reg.team.tournament.id}`} className="group block">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <Badge tone="neutral">{reg.team.tournament.game}</Badge>
-                        <h3 className="mt-2 font-brand text-lg font-bold group-hover:text-brand">
-                          {reg.team.tournament.name}
-                        </h3>
-                      </div>
-                      <Trophy size={18} className="text-fg-subtle" />
-                    </div>
-                  </Link>
-                  <div className="space-y-3 border-t border-line pt-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="mds-uppercase-label text-fg-subtle">Team</p>
-                        <p className="text-sm font-semibold text-brand">{reg.team.name}</p>
-                      </div>
-                      <Link href={`/tournaments/${reg.team.tournament.id}`} aria-label={`Open ${reg.team.tournament.name}`}>
-                        <ArrowRight size={16} className="text-fg-subtle hover:text-brand" />
-                      </Link>
-                    </div>
-                    <div>
-                      <p className="mds-uppercase-label text-fg-subtle">Your seat</p>
-                      <SeatEditor
-                        className="mt-1"
-                        tournamentId={reg.team.tournament.id}
-                        seating={reg.seating}
-                        onSaved={() => queryClient.invalidateQueries({ queryKey: ['profile'] })}
-                      />
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              icon={<Gamepad2 size={26} />}
-              title="No tournaments joined yet"
-              description="Join one to see your team, schedule, and join links here."
-              action={<Link href="/tournaments"><Button>Browse tournaments</Button></Link>}
-            />
-          )}
-        </section>
+        <TournamentList registrations={registrations} loading={loading} onSeatSaved={refreshProfile} />
       </main>
     </div>
+  );
+}
+
+/** What the queue says about a tournament, as a chip on its card. Never a raw state enum. */
+function StateChip({ entry }: { entry?: QueueEntry }) {
+  if (!entry) return null;
+  if (entry.state === 'OUT') return <Badge tone="done">Knocked out</Badge>;
+  if (entry.state === 'NO_BRACKET' || entry.state === 'AWAITING_DRAW') {
+    return <Badge tone="neutral">Not drawn yet</Badge>;
+  }
+  const status = (entry.nextMatch?.status || '').toUpperCase();
+  if (isLive(status)) return <Badge tone="live">Playing now</Badge>;
+  if (isCalled(status)) return <Badge tone="ready">You&apos;re up</Badge>;
+  if (entry.matchesAhead === 0) return <Badge tone="ready">Up next</Badge>;
+  if (entry.matchesAhead === null) return null;
+  return (
+    <Badge tone="neutral">
+      {entry.matchesAhead} {entry.matchesAhead === 1 ? 'match' : 'matches'} ahead
+    </Badge>
+  );
+}
+
+function TournamentList({
+  registrations,
+  loading,
+  onSeatSaved,
+}: {
+  registrations: any[];
+  loading: boolean;
+  onSeatSaved: () => void;
+}) {
+  const { data } = useMyQueue({ enabled: !loading });
+  const byTournament = new Map((data?.queue ?? []).map((e) => [e.tournamentId, e]));
+
+  if (loading && registrations.length === 0) {
+    return (
+      <section className="space-y-3" aria-busy="true">
+        <p className="mds-uppercase-label text-fg-subtle">Your tournaments</p>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <Card className="h-32 animate-pulse" />
+        </div>
+      </section>
+    );
+  }
+
+  // No registrations: the desk already shows one zero state above. Two is noise.
+  if (registrations.length === 0) return null;
+
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="mds-uppercase-label text-fg-subtle">Your tournaments</p>
+        <Link href="/tournaments" className="text-xs font-semibold text-brand hover:underline">
+          Browse all
+        </Link>
+      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {registrations.map((reg: any) => (
+          // The card is not one big link: the seat editor is interactive, and a button inside
+          // an anchor is both invalid markup and a click trap.
+          <Card key={reg.id} className="flex h-full flex-col justify-between gap-4">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge tone="neutral">{reg.team.tournament.game}</Badge>
+                <StateChip entry={byTournament.get(reg.team.tournament.id)} />
+              </div>
+              <Link
+                href={`/tournaments/${reg.team.tournament.id}`}
+                className="group flex items-start justify-between gap-3"
+              >
+                <h3 className="mds-name-lg text-lg group-hover:text-brand">{reg.team.tournament.name}</h3>
+                <ArrowRight size={16} className="mt-1 shrink-0 text-fg-subtle group-hover:text-brand" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-3 border-t border-line pt-3">
+              <div>
+                <p className="mds-uppercase-label text-fg-subtle">Team</p>
+                <p className="mds-name mt-1 text-sm">{reg.team.name}</p>
+              </div>
+              <div>
+                <p className="mds-uppercase-label text-fg-subtle">Your seat</p>
+                <SeatEditor
+                  className="mt-1"
+                  tournamentId={reg.team.tournament.id}
+                  seating={reg.seating}
+                  onSaved={onSeatSaved}
+                />
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </section>
   );
 }

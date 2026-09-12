@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Hash, Loader2, Pencil, X } from 'lucide-react';
+import { Check, Loader2, Pencil, X } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { clientApi } from '@/lib/client-api';
 import { useToast } from '@/components/ToastProvider';
@@ -15,16 +15,21 @@ export const SEAT_HELPER_TEXT = 'Marshals use this to find you. You can change i
  * Inline "your seat" editor for the signed-in player's own Player row in one tournament.
  * Talks to PATCH /api/me/player, which works even after the roster is locked — seats move
  * around on the LAN floor long after the bracket is generated.
+ *
+ * `size="lg"` is the call-board display: the seat is the number a player reads off their phone
+ * while walking to the station, so it is set in the numeric style at display size.
  */
 export function SeatEditor({
     tournamentId,
     seating,
     onSaved,
+    size = 'sm',
     className = '',
 }: {
     tournamentId: string;
     seating?: string | null;
     onSaved?: (seating: string | null) => void;
+    size?: 'sm' | 'lg';
     className?: string;
 }) {
     const toast = useToast();
@@ -50,26 +55,35 @@ export function SeatEditor({
         }
     };
 
+    const startEditing = (event: React.MouseEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setValue(seating || '');
+        setEditing(true);
+    };
+
     if (!editing) {
+        // The seat is a value, not a label: tabular figures, no tracking, never wrapped.
         return (
-            <div className={`flex items-center gap-2 ${className}`}>
-                <Hash size={13} className="shrink-0 text-fg-subtle" />
+            <div
+                className={`flex ${size === 'lg' ? 'flex-wrap items-baseline gap-x-3 gap-y-1' : 'items-center gap-2'} ${className}`}
+            >
                 {seating ? (
-                    <span className="font-brand text-sm font-bold">{seating}</span>
+                    <span
+                        className={
+                            size === 'lg'
+                                ? 'mds-numeric text-4xl font-bold leading-none sm:text-5xl'
+                                : 'mds-numeric text-sm font-bold'
+                        }
+                    >
+                        {seating}
+                    </span>
                 ) : (
-                    <span className="text-xs text-fg-subtle">No seat set</span>
+                    <span className={size === 'lg' ? 'text-sm text-fg-muted' : 'text-xs text-fg-subtle'}>
+                        No seat set
+                    </span>
                 )}
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        setValue(seating || '');
-                        setEditing(true);
-                    }}
-                >
+                <Button type="button" variant="ghost" size="sm" onClick={startEditing}>
                     <Pencil size={12} />
                     {seating ? 'Edit' : 'Set your seat'}
                 </Button>
@@ -79,7 +93,7 @@ export function SeatEditor({
 
     return (
         <div className={`space-y-1.5 ${className}`}>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
                 <input
                     autoFocus
                     value={value}
@@ -98,7 +112,7 @@ export function SeatEditor({
                             setEditing(false);
                         }
                     }}
-                    className="mds-input h-9 w-28 px-3 text-sm font-bold"
+                    className="mds-input mds-numeric h-9 w-28 px-3 text-sm font-bold"
                 />
                 <Button
                     type="button"
@@ -117,6 +131,7 @@ export function SeatEditor({
                     type="button"
                     variant="ghost"
                     size="sm"
+                    aria-label="Cancel seat edit"
                     disabled={saving}
                     onClick={(event) => {
                         event.preventDefault();
