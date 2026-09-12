@@ -76,6 +76,10 @@ export default function TournamentsOverviewClient() {
   };
   const cards = [...filtered].sort((a, b) => rank(a) - rank(b));
 
+  // Is there anything on this server at all (before search/stage filtering)? If not, the
+  // filter field and the stage chips are hidden: controls for a board that does not exist.
+  const hasAny = tournaments.length > 0;
+
   return (
     <div className="flex min-h-screen flex-col bg-page text-fg">
       <PageHeader
@@ -92,51 +96,55 @@ export default function TournamentsOverviewClient() {
           ) : undefined
         }
         actions={
-          <div className="relative w-full sm:w-72">
-            <label htmlFor="directory-filter" className="sr-only">
-              Filter tournaments
-            </label>
-            <Search
-              size={15}
-              aria-hidden
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle"
-            />
-            <input
-              id="directory-filter"
-              type="search"
-              placeholder="Filter tournaments…"
-              value={searchQuery}
-              onChange={(e) => setParam("search", e.target.value)}
-              className="mds-input pl-9"
-            />
-          </div>
+          hasAny ? (
+            <div className="relative w-full sm:w-72">
+              <label htmlFor="directory-filter" className="sr-only">
+                Filter tournaments
+              </label>
+              <Search
+                size={15}
+                aria-hidden
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle"
+              />
+              <input
+                id="directory-filter"
+                type="search"
+                placeholder="Filter tournaments…"
+                value={searchQuery}
+                onChange={(e) => setParam("search", e.target.value)}
+                className="mds-input pl-9"
+              />
+            </div>
+          ) : undefined
         }
       />
 
       <main className="mds-container flex flex-1 flex-col gap-6 py-8">
-        <div className="mds-section-head">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="mds-uppercase-label mr-1 text-fg">Board</h2>
-            <FilterChip label="All" count={searched.length} active={!stageFilter} onClick={() => setParam("stage", "")} />
-            {stageCounts.map(({ stage, count }) => (
-              <FilterChip
-                key={stage}
-                label={STAGE_META[stage].label}
-                count={count}
-                tone={stage === "LIVE" ? "live" : undefined}
-                active={stageFilter === stage}
-                onClick={() => setParam("stage", stageFilter === stage ? "" : stage)}
-              />
-            ))}
+        {hasAny && (
+          <div className="mds-section-head">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="mds-uppercase-label mr-1 text-fg">Board</h2>
+              <FilterChip label="All" count={searched.length} active={!stageFilter} onClick={() => setParam("stage", "")} />
+              {stageCounts.map(({ stage, count }) => (
+                <FilterChip
+                  key={stage}
+                  label={STAGE_META[stage].label}
+                  count={count}
+                  tone={stage === "LIVE" ? "live" : undefined}
+                  active={stageFilter === stage}
+                  onClick={() => setParam("stage", stageFilter === stage ? "" : stage)}
+                />
+              ))}
+            </div>
+            <Badge tone="neutral">
+              {isLoading ? "…" : (
+                <>
+                  <span className="mds-tabular">{filtered.length}</span>&nbsp;listed
+                </>
+              )}
+            </Badge>
           </div>
-          <Badge tone="neutral">
-            {isLoading ? "…" : (
-              <>
-                <span className="mds-tabular">{filtered.length}</span>&nbsp;listed
-              </>
-            )}
-          </Badge>
-        </div>
+        )}
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center gap-4 py-32">
