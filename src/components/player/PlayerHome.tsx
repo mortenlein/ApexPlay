@@ -138,7 +138,11 @@ function TournamentList({
       <section className="space-y-3" aria-busy="true">
         <p className="mds-uppercase-label text-fg-subtle">Your tournaments</p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <Card className="h-32 animate-pulse" />
+          <Card className="space-y-3">
+            <div className="h-3 w-1/4 animate-pulse rounded-sm bg-white/5" />
+            <div className="h-5 w-2/3 animate-pulse rounded-sm bg-white/5" />
+            <div className="h-3 w-1/2 animate-pulse rounded-sm bg-white/5" />
+          </Card>
         </div>
       </section>
     );
