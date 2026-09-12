@@ -33,6 +33,9 @@ process.env.VAPID_SUBJECT = 'mailto:e2e@apexplay.local';
 
 export default defineConfig({
   testDir: './e2e',
+  // `zz-*` specs are visual-audit tools (they screenshot surfaces for a human/agent to look at),
+  // not assertions — run them explicitly with `npx playwright test e2e/zz-<name>.spec.ts`.
+  testIgnore: '**/zz-*.spec.ts',
   fullyParallel: false,
   workers: 1,
   retries: 0,
