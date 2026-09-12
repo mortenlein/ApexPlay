@@ -10,7 +10,7 @@
 :root,
 [data-theme='dark'] {
   /* ============================================================
-     SUBTICK DESIGN SYSTEM — warm-charcoal, mono-everywhere, tactical.
+     SUBTICK DESIGN SYSTEM — warm-charcoal, tactical, dark-first.
      Adopted from the Subtick design system (sibling app). All legacy
      --mds-* tokens below are remapped onto these, so every surface
      (both the `ui/` token components and the `mds-*` classes) reskins.
@@ -45,6 +45,11 @@
   --warn: oklch(0.815 0.140 86);
   --warn-dim: oklch(0.600 0.105 84);
 
+  /* LIVE is the loudest thing on any screen: a solid fill, not a tint. */
+  --live:      oklch(0.660 0.190 26);
+  --live-ink:  oklch(0.155 0.006 70);
+  --live-glow: oklch(0.660 0.190 26 / 0.55);
+
   /* signature accent — ApexPlay blue. One token: change hue 256 -> 58 for Subtick's orange. */
   --accent:       oklch(0.625 0.205 256);
   --accent-hover: oklch(0.560 0.190 256);
@@ -52,9 +57,62 @@
   --accent-ghost: oklch(0.625 0.205 256 / 0.16);
   --accent-line:  oklch(0.625 0.205 256 / 0.45);
 
-  /* type */
+  /* Keyboard focus. Deliberately not --accent: it has to stay visible *on* --accent. */
+  --ring: oklch(0.820 0.140 252);
+
+  /* Surface tints — the "raised by a hair" fills. White-on-dark here, black-on-light in the
+     light block, so one class works in both themes (Tailwind: bg-tint / bg-tint-strong). */
+  --tint-1: oklch(1 0 0 / 0.04);
+  --tint-2: oklch(1 0 0 / 0.07);
+  --tint-3: oklch(1 0 0 / 0.02);
+  --scrim:  oklch(0.09 0.004 70 / 0.62);
+
+  /* ------------------------------------------------------------
+     TYPE FAMILIES — one job each.
+     ------------------------------------------------------------
+       --sans     Inter. Prose, UI, labels, and every name a human typed. Proportional,
+                  which is where the width for long club names comes from.
+       --mono     JetBrains Mono. NUMERICS ONLY — scores, seeds, seat labels, clocks,
+                  invite codes. Reach for it through `.mds-numeric`, not by hand.
+       --display  Martian Mono. The wordmark and page titles; the tactical identity kept
+                  where it is deliberate instead of everywhere.
+     ------------------------------------------------------------ */
+  --sans:    var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono:    var(--font-jet), ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --display: var(--font-martian), var(--font-jet), ui-monospace, monospace;
+
+  /* ------------------------------------------------------------
+     TYPE SCALE — seven steps, and 11px is the floor.
+     ------------------------------------------------------------
+     Before this existed, components hand-picked sizes: 106 × text-[10px], 57 × text-[9px],
+     21 × text-[8px] across src. Monospace at 8-9px is unreadable across a LAN table under
+     stage lighting, which is the one room this product was designed for. Nothing below
+     --fs-label ships. Tailwind exposes these as text-label … text-score.
+
+       label   11px  uppercase labels, eyebrows, badges, table headers   (FLOOR)
+       meta    12px  metadata, stat rows, hints, timestamps
+       body    14px  default UI and body copy
+       lead    16px  emphasised body, long-form, phone card titles
+       title   20px  card and section titles (h3)
+       head    28px  section heads (h2)
+       display fluid page titles (h1)
+       score   40px  scores and clocks read from across the room
+     ------------------------------------------------------------ */
+  --fs-label:   11px;
+  --fs-meta:    12px;
+  --fs-body:    14px;
+  --fs-lead:    16px;
+  --fs-title:   20px;
+  --fs-head:    28px;
+  --fs-display: clamp(2rem, 2.4vw + 1.2rem, 2.75rem);
+  --fs-score:   40px;
+
+  /* The loaded JetBrains Mono weights are 400/500/600/700 and Martian Mono 500/600/700.
+     `font-black` (900) has no face behind it — the browser fakes it. Use 700. */
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semi:    600;
+  --fw-bold:    700;
 
   /* geometry + shadows */
   --r-sm: 4px;  --r-md: 7px;  --r-lg: 11px;  --r-xl: 16px;
@@ -94,32 +152,77 @@
   --mds-shadow-lg:      var(--shadow-pop);
   --mds-context-bar:    oklch(0.165 0.006 70 / 0.92);
   --mds-font-display:   var(--display);
-  --mds-font-body:      var(--mono);
+  --mds-font-body:      var(--sans);
+  --mds-font-mono:      var(--mono);
 }
 
+/* ============================================================
+   LIGHT THEME
+   ------------------------------------------------------------
+   The product is designed for dim rooms, but the theme toggle ships in the header, so light
+   has to be a real theme rather than a stub. It redefines the *Subtick* palette (--bg-*,
+   --ink-*, --line-*, --accent*, semantics, tints) — every --mds-* alias above is declared in
+   terms of those vars and custom properties resolve per element, so the whole legacy layer
+   (and every `bg-card` / `text-fg-muted` Tailwind utility built on it) follows automatically.
+   Same specificity as :root, declared later, so it wins on <html data-theme="light">.
+
+   Values are picked for contrast on paper, not by inverting: the semantic hues are darkened
+   (a dark-mode green at L 0.79 is unreadable on white) and the surface tints flip to black.
+   ============================================================ */
 [data-theme='light'] {
-  /* For now, we focus on Dark Mode as it's the standard for gamers, 
-     but providing a clean light mode fallback */
-  --mds-page:           #f8f9fa;
-  --mds-card:           #ffffff;
-  --mds-card-hover:     #f1f3f5;
-  --mds-input:          #ffffff;
-  --mds-input-border:   #dee2e6;
-  --mds-overlay:        rgba(255, 255, 255, 0.9);
+  --bg-0: oklch(0.982 0.003 80);
+  --bg-1: oklch(1 0 0);
+  --bg-2: oklch(0.962 0.004 80);
+  --bg-3: oklch(0.932 0.005 78);
+  --bg-4: oklch(0.892 0.006 78);
+  --line-0: oklch(0.900 0.005 78);
+  --line-1: oklch(0.845 0.007 78);
+  --line-2: oklch(0.735 0.010 76);
+  --ink-0: oklch(0.205 0.010 70);
+  --ink-1: oklch(0.340 0.011 70);
+  --ink-2: oklch(0.470 0.012 70);
+  --ink-3: oklch(0.575 0.012 70);
+  --ink-4: oklch(0.675 0.011 70);
 
-  /* Text */
-  --mds-text-primary:   #1a1a1a;
-  --mds-text-muted:     #495057;
-  --mds-text-subtle:    #adb5bd;
+  --t: oklch(0.560 0.145 50);
+  --t-dim: oklch(0.660 0.100 52);
+  --t-ghost: oklch(0.560 0.145 50 / 0.12);
+  --ct: oklch(0.500 0.130 246);
+  --ct-dim: oklch(0.620 0.090 244);
+  --ct-ghost: oklch(0.500 0.130 246 / 0.12);
 
-  /* Status Colors */
-  --mds-action:         #0070f3;
-  --mds-action-hover:   #005bcc;
-  --mds-action-soft:    rgba(0, 112, 243, 0.05);
+  --win: oklch(0.500 0.140 152);
+  --win-dim: oklch(0.620 0.095 152);
+  --loss: oklch(0.505 0.195 27);
+  --loss-dim: oklch(0.620 0.140 27);
+  --warn: oklch(0.560 0.120 72);
+  --warn-dim: oklch(0.680 0.090 76);
 
-  /* Borders */
-  --mds-border:         #e9ecef;
-  --mds-border-hover:   #dee2e6;
+  --live:      oklch(0.505 0.195 27);
+  --live-ink:  oklch(0.995 0.005 27);
+  --live-glow: oklch(0.505 0.195 27 / 0.40);
+
+  --accent:       oklch(0.520 0.200 256);
+  --accent-hover: oklch(0.450 0.185 256);
+  --accent-ink:   oklch(0.995 0.003 256);
+  --accent-ghost: oklch(0.520 0.200 256 / 0.12);
+  --accent-line:  oklch(0.520 0.200 256 / 0.45);
+
+  --ring: oklch(0.470 0.200 256);
+
+  --tint-1: oklch(0.30 0.010 70 / 0.045);
+  --tint-2: oklch(0.30 0.010 70 / 0.085);
+  --tint-3: oklch(0.30 0.010 70 / 0.025);
+  --scrim:  oklch(0.45 0.010 70 / 0.35);
+
+  --shadow-1: 0 1px 0 oklch(1 0 0 / 0.6) inset, 0 1px 2px oklch(0.3 0.01 70 / 0.10);
+  --shadow-2: 0 8px 24px oklch(0.3 0.01 70 / 0.12), 0 2px 6px oklch(0.3 0.01 70 / 0.08);
+  --shadow-pop: 0 24px 60px oklch(0.3 0.01 70 / 0.20), 0 4px 12px oklch(0.3 0.01 70 / 0.12);
+
+  --mds-overlay:     oklch(0.982 0.003 80 / 0.72);
+  --mds-context-bar: oklch(1 0 0 / 0.92);
+  /* Cards are pure white here, so a field needs its own step down to read as a field. */
+  --mds-input:       var(--bg-2);
 }
 
 /* ============================================================
@@ -134,15 +237,21 @@ body {
     var(--mds-page);
   background-attachment: fixed;
   font-family: var(--mds-font-body);
-  font-size: 14px;
+  font-size: var(--fs-body);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  font-feature-settings: "ss01", "ss02", "calt", "zero";
+  /* Inter: contextual alternates on, and the disambiguated l/1 so a seat label read off a
+     screen at 12px is never "Il1". Mono-only features live on .mds-numeric. */
+  font-feature-settings: "calt", "cv05";
 }
 
 /* Light mode keeps a flat surface (the warm radial reads as grime on light). */
 [data-theme='light'] body { background: var(--mds-page); }
+
+/* Tell the UA which way round we are, so form controls, scrollbars and autofill follow. */
+:root, [data-theme='dark'] { color-scheme: dark; }
+[data-theme='light'] { color-scheme: light; }
 
 h1, h2, h3, h4, h5, h6 {
   color: var(--mds-text-primary);
@@ -150,9 +259,24 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.02em;
 }
 
-h1 { font-size: 2.5rem; margin-bottom: 1.5rem; }
-h2 { font-size: 1.75rem; margin-bottom: 1rem; }
-h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
+h1 { font-size: var(--fs-display); margin-bottom: 1.5rem; }
+h2 { font-size: var(--fs-head); margin-bottom: 1rem; }
+h3 { font-size: var(--fs-title); margin-bottom: 0.75rem; }
+
+/* ------------------------------------------------------------
+   KEYBOARD FOCUS
+   This is a tool people operate fast, often one-handed. Every interactive element gets the
+   same visible ring, on a token that stays legible *on* the accent as well as on the page.
+   :where() keeps specificity at 0, so a component can still opt out deliberately.
+   ------------------------------------------------------------ */
+:where(a, button, summary, [role='button'], [role='tab'], [role='option'], [tabindex]):focus-visible,
+:where(input, select, textarea):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Never leave a control with no focus affordance at all (Safari/older UA fallback). */
+:where(a, button, input, select, textarea):focus:not(:focus-visible) { outline: none; }
 
 /* ============================================================
    UTILITY CLASSES (MDS REFINED)
@@ -161,21 +285,25 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
 /* ============================================================
    TYPOGRAPHY CONTRACT — shout on labels, never on content.
    ------------------------------------------------------------
-   The UI is monospace throughout, so letter-spacing is the only thing that
-   actually costs width — and every px of tracking on a team name is a px that
-   turns into an ellipsis. The rule:
+   Names are set in the proportional face and never tracked: tracking is the one thing
+   that actually costs width, and every px of it on a team name is a px that turns into
+   an ellipsis. Numbers are the opposite — they want the mono, so columns line up. The rule:
 
      LABEL   (section markers, field labels, eyebrows, metadata)
              → .mds-uppercase-label — uppercase, tracked, small, muted.
-     CONTENT (team names, player names, tournament names, scores)
-             → .mds-name / .mds-name-lg — the user's own casing, no tracking,
-               and it WRAPS rather than truncating. A name a marshal can't read
-               is worse than a name that takes two lines.
+     CONTENT (team names, player names, tournament names)
+             → .mds-name / .mds-name-lg — proportional, the user's own casing, no
+               tracking, and it WRAPS rather than truncating. A name a marshal can't
+               read is worse than a name that takes two lines.
+     NUMERIC (scores, seeds, seat labels, clocks, invite codes)
+             → .mds-numeric — JetBrains Mono + tabular figures. The class carries the
+               family, so adopting the class is the whole migration.
 
    Never put `uppercase tracking-*` on a value a human typed.
    ============================================================ */
 
 .mds-name {
+  font-family: var(--mds-font-body);
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
@@ -186,16 +314,43 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
 }
 
 .mds-name-lg {
-  font-family: var(--mds-font-display);
+  /* Proportional, not the display mono: a big name needs the width more than the identity. */
+  font-family: var(--mds-font-body);
+  font-size: var(--fs-title);
+  line-height: 1.25;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
   text-transform: none;
   overflow-wrap: anywhere;
 }
 
-/* Scores, seeds, seat numbers, clocks — align in columns, never wrap. */
+/* The default heading for a card whose title is a name a human typed. The user's own
+   casing, no tracking, proportional so it fits — never `uppercase tracking-widest`. */
+.mds-card-title {
+  font-family: var(--mds-font-body);
+  font-size: var(--fs-title);
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  text-transform: none;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+
+/* ------------------------------------------------------------
+   THE NUMERIC CONTRACT
+   ------------------------------------------------------------
+   Scores, seeds, seat numbers, clocks, invite codes, map scores. This class carries the
+   MONO FAMILY ITSELF, so every call site that already uses `.mds-numeric` inherits
+   JetBrains Mono the moment the body face goes proportional — no per-component edit.
+   If a number has to line up in a column or be read out loud, it wears this class.
+   ------------------------------------------------------------ */
 .mds-numeric {
+  font-family: var(--mds-font-mono);
   font-variant-numeric: tabular-nums;
+  /* NOT "zero": JetBrains Mono's slashed zero reads as an 8 at label size — "20 listed"
+     became "28 listed" on the directory board. The default dotted zero is unambiguous. */
+  font-feature-settings: "calt";
   letter-spacing: 0;
   white-space: nowrap;
 }
@@ -210,8 +365,14 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
   overflow-wrap: anywhere;
 }
 
+/* Tabular figures WITHOUT switching family — for counts that live inside prose or a label
+   ("12 listed", "3 of 8"). Use .mds-numeric for data that has to line up in a column. */
+.mds-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
 .mds-uppercase-label {
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -228,6 +389,76 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
   padding-right: 2rem;
 }
 
+@media (max-width: 640px) {
+  .mds-container { padding-left: 1rem; padding-right: 1rem; }
+}
+
+/* ------------------------------------------------------------
+   CARD GRID
+   Two cards in a three-column grid leave a third of the screen empty. `auto-fit` lets the
+   row stretch to the width it actually has, so a board reads as full at 2 items and at 20.
+   ------------------------------------------------------------ */
+.mds-card-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+}
+
+/* ------------------------------------------------------------
+   SECTION HEAD — the label + count + link row above a board.
+   ------------------------------------------------------------ */
+.mds-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--mds-border);
+}
+
+/* ------------------------------------------------------------
+   STAT ROW — the metadata line under a name (teams / format / seats).
+   Labels stay muted, values keep tabular figures so columns line up card to card.
+   ------------------------------------------------------------ */
+.mds-stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1rem;
+  font-size: var(--fs-meta);
+  color: var(--mds-text-muted);
+}
+
+.mds-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.mds-stat svg { color: var(--mds-text-subtle); flex: none; }
+
+/* ------------------------------------------------------------
+   STATUS DOT — the smallest possible status mark, for rails and rows where a
+   badge would be too loud. Pair it with a word; never use colour alone.
+   ------------------------------------------------------------ */
+.mds-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  flex: none;
+  background: var(--mds-text-subtle);
+  display: inline-block;
+}
+
+.mds-dot.is-live { background: var(--live); animation: live-pulse 2s infinite; }
+.mds-dot.is-ready { background: var(--mds-green); }
+.mds-dot.is-pending { background: var(--mds-amber); }
+.mds-dot.is-done { background: var(--mds-text-subtle); }
+
 .mds-card {
   background: var(--mds-card);
   border: 1px solid var(--mds-border);
@@ -241,6 +472,20 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
   border-color: var(--mds-border-hover);
 }
 
+/* ------------------------------------------------------------
+   LIVE PANEL — the "happening now" surface. One treatment everywhere: a red rule down the
+   left, a faint red wash, and the LIVE badge. Nothing else in the app may look like this.
+   ------------------------------------------------------------ */
+.mds-live-panel {
+  border: 1px solid var(--mds-border);
+  border-left: 3px solid var(--live);
+  border-radius: var(--mds-radius-large);
+  background:
+    linear-gradient(100deg, var(--live-glow) -40%, transparent 42%),
+    var(--mds-card);
+  box-shadow: var(--mds-shadow-sm);
+}
+
 .workspace-header {
   display: flex;
   flex-wrap: wrap;
@@ -250,8 +495,8 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
   padding: 1.5rem 2rem;
   border-bottom: 1px solid var(--mds-border);
   background:
-    radial-gradient(circle at top right, rgba(0, 112, 243, 0.1), transparent 35%),
-    linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+    radial-gradient(circle at top right, var(--accent-ghost), transparent 45%),
+    linear-gradient(180deg, var(--tint-3), transparent);
 }
 
 .workspace-content {
@@ -261,17 +506,17 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
 }
 
 .workspace-eyebrow {
-  font-size: 10px;
-  font-weight: 800;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-bold);
   text-transform: uppercase;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   color: var(--mds-action);
 }
 
 .workspace-title {
   margin: 0.35rem 0 0;
   font-family: var(--mds-font-display);
-  font-size: clamp(1.9rem, 2vw, 2.75rem);
+  font-size: var(--fs-display);
   font-weight: 700;
   line-height: 0.95;
 }
@@ -279,15 +524,15 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
 .workspace-subtitle {
   margin-top: 0.65rem;
   max-width: 52rem;
-  font-size: 0.95rem;
+  font-size: var(--fs-lead);
   color: var(--mds-text-muted);
 }
 
 .mds-empty-state {
   padding: 3.5rem 2rem;
-  border: 1px dashed var(--mds-border);
+  border: 1px dashed var(--mds-border-hover);
   border-radius: var(--mds-radius-large);
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  background: var(--tint-3);
   text-align: center;
 }
 
@@ -296,7 +541,7 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
   border-left-width: 4px;
   border-radius: var(--mds-radius-medium);
   padding: 1rem 1rem 1rem 1.15rem;
-  background: rgba(255,255,255,0.02);
+  background: var(--tint-3);
 }
 
 .mds-inline-notice.info { border-left-color: var(--mds-action); }
@@ -304,11 +549,11 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
 .mds-inline-notice.success { border-left-color: var(--mds-green); }
 
 .mds-toast {
-  border: 1px solid var(--mds-border);
+  border: 1px solid var(--mds-border-hover);
   border-left-width: 4px;
   border-radius: var(--mds-radius-medium);
   padding: 0.9rem 1rem;
-  background: rgba(15, 17, 20, 0.98);
+  background: var(--mds-card);
   box-shadow: var(--mds-shadow-lg);
 }
 
@@ -318,12 +563,12 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
 
 .mds-btn-primary {
   background: var(--mds-action);
-  color: #ffffff;
+  color: var(--accent-ink);
   border-radius: var(--mds-radius-small);
   padding: 8px 16px;
   font-weight: 600;
-  font-size: 14px;
-  transition: all 0.2s ease;
+  font-size: var(--fs-body);
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -336,14 +581,14 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
 }
 
 .mds-btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--tint-1);
   color: var(--mds-text-primary);
-  border: 1px solid var(--mds-border);
+  border: 1px solid var(--mds-border-hover);
   border-radius: var(--mds-radius-small);
   padding: 8px 16px;
   font-weight: 600;
-  font-size: 14px;
-  transition: all 0.2s ease;
+  font-size: var(--fs-body);
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -351,8 +596,8 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
 }
 
 .mds-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: var(--mds-border-hover);
+  background: var(--tint-2);
+  border-color: var(--line-2);
 }
 
 .mds-input {
@@ -361,30 +606,52 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
   color: var(--mds-text-primary);
   border-radius: var(--mds-radius-small);
   padding: 10px 12px;
-  font-size: 14px;
+  font-size: var(--fs-body);
   width: 100%;
-  transition: all 0.2s ease;
-  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.mds-input:focus {
+.mds-input::placeholder { color: var(--mds-text-subtle); }
+
+.mds-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
   border-color: var(--mds-action);
-  box-shadow: 0 0 0 2px var(--mds-action-soft);
 }
 
 .mds-badge {
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
+  line-height: 1.5;
   padding: 2px 8px;
   border-radius: 4px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   display: inline-flex;
   align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+/* LIVE: a solid fill, not a tint. On a board of tinted chips this is the one that shouts. */
+.mds-badge-live {
+  background: var(--live);
+  color: var(--live-ink);
+  border: 1px solid var(--live);
+  animation: live-pulse 2s infinite;
+}
+
+.mds-badge-live::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  animation: live-blink 1.4s ease-in-out infinite;
 }
 
 .mds-nav-link {
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--mds-text-muted);
   transition: all 0.15s ease;
@@ -397,7 +664,7 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
 
 .mds-nav-link:hover {
   color: var(--mds-text-primary);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--tint-1);
 }
 
 .mds-nav-link.active {
@@ -421,7 +688,7 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
 .mds-table th {
   text-align: left;
   padding: 12px 16px;
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -436,7 +703,7 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
 }
 
 .mds-table tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--tint-3);
 }
 
 /* ============================================================
@@ -481,14 +748,38 @@ body.obs-mode {
    ANIMATIONS
    ============================================================ */
 
+/* The LIVE halo. Token-driven, so it tracks --live in both themes (it used to be a
+   hardcoded pink rgba that matched no token in the system). */
+@keyframes live-pulse {
+  0%   { box-shadow: 0 0 0 0 var(--live-glow); }
+  70%  { box-shadow: 0 0 0 9px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+@keyframes live-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* Legacy alias — `animate-badge-pulse` is referenced across the app. */
 @keyframes badge-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(255, 23, 68, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0); }
+  0%   { box-shadow: 0 0 0 0 var(--live-glow); }
+  70%  { box-shadow: 0 0 0 9px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
 }
 
 .animate-badge-pulse {
   animation: badge-pulse 2s infinite;
+}
+
+/* Calm under load: honour the OS setting, keep the colour, drop the motion. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-badge-pulse,
+  .mds-badge-live,
+  .mds-badge-live::before,
+  .mds-dot.is-live {
+    animation: none;
+  }
 }
 
 @media (max-width: 768px) {
@@ -501,6 +792,18 @@ body.obs-mode {
   }
 
   .workspace-title {
-    font-size: 1.8rem;
+    font-size: var(--fs-head);
+  }
+}
+
+/* ------------------------------------------------------------
+   TOUCH TARGETS
+   A marshal taps this one-handed while walking the floor. Anything interactive in the app
+   chrome gets a 44px hit area on a touch device, without changing how it looks.
+   ------------------------------------------------------------ */
+@media (pointer: coarse) {
+  .mds-tap {
+    min-height: 44px;
+    min-width: 44px;
   }
 }

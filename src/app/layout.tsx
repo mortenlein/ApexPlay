@@ -1,10 +1,28 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono, Martian_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Martian_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import NavigationWrapper from "@/components/NavigationWrapper";
 
-// Subtick design system: JetBrains Mono for all UI/data, Martian Mono for display headings.
+/**
+ * Three faces, one job each (design.md §3):
+ *
+ *   Inter          — prose, UI, labels, and every name a human typed. Proportional, so
+ *                    "Kristiansand Kings" fits where monospace forced an ellipsis.
+ *   JetBrains Mono — numerics only: scores, seeds, seat labels, clocks, invite codes.
+ *                    Applied through `.mds-numeric`, not by hand.
+ *   Martian Mono   — the ApexPlay wordmark and page titles. The tactical identity, kept
+ *                    where it is deliberate rather than everywhere.
+ *
+ * The variables are applied to <html>, never <body>: they are declared on `:root`, and a
+ * <body>-only application silently fell back to serif in production once already.
+ */
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
 const jetMono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -39,13 +57,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${jetMono.variable} ${martianMono.variable}`}
+      className={`${inter.variable} ${jetMono.variable} ${martianMono.variable}`}
       suppressHydrationWarning
     >
-      <body
-        className="antialiased text-[var(--mds-text-primary)]"
-        suppressHydrationWarning
-      >
+      <body className="antialiased text-fg" suppressHydrationWarning>
         <Providers>
           <NavigationWrapper>
             {children}
