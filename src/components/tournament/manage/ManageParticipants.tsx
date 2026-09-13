@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { UserPlus, Plus, Search, Users, Settings2, Trash2, Save, Info, GripVertical } from 'lucide-react';
+import { Plus, Users, Settings2, Trash2, Save, Info, GripVertical } from 'lucide-react';
 import Image from 'next/image';
+import { Badge } from '@/components/ui';
 
 interface ManageParticipantsProps {
   tournament: any;
@@ -63,55 +64,154 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
   };
 
   const filledRosterCount = rosterRows.filter((row) => (row.name || '').trim() || (row.nickname || '').trim()).length;
+  const fieldInput = 'mds-input h-10 px-3 text-sm';
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 animate-in fade-in duration-500">
-      <div className="lg:col-span-4 space-y-8">
-        <div className="mds-card p-8">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="h-10 w-10 rounded-lg bg-[var(--mds-action-soft)] text-[var(--mds-action)] border border-[var(--mds-action)]/20 flex items-center justify-center shadow-sm">
-              <UserPlus size={18} />
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      {/* THE LIST FIRST: on a laptop the roster is what the organizer came for. */}
+      <div className="lg:col-span-8 lg:order-2">
+        <div className="mds-card overflow-hidden p-0">
+          <header className="flex flex-col gap-3 border-b border-[var(--mds-border)] bg-[var(--mds-input)]/20 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-bold tracking-tight">Teams</h2>
+              <Badge tone="neutral">{teams.length} registered</Badge>
             </div>
-            <h2 className="text-xl font-black uppercase tracking-tight">Register Team</h2>
+            {Object.keys(draftSeeds).length > 0 ? (
+              <button
+                onClick={onSaveSeeds}
+                disabled={isLocked}
+                className="mds-btn-primary h-9 gap-2 px-4 text-sm font-bold disabled:opacity-40"
+              >
+                <Save size={14} /> Save seeding
+              </button>
+            ) : null}
+          </header>
+
+          <div className="custom-scrollbar max-h-[640px] divide-y divide-[var(--mds-border)]/60 overflow-y-auto">
+            {sortedTeams.map((team: any, index: number) => (
+              <div
+                key={team.id}
+                draggable={!isLocked}
+                onDragStart={(e) => onDragStart(e, index)}
+                onDragOver={(e) => onDragOver(e, index)}
+                onDragEnd={onDragEnd}
+                className={`group flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 transition-colors sm:flex-nowrap sm:px-6 ${isLocked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'} hover:bg-[var(--mds-input)]/40 ${draggedItemIndex === index ? 'opacity-20' : ''}`}
+              >
+                <div className="flex min-w-[10rem] flex-1 items-center gap-3">
+                  <GripVertical size={15} className="hidden shrink-0 text-[var(--mds-text-subtle)] opacity-40 group-hover:opacity-100 sm:block" />
+                  {/* `.mds-input` is width:100%, so the seed box needs a sized wrapper or it eats
+                      the row and squeezes the team name into a one-character column. */}
+                  <div className="w-14 shrink-0">
+                    <input
+                      type="number"
+                      aria-label={`Seed for ${team.name}`}
+                      disabled={isLocked}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => {
+                        const val = e.target.value === '' ? '' : Number(e.target.value);
+                        setDraftSeeds({ ...draftSeeds, [team.id]: val });
+                      }}
+                      value={draftSeeds[team.id] !== undefined ? draftSeeds[team.id] : (team.seed || index + 1)}
+                      className="mds-input mds-numeric h-9 border-[var(--mds-border)] bg-transparent px-0 text-center font-bold text-[var(--mds-action)]"
+                    />
+                  </div>
+                  <div className="relative hidden h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--mds-border)] bg-[var(--mds-page)] sm:flex">
+                    {team.logoUrl ? (
+                      <Image src={team.logoUrl} fill alt="" className="object-contain p-1.5" />
+                    ) : (
+                      <Users size={16} className="text-[var(--mds-text-muted)]" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="mds-name text-sm">{team.name}</p>
+                    <p className="mt-0.5 text-xs text-[var(--mds-text-subtle)]">
+                      {team.players?.length || 0} of {teamSize} players
+                    </p>
+                  </div>
+                </div>
+
+                {/* Both stay live while the roster is locked: the modal still allows name/seat
+                    corrections, and removal falls back to a forced pull-out (confirmed upstream). */}
+                <div className="ml-auto flex shrink-0 items-center gap-2">
+                  <button
+                    onClick={() => onEditTeam(team)}
+                    title={`Edit ${team.name}`}
+                    aria-label={`Edit ${team.name}`}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)] text-[var(--mds-text-muted)] transition-all hover:border-[var(--mds-action)]/40 hover:text-[var(--mds-action)]"
+                  >
+                    <Settings2 size={15} />
+                  </button>
+                  <button
+                    onClick={() => onDeleteTeam(team.id)}
+                    title={`Remove ${team.name}`}
+                    aria-label={`Remove ${team.name}`}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)] text-[var(--mds-text-muted)] transition-all hover:border-[var(--mds-red)]/40 hover:text-[var(--mds-red)]"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {teams.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 py-20 text-center">
+                <Users size={28} className="text-[var(--mds-text-subtle)]" />
+                <div>
+                  <p className="text-sm font-bold">No teams yet</p>
+                  <p className="mt-1 text-sm text-[var(--mds-text-muted)]">
+                    {isLocked ? 'Unlock roster edits to add teams' : 'Register a team with the form, or paste a CSV.'}
+                  </p>
+                </div>
+              </div>
+            ) : null}
           </div>
-          <form onSubmit={onAddTeam} className="space-y-6">
+        </div>
+      </div>
+
+      <div className="space-y-6 lg:col-span-4 lg:order-1">
+        <div className="mds-card p-5">
+          <h2 className="text-lg font-bold tracking-tight">Register Team</h2>
+          <form onSubmit={onAddTeam} className="mt-4 space-y-4">
             {isLocked ? (
-              <div className="rounded-xl border border-[var(--mds-amber)]/30 bg-[var(--mds-amber)]/10 px-4 py-4 text-sm text-[var(--mds-text-muted)]">
+              <div className="rounded-lg border border-[var(--mds-amber)]/30 bg-[var(--mds-amber)]/10 px-3 py-3 text-sm leading-relaxed text-[var(--mds-text-muted)]">
                 Roster edits are locked because the bracket is already in play. Unlock roster edits in settings before adding or removing teams.
               </div>
             ) : null}
-            <div className="space-y-2.5">
-              <label className="mds-uppercase-label text-[9px] opacity-40">Team Name</label>
+            <div className="space-y-1.5">
+              <label className="mds-uppercase-label" htmlFor="new-team-name">Team name</label>
               <input
+                id="new-team-name"
                 type="text"
                 required
                 disabled={isLocked}
                 value={newTeam.name}
                 onChange={(e) => setNewTeam({ ...newTeam, name: e.target.value })}
-                className="mds-input h-12 px-4 text-sm font-bold uppercase tracking-tight"
+                className={fieldInput}
                 placeholder="Enter team name"
               />
             </div>
-            <div className="space-y-2.5">
-              <label className="mds-uppercase-label text-[9px] opacity-40">Initial Seed (1-99)</label>
+            <div className="space-y-1.5">
+              <label className="mds-uppercase-label" htmlFor="new-team-seed">Initial seed (1-99)</label>
               <input
+                id="new-team-seed"
                 type="number"
                 disabled={isLocked}
                 value={newTeam.seed}
                 onChange={(e) => setNewTeam({ ...newTeam, seed: e.target.value })}
-                className="mds-input h-12 px-4 text-sm font-bold uppercase tracking-tight"
+                className={`${fieldInput} mds-numeric`}
                 placeholder="Seed position"
               />
             </div>
-            <div className="space-y-3 border-t border-[var(--mds-border)] pt-6">
-              <div className="flex items-baseline justify-between">
-                <label className="mds-uppercase-label text-[9px] opacity-40">Roster ({filledRosterCount}/{teamSize})</label>
-                <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--mds-text-subtle)]">Blank rows are skipped</span>
+
+            <div className="space-y-2 border-t border-[var(--mds-border)] pt-4">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="mds-uppercase-label">Roster ({filledRosterCount}/{teamSize})</span>
+                <span className="text-xs text-[var(--mds-text-subtle)]">Blank rows are skipped</span>
               </div>
               {rosterRows.map((row, index) => (
-                <div key={index} className="rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/20 p-3 space-y-2">
+                <div key={index} className="space-y-2 rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/20 p-2.5">
                   <div className="flex items-center gap-2">
-                    <span className="w-5 shrink-0 font-mono text-[10px] font-black text-[var(--mds-action)] opacity-60">
+                    <span className="mds-numeric w-5 shrink-0 text-xs text-[var(--mds-action)]">
                       {(index + 1).toString().padStart(2, '0')}
                     </span>
                     <input
@@ -120,7 +220,7 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                       disabled={isLocked}
                       value={row.name || ''}
                       onChange={(e) => setRosterRow(index, { name: e.target.value })}
-                      className="mds-input h-10 px-3 text-xs font-bold tracking-tight"
+                      className="mds-input h-9 px-2.5 text-sm"
                       placeholder={index === 0 ? 'Player name (captain)' : 'Player name'}
                     />
                   </div>
@@ -131,7 +231,7 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                       disabled={isLocked}
                       value={row.nickname || ''}
                       onChange={(e) => setRosterRow(index, { nickname: e.target.value })}
-                      className="mds-input h-9 px-2 text-[11px] font-bold"
+                      className="mds-input h-9 px-2 text-xs"
                       placeholder="Nick"
                     />
                     <input
@@ -140,7 +240,7 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                       disabled={isLocked}
                       value={row.seating || ''}
                       onChange={(e) => setRosterRow(index, { seating: e.target.value })}
-                      className="mds-input h-9 px-2 text-[11px] font-mono uppercase"
+                      className="mds-input mds-numeric h-9 px-2 text-xs uppercase"
                       placeholder="Seat"
                     />
                     <input
@@ -149,38 +249,37 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                       disabled={isLocked}
                       value={row.steamId || ''}
                       onChange={(e) => setRosterRow(index, { steamId: e.target.value })}
-                      className="mds-input h-9 px-2 text-[11px] font-mono"
+                      className="mds-input mds-numeric h-9 px-2 text-xs"
                       placeholder="SteamID"
                     />
                   </div>
                 </div>
               ))}
             </div>
-            <button type="submit" disabled={isLocked} className="mds-btn-primary w-full h-12 text-xs font-black uppercase tracking-widest gap-2 disabled:opacity-40">
+
+            <button type="submit" disabled={isLocked} className="mds-btn-primary h-11 w-full gap-2 text-sm font-bold disabled:opacity-40">
               <Plus size={16} /> Add Team
             </button>
           </form>
         </div>
 
-        <div className="mds-card p-8 bg-[var(--mds-action-soft)] border-[var(--mds-action)]/20">
-          <div className="flex items-start gap-4">
-            <Info size={20} className="text-[var(--mds-action)] shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-black uppercase tracking-tight text-[var(--mds-action)] mb-1">Seeding protocol</h4>
-              <p className="text-xs text-[var(--mds-text-subtle)] leading-relaxed font-medium">
-                Drag teams to reorder the bracket seeds, or edit the seed numbers directly. Once the bracket is live, lock roster edits to prevent accidental changes.
-              </p>
-            </div>
+        <div className="mds-card border-[var(--mds-action)]/20 bg-[var(--mds-action-soft)] p-5">
+          <div className="flex items-start gap-3">
+            <Info size={16} className="mt-0.5 shrink-0 text-[var(--mds-action)]" />
+            <p className="text-sm leading-relaxed text-[var(--mds-text-muted)]">
+              Drag teams to reorder the bracket seeds, or type a seed number directly. Once the bracket is live,
+              lock roster edits in settings to prevent accidental changes.
+            </p>
           </div>
         </div>
 
-        <div className="mds-card p-8">
-          <div className="flex items-center justify-between mb-5">
+        <div className="mds-card p-5">
+          <div className="mb-3 flex items-start justify-between gap-3">
             <div>
-              <h3 className="text-sm font-black uppercase tracking-tight">Bulk import</h3>
-              <p className="mt-1 text-xs text-[var(--mds-text-muted)]">Paste CSV rows to register multiple teams at once.</p>
+              <h3 className="text-sm font-bold tracking-tight">Bulk import</h3>
+              <p className="mt-0.5 text-xs text-[var(--mds-text-muted)]">Paste CSV rows to register several teams at once.</p>
             </div>
-            <button type="button" onClick={onExportCsv} className="mds-btn-secondary h-9 px-4 text-[10px] font-black uppercase tracking-widest">
+            <button type="button" onClick={onExportCsv} className="mds-btn-secondary h-9 shrink-0 px-4 text-sm font-bold">
               Export CSV
             </button>
           </div>
@@ -188,107 +287,17 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
             value={importCsv}
             onChange={(event) => setImportCsv(event.target.value)}
             disabled={isLocked}
-            className="mds-input min-h-[180px] resize-y font-mono text-xs leading-6"
+            className="mds-input min-h-[140px] resize-y font-mono text-xs leading-6"
             placeholder="teamName,seed,playerName,nickname,countryCode,seating,steamId,isLeader"
           />
           <button
             type="button"
             disabled={isLocked || importing || !importCsv.trim()}
             onClick={onImportCsv}
-            className="mt-4 w-full mds-btn-primary h-11 text-xs font-black uppercase tracking-widest disabled:opacity-40"
+            className="mds-btn-primary mt-3 h-10 w-full text-sm font-bold disabled:opacity-40"
           >
-            {importing ? 'Importing teams...' : 'Import teams'}
+            {importing ? 'Importing teams…' : 'Import teams'}
           </button>
-        </div>
-      </div>
-
-      <div className="lg:col-span-8">
-        <div className="mds-card p-0 overflow-hidden shadow-xl">
-          <header className="px-8 py-6 border-b border-[var(--mds-border)] bg-[var(--mds-input)]/20 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-6">
-              <h2 className="text-lg font-black uppercase tracking-tight">Teams</h2>
-              <span className="mds-badge bg-[var(--mds-input)] border border-[var(--mds-border)] text-[9px] font-black uppercase tracking-widest">{teams.length} Teams Registered</span>
-            </div>
-            {Object.keys(draftSeeds).length > 0 ? (
-              <button onClick={onSaveSeeds} disabled={isLocked} className="mds-btn-primary h-9 px-4 text-[10px] font-black uppercase tracking-widest gap-2 animate-pulse disabled:opacity-40">
-                <Save size={14} /> Commit Seeds
-              </button>
-            ) : null}
-          </header>
-
-          <div className="divide-y divide-[var(--mds-border)]/50 max-h-[700px] overflow-y-auto custom-scrollbar">
-            {sortedTeams.map((team: any, index: number) => (
-              <div
-                key={team.id}
-                draggable={!isLocked}
-                onDragStart={(e) => onDragStart(e, index)}
-                onDragOver={(e) => onDragOver(e, index)}
-                onDragEnd={onDragEnd}
-                className={`px-8 py-4 flex items-center justify-between group transition-all ${isLocked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'} hover:bg-[var(--mds-input)]/40 ${draggedItemIndex === index ? 'opacity-20 scale-[0.98]' : ''}`}
-              >
-                <div className="flex items-center gap-6 flex-1 min-w-0">
-                  <div className="flex items-center gap-4 shrink-0 pointer-events-auto">
-                    <GripVertical size={16} className="text-[var(--mds-text-muted)] opacity-20 group-hover:opacity-100 transition-opacity" />
-                    <input
-                      type="number"
-                      disabled={isLocked}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => {
-                        const val = e.target.value === '' ? '' : Number(e.target.value);
-                        setDraftSeeds({ ...draftSeeds, [team.id]: val });
-                      }}
-                      value={draftSeeds[team.id] !== undefined ? draftSeeds[team.id] : (team.seed || index + 1)}
-                      className="w-12 h-10 mds-input text-center font-mono font-bold text-[var(--mds-action)] border-[var(--mds-border)] focus:border-[var(--mds-action)] bg-transparent"
-                    />
-                  </div>
-                  <div className="truncate flex items-center gap-5">
-                    <div className="h-12 w-12 shrink-0 bg-[var(--mds-page)] border border-[var(--mds-border)] rounded-lg overflow-hidden relative flex items-center justify-center group-hover:border-[var(--mds-action)]/30 transition-all shadow-inner">
-                      {team.logoUrl ? (
-                        <Image src={team.logoUrl} fill alt="" className="object-contain p-2 grayscale brightness-125" />
-                      ) : (
-                        <Users size={18} className="text-[var(--mds-text-muted)]" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-base font-black uppercase tracking-tight group-hover:text-[var(--mds-action)] transition-colors truncate">{team.name}</p>
-                      <p className="mds-uppercase-label text-[8px] opacity-40 mt-1">{team.players?.length || 0} players</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                  {/* Both stay live while the roster is locked: the modal still allows name/seat
-                      corrections, and removal falls back to a forced pull-out (confirmed upstream). */}
-                  <button
-                    onClick={() => onEditTeam(team)}
-                    title={`Edit ${team.name}`}
-                    aria-label={`Edit ${team.name}`}
-                    className="h-10 w-10 flex items-center justify-center rounded-lg bg-[var(--mds-input)] border border-[var(--mds-border)] hover:border-[var(--mds-action)]/40 hover:text-[var(--mds-action)] transition-all shadow-sm"
-                  >
-                    <Settings2 size={16} />
-                  </button>
-                  <button
-                    onClick={() => onDeleteTeam(team.id)}
-                    title={`Remove ${team.name}`}
-                    aria-label={`Remove ${team.name}`}
-                    className="h-10 w-10 flex items-center justify-center rounded-lg bg-[var(--mds-input)] border border-[var(--mds-border)] hover:border-[var(--mds-red)]/40 hover:text-[var(--mds-red)] transition-all shadow-sm"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            ))}
-
-            {teams.length === 0 ? (
-              <div className="py-32 text-center opacity-30 flex flex-col items-center gap-4">
-                <Search size={40} className="text-[var(--mds-text-muted)]" />
-                <div>
-                  <p className="mds-uppercase-label text-[10px] tracking-widest">No teams yet</p>
-                  <p className="text-[10px] font-bold mt-1 text-[var(--mds-text-subtle)] uppercase">{isLocked ? 'Unlock roster edits to add teams' : 'Add a team to get started'}</p>
-                </div>
-              </div>
-            ) : null}
-          </div>
         </div>
       </div>
     </div>

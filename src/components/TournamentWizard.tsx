@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { AlertTriangle, Check, ChevronRight, ChevronLeft, Trophy, X, Info, Send, Copy, Loader2, Plus, Globe, Settings, Layers, Zap } from 'lucide-react';
+import { AlertTriangle, Check, ChevronRight, ChevronLeft, Trophy, X, Copy, Loader2, Plus, Zap } from 'lucide-react';
 import {
     BO3_STAGES,
     BO5_STAGES,
@@ -17,6 +17,18 @@ import {
 interface TournamentWizardProps {
     onClose: () => void;
     onComplete: (data: any) => Promise<string | void>;
+}
+
+const STEP_TITLES = ['Select Game', 'Tournament Details', 'Format & Rules', 'Series Rules', 'Review Setup', 'Tournament Live'];
+
+/** Step heading + one line of context. The heading is furniture, so it may shout; nothing else does. */
+function StepHeader({ title, hint }: { title: string; hint: string }) {
+    return (
+        <div>
+            <h3 className="font-brand text-xl font-bold tracking-tight">{title}</h3>
+            <p className="mt-1 text-sm leading-relaxed text-[var(--mds-text-muted)]">{hint}</p>
+        </div>
+    );
 }
 
 export default function TournamentWizard({ onClose, onComplete }: TournamentWizardProps) {
@@ -36,6 +48,7 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
     const [submitError, setSubmitError] = useState<string | null>(null);
 
     const selectedGame = SUPPORTED_GAMES.find(g => g.id === formData.game);
+    const selectedFormat = FORMAT_OPTIONS.find(f => f.id === formData.format);
     const nextStep = () => setStep(s => Math.min(s + 1, 6));
     const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
@@ -70,69 +83,71 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
         navigator.clipboard.writeText(url);
     };
 
+    const optionCard = (selected: boolean) =>
+        `rounded-lg border-2 p-4 text-left transition-all ${
+            selected
+                ? 'border-[var(--mds-action)] bg-[var(--mds-action)]/10'
+                : 'border-[var(--mds-border)] bg-[var(--mds-input)]/20 hover:border-[var(--mds-action)]/40'
+        }`;
+
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 lg:p-12 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200">
             <div className="absolute inset-0 bg-[var(--mds-overlay)] backdrop-blur-sm" onClick={onClose} />
-            
-            <div className="mds-card w-full max-w-3xl max-h-[90vh] relative z-10 flex flex-col p-0 overflow-hidden shadow-2xl scale-in-center duration-300">
-                {/* PROGRESS BAR */}
-                <div className="h-1 w-full bg-[var(--mds-input)] border-b border-[var(--mds-border)]">
+
+            {/* 92vh with the step controls pinned below the scroll area: at 1280x720 the organizer
+                must still be able to reach Continue / Create. */}
+            <div className="mds-card relative z-10 flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden p-0 shadow-2xl">
+                <div className="h-1 w-full bg-[var(--mds-input)]">
                     <div
-                        className="h-full bg-[var(--mds-action)] transition-all duration-700 ease-in-out shadow-[0_0_8px_var(--mds-action)]"
+                        className="h-full bg-[var(--mds-action)] transition-all duration-500"
                         style={{ width: `${(step / 6) * 100}%` }}
                     />
                 </div>
 
-                <header className="px-10 py-8 border-b border-[var(--mds-border)] flex items-center justify-between bg-[var(--mds-input)]/20">
-                    <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-[var(--mds-action-soft)] text-[var(--mds-action)] border border-[var(--mds-action)]/20">
-                            <Plus size={20} />
+                <header className="flex items-center justify-between gap-4 border-b border-[var(--mds-border)] bg-[var(--mds-input)]/20 px-6 py-4">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--mds-action)]/20 bg-[var(--mds-action-soft)] text-[var(--mds-action)]">
+                            <Plus size={18} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-black uppercase tracking-tight">Create Tournament</h2>
-                            <p className="mds-uppercase-label text-[9px] mt-0.5 opacity-40">Step {step} of 6</p>
+                            <h2 className="text-base font-bold tracking-tight">Create Tournament</h2>
+                            <p className="mds-uppercase-label">Step {step} of 6 · {STEP_TITLES[step - 1]}</p>
                         </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="mds-btn-secondary h-10 w-10 p-0 flex items-center justify-center"
-                    >
+                    <button onClick={onClose} aria-label="Close" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-[var(--mds-border)] bg-white/5 text-[var(--mds-text-primary)] transition-colors hover:bg-white/10">
                         <X size={18} />
                     </button>
                 </header>
 
-                <div className="flex-1 overflow-y-auto p-10 lg:p-12 custom-scrollbar">
+                <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-6">
                     {/* STEP 1: GAME SELECTION */}
                     {step === 1 && (
-                        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div>
-                                <h3 className="text-3xl font-black uppercase tracking-tight">Select Game</h3>
-                                <p className="mt-2 text-[var(--mds-text-muted)] font-medium leading-relaxed">Choose the game for this tournament cycle.</p>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div className="space-y-5">
+                            <StepHeader title="Select Game" hint="Choose the game for this tournament." />
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 {SUPPORTED_GAMES.map((game) => (
-                                    <button 
+                                    <button
                                         key={game.id}
                                         onClick={() => { setFormData({ ...formData, game: game.id, teamSize: String(defaultTeamSize(game)) }); nextStep(); }}
-                                        className={`group relative h-48 rounded-xl overflow-hidden border-2 transition-all text-left ${formData.game === game.id ? 'border-[var(--mds-action)] bg-[var(--mds-action)]/5' : 'border-[var(--mds-border)] hover:border-[var(--mds-action)]/40'}`}
+                                        className={`group relative h-32 overflow-hidden rounded-lg border-2 text-left transition-all ${formData.game === game.id ? 'border-[var(--mds-action)]' : 'border-[var(--mds-border)] hover:border-[var(--mds-action)]/40'}`}
                                     >
-                                        <Image 
-                                            src={game.bannerUrl} 
-                                            fill 
-                                            sizes="400px" 
-                                            className="object-cover opacity-10 group-hover:scale-105 group-hover:opacity-20 transition-all duration-700" 
-                                            alt="" 
+                                        <Image
+                                            src={game.bannerUrl}
+                                            fill
+                                            sizes="400px"
+                                            className="object-cover opacity-10 transition-opacity duration-500 group-hover:opacity-20"
+                                            alt=""
                                         />
-                                        <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                                            <div className="h-10 w-10 rounded-lg bg-[var(--mds-card)] flex items-center justify-center p-2 mb-4 border border-[var(--mds-border)] shadow-md group-hover:scale-110 transition-transform">
-                                                <Image src={game.logoUrl} width={24} height={24} className="object-contain" alt="" />
+                                        <div className="absolute inset-0 flex flex-col justify-end p-4">
+                                            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--mds-border)] bg-[var(--mds-card)] p-1.5">
+                                                <Image src={game.logoUrl} width={20} height={20} className="object-contain" alt="" />
                                             </div>
-                                            <span className="text-lg font-black uppercase tracking-tight text-[var(--mds-text-primary)]">{game.name}</span>
-                                            <span className="mds-uppercase-label text-[9px] mt-1 opacity-50">{game.type} Mode</span>
+                                            <span className="mds-name text-base">{game.name}</span>
+                                            <span className="mds-uppercase-label">{game.type}</span>
                                         </div>
                                         {formData.game === game.id && (
-                                            <div className="absolute top-4 right-4 h-6 w-6 rounded-full bg-[var(--mds-action)] flex items-center justify-center shadow-[0_0_12px_var(--mds-action)]">
-                                                <Check size={12} className="text-white" />
+                                            <div className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--mds-action)]">
+                                                <Check size={11} className="text-white" />
                                             </div>
                                         )}
                                     </button>
@@ -143,20 +158,18 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
 
                     {/* STEP 2: IDENTITY */}
                     {step === 2 && (
-                        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div>
-                                <h3 className="text-3xl font-black uppercase tracking-tight">Tournament Details</h3>
-                                <p className="mt-2 text-[var(--mds-text-muted)] font-medium leading-relaxed">Provide an authoritative name for the competition.</p>
-                            </div>
-                            <div className="space-y-4">
-                                <label className="mds-uppercase-label opacity-40">Tournament Name</label>
+                        <div className="space-y-5">
+                            <StepHeader title="Tournament Details" hint="What should players and spectators see this event called?" />
+                            <div className="space-y-1.5">
+                                <label className="mds-uppercase-label" htmlFor="wizard-name">Tournament name</label>
                                 <input
+                                    id="wizard-name"
                                     autoFocus
                                     type="text"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     onKeyDown={(e) => e.key === 'Enter' && formData.name && nextStep()}
-                                    className="mds-input h-16 text-xl font-bold uppercase tracking-tight bg-[var(--mds-input)]/40 px-6"
+                                    className="mds-input mds-name h-12 px-4 text-base"
                                     placeholder="e.g. Winter Invitational 2024"
                                 />
                             </div>
@@ -165,52 +178,49 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
 
                     {/* STEP 3: FORMAT */}
                     {step === 3 && (
-                        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div>
-                                <h3 className="text-3xl font-black uppercase tracking-tight">Format & Rules</h3>
-                                <p className="mt-2 text-[var(--mds-text-muted)] font-medium leading-relaxed">Define the bracket structure and participation limits.</p>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                <div className="space-y-4">
-                                    <label className="mds-uppercase-label opacity-40">Bracket Style</label>
-                                    <div className="space-y-3">
-                                        {FORMAT_OPTIONS.map(f => (
-                                            <button 
-                                                key={f.id} 
-                                                onClick={() => setFormData({ ...formData, format: f.id })}
-                                                className={`w-full rounded-lg border-2 p-6 text-left transition-all ${formData.format === f.id ? 'border-[var(--mds-action)] bg-[var(--mds-action)]/10 shadow-[0_0_0_1px_var(--mds-action)]' : 'border-[var(--mds-border)] bg-[var(--mds-input)]/20 hover:border-[var(--mds-action)]/40'}`}
-                                            >
-                                                <div className="font-bold uppercase tracking-tight text-[var(--mds-text-primary)]">{f.name}</div>
-                                                <div className="text-[10px] mds-uppercase-label opacity-40 mt-1">{f.desc}</div>
-                                            </button>
-                                        ))}
-                                    </div>
+                        <div className="space-y-5">
+                            <StepHeader title="Format & Rules" hint="How the bracket is built and how many players are on a team." />
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <label className="mds-uppercase-label">Bracket style</label>
+                                    {FORMAT_OPTIONS.map(f => (
+                                        <button
+                                            key={f.id}
+                                            onClick={() => setFormData({ ...formData, format: f.id })}
+                                            className={`w-full ${optionCard(formData.format === f.id)}`}
+                                        >
+                                            <div className="text-sm font-bold">{f.name}</div>
+                                            <div className="mt-0.5 text-xs text-[var(--mds-text-muted)]">{f.desc}</div>
+                                        </button>
+                                    ))}
                                 </div>
 
-                                <div className="space-y-4">
-                                    <label className="mds-uppercase-label opacity-40">Team Size</label>
-                                    <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-2">
+                                    <label className="mds-uppercase-label">Team size</label>
+                                    <div className="grid grid-cols-2 gap-2">
                                         {selectedGame?.teamSize.map(size => (
-                                            <button 
-                                                key={size} 
+                                            <button
+                                                key={size}
                                                 onClick={() => setFormData({ ...formData, teamSize: String(size) })}
-                                                className={`rounded-lg border-2 p-5 text-center transition-all ${formData.teamSize === String(size) ? 'border-[var(--mds-action)] bg-[var(--mds-action)]/10 shadow-[0_0_0_1px_var(--mds-action)]' : 'border-[var(--mds-border)] bg-[var(--mds-input)]/20 hover:border-[var(--mds-action)]/40'}`}
+                                                className={`text-center text-base font-bold ${optionCard(formData.teamSize === String(size))}`}
                                             >
-                                                <div className="font-bold text-lg uppercase tracking-tighter">{teamSizeLabel(selectedGame, size)}</div>
+                                                {teamSizeLabel(selectedGame, size)}
                                             </button>
                                         ))}
                                     </div>
 
-                                    <div className="mt-8 p-6 mds-card bg-[var(--mds-input)]/20 flex items-center justify-between">
+                                    <div className="mds-card flex items-center justify-between gap-4 bg-[var(--mds-input)]/20 p-4">
                                         <div>
-                                            <div className="font-bold text-[var(--mds-text-primary)] text-sm uppercase tracking-tight">3rd Place Match</div>
-                                            <div className="mds-uppercase-label text-[9px] opacity-40 mt-0.5">Determines the bronze medalist</div>
+                                            <div className="text-sm font-semibold">3rd Place Match</div>
+                                            <div className="mt-0.5 text-xs text-[var(--mds-text-muted)]">Decides the bronze medal</div>
                                         </div>
-                                        <button 
+                                        <button
+                                            aria-label="Toggle third place match"
+                                            aria-pressed={formData.hasThirdPlace}
                                             onClick={() => setFormData({ ...formData, hasThirdPlace: !formData.hasThirdPlace })}
-                                            className={`h-6 w-12 rounded-full relative transition-all duration-300 ${formData.hasThirdPlace ? 'bg-[var(--mds-action)] shadow-[0_0_8px_var(--mds-action)]' : 'bg-gray-700'}`}
+                                            className={`relative h-6 w-11 shrink-0 rounded-full transition-all ${formData.hasThirdPlace ? 'bg-[var(--mds-action)]' : 'bg-gray-700'}`}
                                         >
-                                            <div className={`absolute top-1 h-4 w-4 bg-white rounded-full transition-all duration-300 ${formData.hasThirdPlace ? 'left-7' : 'left-1'}`} />
+                                            <div className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-all ${formData.hasThirdPlace ? 'left-6' : 'left-1'}`} />
                                         </button>
                                     </div>
                                 </div>
@@ -220,54 +230,54 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
 
                     {/* STEP 4: SERIES SETTINGS */}
                     {step === 4 && (
-                        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div>
-                                <h3 className="text-3xl font-black uppercase tracking-tight">Series Rules</h3>
-                                <p className="mt-2 text-[var(--mds-text-muted)] font-medium leading-relaxed">Choose the best-of format for each stage of the bracket.</p>
-                            </div>
+                        <div className="space-y-5">
+                            <StepHeader title="Series Rules" hint="Choose where the bracket switches from single maps to longer series." />
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                <div className="space-y-4">
-                                    <label className="mds-uppercase-label opacity-40">BO3 From Stage</label>
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                <div className="space-y-1.5">
+                                    <label className="mds-uppercase-label" htmlFor="wizard-bo3">BO3 from stage</label>
                                     <div className="relative">
                                         <select
+                                            id="wizard-bo3"
                                             value={formData.bo3LastRounds}
                                             onChange={(e) => setFormData({ ...formData, bo3LastRounds: e.target.value })}
-                                            className="mds-input h-14 cursor-pointer appearance-none px-6 pr-10 font-bold uppercase tracking-tight"
+                                            className="mds-input h-11 cursor-pointer appearance-none px-4 pr-10 text-sm font-semibold"
                                         >
                                             {BO3_STAGES.map((v) => (
                                                 <option key={v} value={String(v)}>{STAGE_LABELS[v]}</option>
                                             ))}
                                         </select>
-                                        <div className="absolute top-1/2 right-4 -translate-y-1/2 pointer-events-none opacity-40">
-                                            <ChevronRight size={16} className="rotate-90" />
+                                        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 opacity-40">
+                                            <ChevronRight size={15} className="rotate-90" />
                                         </div>
                                     </div>
-                                    <p className="text-[10px] text-[var(--mds-text-subtle)] font-medium leading-relaxed">BO3 applies from this stage through to the final. Earlier rounds stay BO1.</p>
+                                    <p className="text-xs leading-relaxed text-[var(--mds-text-subtle)]">BO3 applies from this stage through to the final. Earlier rounds stay BO1.</p>
                                 </div>
-                                <div className="space-y-4">
-                                    <label className="mds-uppercase-label opacity-40">BO5 From Stage</label>
+                                <div className="space-y-1.5">
+                                    <label className="mds-uppercase-label" htmlFor="wizard-bo5">BO5 from stage</label>
                                     <div className="relative">
                                         <select
+                                            id="wizard-bo5"
                                             value={formData.bo5LastRounds}
                                             onChange={(e) => setFormData({ ...formData, bo5LastRounds: e.target.value })}
-                                            className="mds-input h-14 cursor-pointer appearance-none px-6 pr-10 font-bold uppercase tracking-tight"
+                                            className="mds-input h-11 cursor-pointer appearance-none px-4 pr-10 text-sm font-semibold"
                                         >
                                             {BO5_STAGES.map((v) => (
                                                 <option key={v} value={String(v)}>{STAGE_LABELS[v]}</option>
                                             ))}
                                         </select>
-                                        <div className="absolute top-1/2 right-4 -translate-y-1/2 pointer-events-none opacity-40">
-                                            <ChevronRight size={16} className="rotate-90" />
+                                        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 opacity-40">
+                                            <ChevronRight size={15} className="rotate-90" />
                                         </div>
                                     </div>
-                                    <p className="text-[10px] text-[var(--mds-text-subtle)] font-medium leading-relaxed">BO5 overrides BO3 for the stages they share.</p>
+                                    <p className="text-xs leading-relaxed text-[var(--mds-text-subtle)]">BO5 overrides BO3 for the stages they share.</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-4 p-6 mds-card border-[var(--mds-action)]/20 bg-[var(--mds-action-soft)]">
-                                <Zap size={18} className="text-[var(--mds-action)] mt-0.5" />
-                                <p className="text-xs text-[var(--mds-text-muted)] leading-relaxed font-bold uppercase tracking-tight">
-                                    BO5 rules will automatically override BO3 settings for overlapping tournament rounds.
+                            <div className="mds-card flex items-start gap-3 border-[var(--mds-action)]/20 bg-[var(--mds-action-soft)] p-4">
+                                <Zap size={16} className="mt-0.5 shrink-0 text-[var(--mds-action)]" />
+                                <p className="text-sm leading-relaxed text-[var(--mds-text-muted)]">
+                                    Where both apply, BO5 wins: set BO5 to the grand final and BO3 to the semi-finals and you get
+                                    BO1 early, BO3 in the semis, BO5 in the final.
                                 </p>
                             </div>
                         </div>
@@ -275,42 +285,42 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
 
                     {/* STEP 5: REVIEW */}
                     {step === 5 && (
-                        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div>
-                                <h3 className="text-3xl font-black uppercase tracking-tight">Review Setup</h3>
-                                <p className="mt-2 text-[var(--mds-text-muted)] font-medium leading-relaxed">Verify all parameters before initializing the tournament.</p>
-                            </div>
-                            <div className="mds-card bg-[var(--mds-input)]/20 p-8 space-y-8 relative overflow-hidden">
-                                <div className="flex items-center gap-6">
-                                    <div className="h-20 w-20 rounded-xl border border-[var(--mds-border)] bg-[var(--mds-page)] flex items-center justify-center p-4 shadow-lg">
-                                        {selectedGame && <Image src={selectedGame.logoUrl} width={48} height={48} className="object-contain" alt="" />}
+                        <div className="space-y-5">
+                            <StepHeader title="Review Setup" hint="Check the setup before the tournament is created." />
+                            <div className="mds-card space-y-5 bg-[var(--mds-input)]/20 p-5">
+                                <div className="flex items-center gap-4">
+                                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-[var(--mds-border)] bg-[var(--mds-page)] p-2.5">
+                                        {selectedGame && <Image src={selectedGame.logoUrl} width={36} height={36} className="object-contain" alt="" />}
                                     </div>
-                                    <div className="flex-1">
-                                        <h4 className="text-2xl font-black uppercase tracking-tight text-[var(--mds-text-primary)]">{formData.name}</h4>
-                                        <div className="mt-2 flex items-center gap-4">
+                                    <div className="min-w-0 flex-1">
+                                        <h4 className="mds-name-lg text-xl">{formData.name}</h4>
+                                        <div className="mt-1.5 flex flex-wrap items-center gap-2">
                                             <span className="mds-badge bg-[var(--mds-action-soft)] text-[var(--mds-action)]">{selectedGame?.name}</span>
-                                            <span className="mds-badge bg-[var(--mds-input)] border border-[var(--mds-border)] text-[var(--mds-text-subtle)]">{formData.format.replace('_', ' ')}</span>
+                                            <span className="mds-badge border border-[var(--mds-border)] bg-[var(--mds-input)] text-[var(--mds-text-subtle)]">
+                                                {selectedFormat?.name}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-8 border-t border-[var(--mds-border)]">
+                                <div className="grid grid-cols-2 gap-4 border-t border-[var(--mds-border)] pt-5 lg:grid-cols-4">
                                     {[
                                         { label: 'Format Style', value: formData.format === 'SINGLE_ELIMINATION' ? 'Single' : 'Double' },
-                                        { label: 'Decider Match', value: formData.hasThirdPlace ? 'Active' : 'N/A' },
+                                        { label: 'Decider Match', value: formData.hasThirdPlace ? 'Active' : 'None' },
+                                        { label: 'Team Size', value: teamSizeLabel(selectedGame, Number.parseInt(formData.teamSize, 10)) },
                                         { label: 'BO3 From', value: stageLabel(Number.parseInt(formData.bo3LastRounds, 10)) },
                                         { label: 'BO5 From', value: stageLabel(Number.parseInt(formData.bo5LastRounds, 10)) },
                                     ].map(item => (
                                         <div key={item.label}>
-                                            <p className="mds-uppercase-label text-[8px] opacity-40 mb-1.5">{item.label}</p>
-                                            <p className="font-bold text-sm uppercase tracking-tight text-[var(--mds-text-primary)]">{item.value}</p>
+                                            <p className="mds-uppercase-label">{item.label}</p>
+                                            <p className="mt-1 text-sm font-semibold">{item.value}</p>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                             {submitError && (
-                                <div className="flex items-start gap-3 p-5 rounded-xl border border-[var(--mds-red)]/30 bg-[var(--mds-red)]/5" role="alert">
-                                    <AlertTriangle size={16} className="text-[var(--mds-red)] mt-0.5 shrink-0" />
-                                    <p className="text-xs font-bold uppercase tracking-tight text-[var(--mds-red)] leading-relaxed">{submitError}</p>
+                                <div className="flex items-start gap-3 rounded-lg border border-[var(--mds-red)]/30 bg-[var(--mds-red)]/5 p-4" role="alert">
+                                    <AlertTriangle size={15} className="mt-0.5 shrink-0 text-[var(--mds-red)]" />
+                                    <p className="text-sm leading-relaxed text-[var(--mds-red)]">{submitError}</p>
                                 </div>
                             )}
                         </div>
@@ -318,37 +328,39 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
 
                     {/* STEP 6: SUCCESS */}
                     {step === 6 && (
-                        <div className="space-y-12 text-center py-10 animate-in fade-in zoom-in-95 duration-700">
-                            <div className="h-24 w-24 rounded-full border-2 border-[var(--mds-action)] bg-[var(--mds-action-soft)] flex items-center justify-center mx-auto shadow-lg shadow-[var(--mds-action)]/20">
-                                <Trophy size={40} className="text-[var(--mds-action)]" />
+                        <div className="space-y-6 py-4 text-center">
+                            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border-2 border-[var(--mds-action)] bg-[var(--mds-action-soft)]">
+                                <Trophy size={28} className="text-[var(--mds-action)]" />
                             </div>
                             <div>
-                                <h3 className="text-4xl font-black uppercase tracking-tight text-[var(--mds-text-primary)]">Tournament Live</h3>
-                                <p className="mt-2 text-[var(--mds-text-muted)] font-medium">Tournament parameters synchronized. Participants may now enroll.</p>
+                                <h3 className="font-brand text-2xl font-bold tracking-tight">Tournament Live</h3>
+                                <p className="mt-1.5 text-sm text-[var(--mds-text-muted)]">
+                                    <span className="mds-name">{formData.name}</span> is created. Share the link and players can register.
+                                </p>
                             </div>
 
-                            <div className="max-w-md mx-auto space-y-6">
-                                <div className="mds-card bg-[var(--mds-input)]/40 p-8 text-center border-none shadow-inner">
-                                    <p className="mds-uppercase-label text-[9px] mb-4 opacity-40">Registration Link</p>
-                                    <div className="flex gap-2">
-                                        <div className="flex-1 rounded-lg px-5 py-4 font-mono text-[11px] truncate text-left bg-[var(--mds-page)] border border-[var(--mds-border)] text-[var(--mds-action)] font-bold">
+                            <div className="mx-auto max-w-md space-y-4">
+                                <div className="rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/40 p-4 text-left">
+                                    <p className="mds-uppercase-label">Registration link</p>
+                                    <div className="mt-2 flex gap-2">
+                                        <div className="flex-1 truncate rounded-lg border border-[var(--mds-border)] bg-[var(--mds-page)] px-3 py-2.5 text-left font-mono text-xs text-[var(--mds-action)]">
                                             {typeof window !== 'undefined' ? `${window.location.host}/tournaments/${createdId}` : ''}
                                         </div>
-                                        <button onClick={copyLink} className="mds-btn-primary h-14 w-14 p-0">
-                                            <Copy size={18} />
+                                        <button onClick={copyLink} aria-label="Copy registration link" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm bg-[var(--mds-action)] text-white transition-colors hover:bg-[var(--mds-action-hover)]">
+                                            <Copy size={16} />
                                         </button>
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                                    <button onClick={onClose} className="mds-btn-secondary h-14 px-10 flex-1 uppercase font-black text-xs tracking-widest">
+                                <div className="flex flex-col gap-3 sm:flex-row">
+                                    <button onClick={onClose} className="mds-btn-secondary h-11 flex-1 px-6 text-sm font-bold">
                                         Close
                                     </button>
-                                    <button 
-                                        onClick={() => window.location.href = `/tournaments/${createdId}`}
-                                        className="mds-btn-primary h-14 px-10 flex-1 uppercase font-black text-xs tracking-widest"
+                                    <button
+                                        onClick={() => window.location.href = `/admin/tournaments/${createdId}?tab=participants`}
+                                        className="mds-btn-primary h-11 flex-1 px-6 text-sm font-bold"
                                     >
-                                        Tournament Setup
+                                        Add teams
                                     </button>
                                 </div>
                             </div>
@@ -358,36 +370,31 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
 
                 {/* FOOTER CONTROLS */}
                 {step < 6 && (
-                    <div className="px-10 py-8 border-t border-[var(--mds-border)] bg-[var(--mds-input)]/30 backdrop-blur-md flex justify-between items-center shrink-0">
-                        <div className="hidden sm:flex items-center gap-3">
-                            <span className="mds-uppercase-label text-[9px] opacity-30 tracking-[0.2em]">Step Control //</span>
-                            <span className="font-black text-[10px] uppercase tracking-widest">Active Step: {step}</span>
-                        </div>
-
-                        <div className="flex gap-4 w-full sm:w-auto">
+                    <div className="flex shrink-0 items-center justify-end gap-4 border-t border-[var(--mds-border)] bg-[var(--mds-input)]/30 px-6 py-4">
+                        <div className="flex w-full gap-3 sm:w-auto">
                             {step > 1 && (
-                                <button onClick={prevStep} className="mds-btn-secondary h-12 px-8 text-xs font-black uppercase tracking-widest gap-2 flex-1 sm:flex-initial">
-                                    <ChevronLeft size={16} /> Back
+                                <button onClick={prevStep} className="mds-btn-secondary h-11 flex-1 gap-2 px-6 text-sm font-bold sm:flex-initial">
+                                    <ChevronLeft size={15} /> Back
                                 </button>
                             )}
                             {step < 5 ? (
                                 <button
                                     disabled={(step === 1 && !formData.game) || (step === 2 && !formData.name)}
                                     onClick={nextStep}
-                                    className="mds-btn-primary h-12 px-10 text-xs font-black uppercase tracking-widest gap-2 flex-1 sm:flex-initial disabled:opacity-30 disabled:cursor-not-allowed"
+                                    className="mds-btn-primary h-11 flex-1 gap-2 px-8 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-30 sm:flex-initial"
                                 >
-                                    Continue <ChevronRight size={16} />
+                                    Continue <ChevronRight size={15} />
                                 </button>
                             ) : (
-                                <button 
-                                    disabled={isSubmitting} 
+                                <button
+                                    disabled={isSubmitting}
                                     onClick={handleSubmit}
-                                    className="mds-btn-primary h-12 px-10 text-xs font-black uppercase tracking-widest gap-2 min-w-[200px] flex-1 sm:flex-initial disabled:opacity-30 shadow-lg shadow-[var(--mds-action)]/20"
+                                    className="mds-btn-primary h-11 min-w-[190px] flex-1 gap-2 px-8 text-sm font-bold disabled:opacity-30 sm:flex-initial"
                                 >
                                     {isSubmitting ? (
-                                        <><Loader2 size={16} className="animate-spin" /> Creating...</>
+                                        <><Loader2 size={15} className="animate-spin" /> Creating…</>
                                     ) : (
-                                        <><Trophy size={16} /> Create Tournament</>
+                                        <><Trophy size={15} /> Create Tournament</>
                                     )}
                                 </button>
                             )}

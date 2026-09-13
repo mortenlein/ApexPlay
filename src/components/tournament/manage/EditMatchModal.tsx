@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Sword, Save, RefreshCw, Send, CheckCircle2, History, Clock, Flag, ShieldCheck, Trophy, Activity, Play } from 'lucide-react';
+import { X, Save, RefreshCw, Send, CheckCircle2, History, Clock, Flag, Trophy, Activity, Play } from 'lucide-react';
 
 interface EditMatchModalProps {
   match: any;
@@ -14,6 +14,12 @@ interface EditMatchModalProps {
   onLoadMatch: (matchId: string) => Promise<void>;
   isSaving: boolean;
   isLoadingMatch: boolean;
+  /**
+   * How a human identifies this match — its place in the draw ("Semi-Final"), worked out by the
+   * workspace because it needs the whole bracket to do so. The uuid is an implementation detail
+   * and is never shown.
+   */
+  stageName: string;
 }
 
 export const EditMatchModal: React.FC<EditMatchModalProps> = ({
@@ -26,7 +32,8 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
   onAnnounceDiscord,
   onLoadMatch,
   isSaving,
-  isLoadingMatch
+  isLoadingMatch,
+  stageName,
 }) => {
   const [announcing, setAnnouncing] = useState(false);
   const bothTeamsAssigned = Boolean(match.homeTeam && match.awayTeam);
@@ -51,219 +58,222 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
     onForfeit(side);
   };
 
+  const actionButton = 'flex h-11 flex-1 min-w-[150px] items-center justify-center gap-2 rounded-lg border text-sm font-bold transition-all disabled:opacity-50';
+
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="absolute inset-0 bg-[var(--mds-overlay)] backdrop-blur-md" onClick={onClose}></div>
-      <div className="mds-card w-full max-w-3xl max-h-[92vh] p-0 relative z-10 flex flex-col overflow-hidden shadow-2xl scale-in-center duration-300 border-[var(--mds-action)]/20 hover:border-[var(--mds-action)]/40 transition-all">
-        <header className="px-10 py-10 border-b border-[var(--mds-border)] bg-[var(--mds-input)]/20 flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-6">
-            <div className="h-14 w-14 rounded-xl bg-[var(--mds-red)]/10 text-[var(--mds-red)] border border-[var(--mds-red)]/20 flex items-center justify-center shadow-lg">
-                <Sword size={28} />
+      {/* Capped at 92vh with the save pinned below the scroll area: on a 1280x720 laptop the
+          organizer must still be able to reach "Update Match Data". */}
+      <div className="mds-card relative z-10 flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden p-0 shadow-2xl">
+        <header className="flex items-start justify-between gap-4 border-b border-[var(--mds-border)] bg-[var(--mds-input)]/20 px-6 py-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h2 className="text-lg font-bold tracking-tight">Match Controls</h2>
+              {isForfeit && (
+                <span className="mds-badge flex items-center gap-1.5 border border-[var(--mds-red)]/30 bg-[var(--mds-red)]/10 text-[var(--mds-red)]">
+                  <Flag size={10} /> Forfeit
+                </span>
+              )}
             </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-black uppercase tracking-tight">Match Controls</h2>
-                {isForfeit && (
-                  <span className="flex items-center gap-1.5 rounded-md border border-[var(--mds-red)]/30 bg-[var(--mds-red)]/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-[var(--mds-red)]">
-                    <Flag size={10} /> Forfeit
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-3 mt-1.5 opacity-40 text-[9px] font-black uppercase tracking-[0.2em]">
-                <ShieldCheck size={12} /> Match ID: {match.id.split('-')[0].toUpperCase()}
-              </div>
-            </div>
+            <p className="mt-1 text-sm text-[var(--mds-text-muted)]">
+              {stageName} · Best of {matchForm.bestOf || 1}
+            </p>
           </div>
-          <button onClick={onClose} className="mds-btn-secondary h-12 w-12 p-0 flex items-center justify-center rounded-xl bg-[var(--mds-input)] border border-[var(--mds-border)] shadow-sm active:scale-95 transition-all">
-            <X size={20} />
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-[var(--mds-border)] bg-white/5 text-[var(--mds-text-primary)] transition-colors hover:bg-white/10"
+          >
+            <X size={18} />
           </button>
         </header>
-        
-        <form id="edit-match-form" onSubmit={onSaveMatch} className="flex-1 min-h-0 overflow-y-auto p-10 space-y-8 custom-scrollbar">
+
+        <form id="edit-match-form" onSubmit={onSaveMatch} className="custom-scrollbar min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
           {/* STATUS SELECTOR */}
-          <div className="space-y-4">
-            <label className="mds-uppercase-label">Match Status</label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                    { id: 'PENDING', label: 'Not called', color: 'var(--mds-text-subtle)', icon: Clock },
-                    { id: 'READY', label: 'Called', color: 'var(--mds-text-muted)', icon: History },
-                    { id: 'LIVE', label: 'Live', color: 'var(--mds-red)', icon: Activity },
-                    { id: 'COMPLETED', label: 'Final', color: 'var(--mds-green)', icon: CheckCircle2 }
-                ].map((s) => (
-                    <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => setMatchForm({...matchForm, status: s.id})}
-                        className={`flex items-center justify-center p-4 rounded-lg border-2 transition-all gap-3 ${
-                            matchForm.status === s.id 
-                                ? 'bg-[var(--mds-action-soft)] border-[var(--mds-action)] text-[var(--mds-text-primary)]' 
-                                : 'bg-[var(--mds-input)] border-[var(--mds-border)] text-[var(--mds-text-muted)] hover:border-[var(--mds-border-hover)]'
-                        }`}
-                    >
-                        <s.icon size={16} style={{ color: matchForm.status === s.id ? s.color : 'inherit' }} />
-                        <span className="text-[11px] font-bold uppercase tracking-wider">{s.label}</span>
-                    </button>
-                ))}
+          <div className="space-y-2">
+            <label className="mds-uppercase-label">Match status</label>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {[
+                { id: 'PENDING', label: 'Not called', color: 'var(--mds-text-subtle)', icon: Clock },
+                { id: 'READY', label: 'Called', color: 'var(--mds-green)', icon: History },
+                { id: 'LIVE', label: 'Live', color: 'var(--mds-red)', icon: Activity },
+                { id: 'COMPLETED', label: 'Final', color: 'var(--mds-text-muted)', icon: CheckCircle2 }
+              ].map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setMatchForm({ ...matchForm, status: s.id })}
+                  className={`flex items-center justify-center gap-2 rounded-lg border-2 p-3 transition-all ${
+                    matchForm.status === s.id
+                      ? 'border-[var(--mds-action)] bg-[var(--mds-action-soft)] text-[var(--mds-text-primary)]'
+                      : 'border-[var(--mds-border)] bg-[var(--mds-input)] text-[var(--mds-text-muted)] hover:border-[var(--mds-border-hover)]'
+                  }`}
+                >
+                  <s.icon size={15} style={{ color: matchForm.status === s.id ? s.color : 'inherit' }} />
+                  <span className="text-sm font-bold">{s.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* SCORE INPUT */}
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-6 bg-[var(--mds-input)]/40 p-8 rounded-xl border border-[var(--mds-border)] shadow-inner">
-            <div className="space-y-4 text-center">
-              <label className="mds-uppercase-label text-[9px]">Home Team</label>
-              <div className="text-sm font-black uppercase truncate text-[var(--mds-text-primary)]">{match.homeTeam?.name || 'TBD'}</div>
-              <input 
-                type="number" 
-                value={matchForm.homeScore} 
-                onChange={(e) => setMatchForm({...matchForm, homeScore: parseInt(e.target.value) || 0})}
-                className="mds-input text-center h-16 text-3xl font-black tabular-nums"
+          {/* SCORE INPUT — the reason the editor is open most of the time. */}
+          <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4 rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/40 p-5">
+            <div className="space-y-2 text-center">
+              <label className="mds-uppercase-label" htmlFor="home-score">Home</label>
+              <div className="mds-name text-sm">{match.homeTeam?.name || 'TBD'}</div>
+              <input
+                id="home-score"
+                type="number"
+                value={matchForm.homeScore}
+                onChange={(e) => setMatchForm({ ...matchForm, homeScore: parseInt(e.target.value) || 0 })}
+                className="mds-input mds-numeric h-14 text-center text-2xl font-bold"
               />
             </div>
-            
-            <div className="text-2xl font-black text-[var(--mds-border)] mt-8">VS</div>
-            
-            <div className="space-y-4 text-center">
-              <label className="mds-uppercase-label text-[9px]">Away Team</label>
-              <div className="text-sm font-black uppercase truncate text-[var(--mds-text-primary)]">{match.awayTeam?.name || 'TBD'}</div>
-              <input 
-                type="number" 
-                value={matchForm.awayScore} 
-                onChange={(e) => setMatchForm({...matchForm, awayScore: parseInt(e.target.value) || 0})}
-                className="mds-input text-center h-16 text-3xl font-black tabular-nums"
+
+            <div className="mds-uppercase-label pt-9 text-[var(--mds-text-subtle)]">vs</div>
+
+            <div className="space-y-2 text-center">
+              <label className="mds-uppercase-label" htmlFor="away-score">Away</label>
+              <div className="mds-name text-sm">{match.awayTeam?.name || 'TBD'}</div>
+              <input
+                id="away-score"
+                type="number"
+                value={matchForm.awayScore}
+                onChange={(e) => setMatchForm({ ...matchForm, awayScore: parseInt(e.target.value) || 0 })}
+                className="mds-input mds-numeric h-14 text-center text-2xl font-bold"
               />
             </div>
           </div>
 
           {/* MAP SCORES (Conditional) */}
           {matchForm.bestOf > 1 && (
-            <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
-                <label className="mds-uppercase-label">Series Map Progression</label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {[...Array(matchForm.bestOf)].map((_, i) => {
-                        const score = (matchForm.mapScores || [])[i] || { home: 0, away: 0, map: '' };
-                        return (
-                            <div key={i} className="p-4 rounded-lg bg-[var(--mds-input)] border border-[var(--mds-border)] space-y-3">
-                                <span className="text-[9px] font-bold text-[var(--mds-text-subtle)] uppercase tracking-widest">MAP {i + 1}</span>
-                                <div className="flex items-center gap-2">
-                                    <input 
-                                        type="number" 
-                                        value={score.home}
-                                        onChange={(e) => {
-                                            const newScores = [...(matchForm.mapScores || [])];
-                                            newScores[i] = { ...score, home: parseInt(e.target.value) || 0 };
-                                            setMatchForm({ ...matchForm, mapScores: newScores });
-                                        }}
-                                        className="w-full h-8 bg-black border border-[var(--mds-border)] text-center font-mono font-bold text-xs rounded"
-                                    />
-                                    <span className="opacity-20 font-bold text-[10px]">:</span>
-                                    <input 
-                                        type="number" 
-                                        value={score.away}
-                                        onChange={(e) => {
-                                            const newScores = [...(matchForm.mapScores || [])];
-                                            newScores[i] = { ...score, away: parseInt(e.target.value) || 0 };
-                                            setMatchForm({ ...matchForm, mapScores: newScores });
-                                        }}
-                                        className="w-full h-8 bg-black border border-[var(--mds-border)] text-center font-mono font-bold text-xs rounded"
-                                    />
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
+            <div className="space-y-2">
+              <label className="mds-uppercase-label">Map scores</label>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {[...Array(matchForm.bestOf)].map((_, i) => {
+                  const score = (matchForm.mapScores || [])[i] || { home: 0, away: 0, map: '' };
+                  return (
+                    <div key={i} className="space-y-2 rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)] p-3">
+                      <span className="mds-uppercase-label text-[var(--mds-text-subtle)]">Map {i + 1}</span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          aria-label={`Map ${i + 1} home score`}
+                          value={score.home}
+                          onChange={(e) => {
+                            const newScores = [...(matchForm.mapScores || [])];
+                            newScores[i] = { ...score, home: parseInt(e.target.value) || 0 };
+                            setMatchForm({ ...matchForm, mapScores: newScores });
+                          }}
+                          className="mds-input mds-numeric h-9 w-full px-2 text-center text-sm font-bold"
+                        />
+                        <span className="text-xs text-[var(--mds-text-subtle)]">:</span>
+                        <input
+                          type="number"
+                          aria-label={`Map ${i + 1} away score`}
+                          value={score.away}
+                          onChange={(e) => {
+                            const newScores = [...(matchForm.mapScores || [])];
+                            newScores[i] = { ...score, away: parseInt(e.target.value) || 0 };
+                            setMatchForm({ ...matchForm, mapScores: newScores });
+                          }}
+                          className="mds-input mds-numeric h-9 w-full px-2 text-center text-sm font-bold"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
           {/* SETTINGS & ACTIONS */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-4">
-                <label className="mds-uppercase-label">Series Configuration</label>
-                <select 
-                    value={matchForm.bestOf}
-                    onChange={(e) => setMatchForm({...matchForm, bestOf: parseInt(e.target.value)})}
-                    className="mds-input h-12 text-[11px] font-bold uppercase tracking-wider"
-                >
-                    <option value={1}>Best of 1 (BO1)</option>
-                    <option value={3}>Best of 3 (BO3)</option>
-                    <option value={5}>Best of 5 (BO5)</option>
-                </select>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div className="space-y-2">
+              <label className="mds-uppercase-label" htmlFor="series-length">Series length</label>
+              <select
+                id="series-length"
+                value={matchForm.bestOf}
+                onChange={(e) => setMatchForm({ ...matchForm, bestOf: parseInt(e.target.value) })}
+                className="mds-input h-11 text-sm font-semibold"
+              >
+                <option value={1}>Best of 1 (BO1)</option>
+                <option value={3}>Best of 3 (BO3)</option>
+                <option value={5}>Best of 5 (BO5)</option>
+              </select>
             </div>
-            <div className="space-y-4">
-                <label className="mds-uppercase-label">Match Actions</label>
-                <div className="flex flex-wrap gap-3">
-                    <button 
-                        type="button"
-                        onClick={() => onLoadMatch(match.id)}
-                        disabled={isLoadingMatch}
-                        data-testid="start-match-button"
-                        className="flex-1 h-12 rounded-lg border border-[var(--mds-action)]/30 hover:border-[var(--mds-action)] hover:bg-[var(--mds-action)]/10 text-[var(--mds-action)] transition-all flex items-center justify-center gap-2 group disabled:opacity-50 min-w-[160px]"
-                    >
-                        {isLoadingMatch ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />}
-                        <span className="text-[10px] font-black uppercase tracking-wider">Start Match</span>
-                    </button>
-                    <button 
-                        type="button"
-                        onClick={() => handleAnnounce('START')}
-                        disabled={announcing}
-                        data-testid="notify-players-button"
-                        className="flex-1 h-12 rounded-lg border border-[#5865F2]/30 hover:border-[#5865F2] hover:bg-[#5865F2]/10 text-[#5865F2] transition-all flex items-center justify-center gap-2 group disabled:opacity-50 min-w-[140px]"
-                    >
-                        <Send size={14} className="group-hover:translate-x-0.5 transition-transform" /> 
-                        <span className="text-[10px] font-black uppercase tracking-wider">Notify Players</span>
-                    </button>
-                    <button 
-                        type="button"
-                        onClick={() => handleAnnounce('RESULT')}
-                        disabled={announcing}
-                        className="flex-1 h-12 rounded-lg border border-[var(--mds-green)]/30 hover:border-[var(--mds-green)] hover:bg-[var(--mds-green)]/10 text-[var(--mds-green)] transition-all flex items-center justify-center gap-2 group disabled:opacity-50 min-w-[140px]"
-                    >
-                        <Trophy size={14} /> 
-                        <span className="text-[10px] font-black uppercase tracking-wider">Send Result</span>
-                    </button>
-                </div>
+            <div className="space-y-2">
+              <label className="mds-uppercase-label">Match actions</label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => onLoadMatch(match.id)}
+                  disabled={isLoadingMatch}
+                  data-testid="start-match-button"
+                  className={`${actionButton} border-[var(--mds-action)]/30 text-[var(--mds-action)] hover:border-[var(--mds-action)] hover:bg-[var(--mds-action)]/10`}
+                >
+                  {isLoadingMatch ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />}
+                  Start Match
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAnnounce('START')}
+                  disabled={announcing}
+                  data-testid="notify-players-button"
+                  className={`${actionButton} border-[#5865F2]/30 text-[#5865F2] hover:border-[#5865F2] hover:bg-[#5865F2]/10`}
+                >
+                  <Send size={14} /> Notify Players
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAnnounce('RESULT')}
+                  disabled={announcing}
+                  className={`${actionButton} border-[var(--mds-green)]/30 text-[var(--mds-green)] hover:border-[var(--mds-green)] hover:bg-[var(--mds-green)]/10`}
+                >
+                  <Trophy size={14} /> Send Result
+                </button>
+              </div>
             </div>
           </div>
 
           {/* FORFEIT / WALKOVER */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             <label className="mds-uppercase-label">Forfeit</label>
-            <div className="flex flex-wrap gap-3">
-                {(['HOME', 'AWAY'] as const).map((side) => (
-                    <button
-                        key={side}
-                        type="button"
-                        onClick={() => handleForfeit(side)}
-                        disabled={!bothTeamsAssigned || isSaving}
-                        data-testid={`forfeit-${side.toLowerCase()}-button`}
-                        className="flex-1 h-12 min-w-[160px] rounded-lg border border-[var(--mds-red)]/30 hover:border-[var(--mds-red)] hover:bg-[var(--mds-red)]/10 text-[var(--mds-red)] transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:hover:border-[var(--mds-red)]/30 disabled:hover:bg-transparent"
-                    >
-                        <Flag size={14} />
-                        <span className="text-[10px] font-black uppercase tracking-wider">
-                            {side === 'HOME' ? 'Home forfeits' : 'Away forfeits'}
-                        </span>
-                    </button>
-                ))}
+            <div className="flex flex-wrap gap-2">
+              {(['HOME', 'AWAY'] as const).map((side) => (
+                <button
+                  key={side}
+                  type="button"
+                  onClick={() => handleForfeit(side)}
+                  disabled={!bothTeamsAssigned || isSaving}
+                  data-testid={`forfeit-${side.toLowerCase()}-button`}
+                  className={`${actionButton} border-[var(--mds-red)]/30 text-[var(--mds-red)] hover:border-[var(--mds-red)] hover:bg-[var(--mds-red)]/10 disabled:hover:border-[var(--mds-red)]/30 disabled:hover:bg-transparent`}
+                >
+                  <Flag size={14} />
+                  {side === 'HOME' ? 'Home forfeits' : 'Away forfeits'}
+                </button>
+              ))}
             </div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--mds-text-subtle)]">
-                {bothTeamsAssigned
-                    ? 'Declares the other team the winner and advances them immediately.'
-                    : 'Both teams must be assigned before a forfeit can be recorded.'}
+            <p className="text-xs text-[var(--mds-text-subtle)]">
+              {bothTeamsAssigned
+                ? 'Declares the other team the winner and advances them immediately.'
+                : 'Both teams must be assigned before a forfeit can be recorded.'}
             </p>
           </div>
-
         </form>
 
         {/* Save lives outside the scroll area so it is always reachable, whatever the window height. */}
-        <footer className="px-10 py-5 border-t border-[var(--mds-border)] bg-[var(--mds-input)]/10">
-            <button
-                type="submit"
-                form="edit-match-form"
-                disabled={isSaving}
-                className="mds-btn-primary w-full h-14 text-[11px] font-black uppercase tracking-[0.15em] shadow-lg shadow-[var(--mds-action)]/20"
-            >
-                {isSaving ? <RefreshCw className="animate-spin" size={18} /> : <Save size={18} />}
-                Update Match Data
-            </button>
+        <footer className="border-t border-[var(--mds-border)] bg-[var(--mds-input)]/10 px-6 py-4">
+          <button
+            type="submit"
+            form="edit-match-form"
+            disabled={isSaving}
+            className="mds-btn-primary h-12 w-full gap-2 text-sm font-bold"
+          >
+            {isSaving ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
+            Update Match Data
+          </button>
         </footer>
       </div>
     </div>

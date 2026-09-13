@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { Check, ChevronDown, ChevronRight, MapPin, Crown, Users, Swords, Trophy, GitBranch } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, MapPin, Crown, Users, Trophy, GitBranch, ExternalLink } from 'lucide-react';
 import PublicBracket from '@/components/PublicBracket';
 import { Card, Badge, StatusBadge } from '@/components/ui';
 import { byPlayOrder, isActive, isDone } from '@/lib/match-status';
@@ -16,7 +16,12 @@ interface ManageControlProps {
 
 const byOrder = (a: any, b: any) => byPlayOrder(a, b);
 
-function stageLabel(match: any, totalRounds: number) {
+/**
+ * The human name for where a match sits in the bracket. This is what an organizer says out loud
+ * ("the second quarter-final"), and it is what identifies a match on screen — never its uuid.
+ * Shared by every manage surface so one match is called the same thing everywhere.
+ */
+export function stageLabel(match: any, totalRounds: number) {
   if (match.bracketType === 'GRAND_FINAL') return 'Grand Final';
   if (match.bracketType === 'THIRD_PLACE') return '3rd Place';
   if (match.bracketType === 'LOSERS') return `Lower R${match.round}`;
@@ -27,27 +32,80 @@ function stageLabel(match: any, totalRounds: number) {
   return `Round ${match.round}`;
 }
 
+/** How many of a team's players floor staff have confirmed at their seat. */
+function checkedIn(team: any): { seated: number; total: number } {
+  const players: any[] = team?.players || [];
+  return { seated: players.filter((p) => p?.checkedInAt).length, total: players.length };
+}
+
+/**
+ * One side of a matchup. The name gets the full width of the row and wraps — a name the
+ * organizer cannot read is worse than a name that takes two lines — with the score pinned right.
+ */
+function TeamLine({
+  team,
+  score,
+  won,
+  showCheckin,
+}: {
+  team: any;
+  score: number;
+  won: boolean;
+  showCheckin: boolean;
+}) {
+  const { seated, total } = checkedIn(team);
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <span className={`mds-name block text-sm ${won ? 'text-brand' : 'text-fg'}`}>
+          {team?.name || 'TBD'}
+        </span>
+        {showCheckin && total > 0 && (
+          /* Check-in is progress, not an alarm: green once the roster is complete, amber while it
+             fills, muted at zero — the workspace hydrates from a payload that can be a beat behind
+             on `checkedInAt`, so "nobody yet" must not read as a red flag. */
+          <span
+            className={`mt-0.5 inline-flex items-center gap-1 text-xs ${
+              seated === 0 ? 'text-fg-subtle' : seated === total ? 'text-success' : 'text-warning'
+            }`}
+          >
+            {seated === total ? <Check size={11} /> : null}
+            <span className="mds-numeric">{seated}/{total}</span> at seat
+          </span>
+        )}
+      </div>
+      <span className={`mds-numeric shrink-0 text-sm font-bold ${won ? 'text-brand' : 'text-fg-muted'}`}>
+        {score}
+      </span>
+    </div>
+  );
+}
+
 function GameRow({ match, totalRounds, onClick }: { match: any; totalRounds: number; onClick: () => void }) {
+  const live = isActive(match.status);
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full rounded-sm border border-line bg-field px-3 py-2 text-left transition-all hover:border-line-hover"
+      className="w-full rounded-sm border border-line bg-field px-3 py-2.5 text-left transition-all hover:border-line-hover"
     >
-      <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-[11px] font-semibold text-fg-subtle">{stageLabel(match, totalRounds)}</span>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="mds-uppercase-label whitespace-nowrap text-fg-subtle">{stageLabel(match, totalRounds)}</span>
         <StatusBadge status={match.status} />
       </div>
-      <div className="flex items-center justify-between gap-2 text-sm">
-        <span className={`truncate font-semibold ${match.winnerId && match.winnerId === match.homeTeamId ? 'text-brand' : ''}`}>
-          {match.homeTeam?.name || 'TBD'}
-        </span>
-        <span className="shrink-0 font-mono font-bold tabular-nums text-fg-muted">
-          {match.homeScore}:{match.awayScore}
-        </span>
-        <span className={`truncate text-right font-semibold ${match.winnerId && match.winnerId === match.awayTeamId ? 'text-brand' : ''}`}>
-          {match.awayTeam?.name || 'TBD'}
-        </span>
+      <div className="space-y-1.5">
+        <TeamLine
+          team={match.homeTeam}
+          score={match.homeScore}
+          won={Boolean(match.winnerId) && match.winnerId === match.homeTeamId}
+          showCheckin={live}
+        />
+        <TeamLine
+          team={match.awayTeam}
+          score={match.awayScore}
+          won={Boolean(match.winnerId) && match.winnerId === match.awayTeamId}
+          showCheckin={live}
+        />
       </div>
     </button>
   );
@@ -60,6 +118,7 @@ function GamesSection({
   totalRounds,
   onOpen,
   empty,
+  className = '',
 }: {
   title: string;
   icon: React.ReactNode;
@@ -67,9 +126,10 @@ function GamesSection({
   totalRounds: number;
   onOpen: (m: any) => void;
   empty: string;
+  className?: string;
 }) {
   return (
-    <div className="space-y-2">
+    <div className={`space-y-2 ${className}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {icon}
@@ -110,19 +170,26 @@ function checkinsFromMatches(matches: any[]): Record<string, boolean> {
 function TeamRosterCard({ team, checkins }: { team: any; checkins: Record<string, boolean> }) {
   const [open, setOpen] = useState(true);
   const players = team.players || [];
+  const seated = players.filter((p: any) => checkins[p.id]).length;
   return (
     <div className="rounded-sm border border-line bg-field">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-3 py-2 text-left"
+        className="flex w-full items-start justify-between gap-2 px-3 py-2 text-left"
       >
-        <div className="flex items-center gap-2 overflow-hidden">
-          {open ? <ChevronDown size={14} className="shrink-0 text-fg-subtle" /> : <ChevronRight size={14} className="shrink-0 text-fg-subtle" />}
-          <span className="truncate text-sm font-semibold">{team.name}</span>
+        <div className="flex min-w-0 items-start gap-2">
+          {open ? (
+            <ChevronDown size={14} className="mt-0.5 shrink-0 text-fg-subtle" />
+          ) : (
+            <ChevronRight size={14} className="mt-0.5 shrink-0 text-fg-subtle" />
+          )}
+          <span className="mds-name text-sm">{team.name}</span>
           {team.seed != null && <Badge tone="neutral">#{team.seed}</Badge>}
         </div>
-        <span className="shrink-0 text-xs text-fg-subtle">{players.length}</span>
+        <span className="mds-numeric shrink-0 text-xs text-fg-subtle">
+          {seated > 0 ? `${seated}/${players.length}` : players.length}
+        </span>
       </button>
       {open && (
         <div className="space-y-1 border-t border-line px-3 py-2">
@@ -132,23 +199,23 @@ function TeamRosterCard({ team, checkins }: { team: any; checkins: Record<string
             players.map((p: any) => (
               <div key={p.id} className="flex items-center gap-2 text-sm">
                 <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${p.isOnline ? 'bg-success' : 'bg-line-hover'}`} />
-                <span className="flex-1 truncate font-medium">
+                <span className="mds-name min-w-0 flex-1">
                   {p.nickname || p.name}
                   {p.isLeader && <Crown size={11} className="ml-1 inline text-warning" />}
                 </span>
                 {p.countryCode && (
-                  <span className="text-[10px] font-semibold uppercase text-fg-subtle">{p.countryCode}</span>
+                  <span className="mds-uppercase-label shrink-0 text-fg-subtle">{p.countryCode}</span>
                 )}
                 {checkins[p.id] && (
                   <span
                     title="Checked in at seat by floor staff"
-                    className="inline-flex items-center rounded-sm bg-success/15 px-1 py-0.5 text-success"
+                    className="inline-flex shrink-0 items-center rounded-sm bg-success/15 px-1 py-0.5 text-success"
                   >
                     <Check size={11} />
                   </span>
                 )}
                 <span
-                  className={`inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 font-mono text-[11px] font-bold ${
+                  className={`mds-numeric inline-flex shrink-0 items-center gap-1 rounded-sm px-1.5 py-0.5 text-[11px] font-bold ${
                     p.seating ? 'bg-brand-soft text-brand' : 'bg-white/5 text-fg-subtle'
                   }`}
                 >
@@ -165,13 +232,26 @@ function TeamRosterCard({ team, checkins }: { team: any; checkins: Record<string
 }
 
 /**
- * Single organizer control view: all teams + rosters (left), the interactive bracket
- * (center — drag to pan, scroll to zoom, click a match to edit/update), and the
- * now/next/completed games as a list (right). One screen to run the event.
+ * The screen an organizer runs the whole LAN from, in the order the questions get asked:
+ *
+ *   1. What needs me right now? → the games rail across the top: Now / Up next / Completed, each
+ *      row one click away from the editor that changes a result.
+ *   2. Who is where? → teams, seats and check-in ticks.
+ *   3. What does the whole draw look like? → the bracket map, plus the full-size public bracket.
+ *
+ * The bracket used to own the largest panel here, but React Flow fits the entire draw into the
+ * panel: at cockpit size an eight-team bracket renders at ~0.3 zoom, i.e. 4px text. It is a map,
+ * not a working surface, so it gets map-sized space and the running order gets the top of the
+ * screen.
  */
-export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: ManageControlProps) {
+/** Highest winners-bracket round in a draw — the anchor "Final / Semi-Final / …" counts back from. */
+export function totalRoundsOf(matches: any[]) {
   const winners = matches.filter((m) => m.bracketType === 'WINNERS');
-  const totalRounds = winners.length ? Math.max(...winners.map((m) => m.round)) : 0;
+  return winners.length ? Math.max(...winners.map((m) => m.round)) : 0;
+}
+
+export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: ManageControlProps) {
+  const totalRounds = totalRoundsOf(matches);
   const checkins = useMemo(() => checkinsFromMatches(matches), [matches]);
 
   // Three groups the organizer actually runs the floor from:
@@ -190,64 +270,13 @@ export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: 
     .sort((a, b) => b.round - a.round || b.matchOrder - a.matchOrder);
 
   return (
-    <div className="grid grid-cols-12 gap-6">
-      {/* Teams & rosters */}
-      <aside className="col-span-12 space-y-3 lg:col-span-3">
-        <div className="flex items-center gap-2">
-          <Users size={16} className="text-brand" />
-          <h2 className="mds-uppercase-label text-fg-subtle">Teams &amp; rosters</h2>
-          <Badge tone="neutral">{teams.length}</Badge>
-        </div>
-        <div className="space-y-2">
-          {teams.length === 0 ? (
-            <p className="rounded-sm border border-dashed border-line px-3 py-3 text-xs text-fg-subtle">
-              No teams registered yet.
-            </p>
-          ) : (
-            teams.map((t: any) => <TeamRosterCard key={t.id} team={t} checkins={checkins} />)
-          )}
-        </div>
-      </aside>
-
-      {/* Bracket */}
-      <section className="col-span-12 lg:col-span-6">
-        <Card className="flex h-[640px] flex-col overflow-hidden p-0">
-          <div className="flex items-center justify-between border-b border-line px-4 py-3">
-            <div className="flex items-center gap-2">
-              <GitBranch size={16} className="text-brand" />
-              <h2 className="text-sm font-bold">Bracket</h2>
-            </div>
-            <span className="hidden text-xs text-fg-subtle sm:block">drag to pan · scroll to zoom · click a match to update</span>
-          </div>
-          <div className="relative flex-1">
-            {matches.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-                <Trophy size={26} className="text-fg-subtle" />
-                <p className="text-sm text-fg-muted">No bracket yet — generate it from Matches once teams are seeded.</p>
-              </div>
-            ) : (
-              <PublicBracket
-                tournamentId={tournament.id}
-                matches={matches}
-                onMatchClick={(id: string) => {
-                  const m = matches.find((mm) => mm.id === id);
-                  if (m) onOpenMatchModal(m);
-                }}
-              />
-            )}
-          </div>
-        </Card>
-      </section>
-
-      {/* Games queue + live source */}
-      <aside className="col-span-12 space-y-5 lg:col-span-3">
-        <EonBridgePanel tournamentId={tournament.id} />
-
-        <div className="flex items-center gap-2">
-          <Swords size={16} className="text-brand" />
-          <h2 className="mds-uppercase-label text-fg-subtle">Games</h2>
-        </div>
+    <div className="space-y-6">
+      {/* The running order — the first thing on screen, because it is the first question an
+          organizer asks. Column widths carry the hierarchy: what is happening now is wider than
+          the queue, which is wider than the history. */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
         <GamesSection
+          className="md:col-span-5"
           title="Now"
           icon={<span className="h-2 w-2 rounded-full bg-danger" />}
           matches={now}
@@ -256,6 +285,7 @@ export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: 
           empty="Nothing called or live."
         />
         <GamesSection
+          className="md:col-span-4"
           title="Up next"
           icon={<span className="h-2 w-2 rounded-full bg-warning" />}
           matches={upNext}
@@ -264,6 +294,7 @@ export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: 
           empty="Nothing queued — later rounds appear once both teams are known."
         />
         <GamesSection
+          className="md:col-span-3"
           title="Completed"
           icon={<span className="h-2 w-2 rounded-full bg-success" />}
           matches={previous}
@@ -271,7 +302,68 @@ export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: 
           onOpen={onOpenMatchModal}
           empty="No results yet."
         />
-      </aside>
+      </div>
+
+      <div className="grid grid-cols-12 gap-6">
+        {/* Teams, seats and check-in */}
+        <aside className="col-span-12 space-y-3 lg:col-span-4">
+          <div className="flex items-center gap-2">
+            <Users size={16} className="text-brand" />
+            <h2 className="mds-uppercase-label text-fg-subtle">Teams &amp; rosters</h2>
+            <Badge tone="neutral">{teams.length}</Badge>
+          </div>
+          {/* The rosters are the tallest thing here (8 teams x 5 players); they scroll in place so
+              the cockpit stays one screen instead of a column of names next to empty space. */}
+          <div className="custom-scrollbar max-h-[420px] space-y-2 overflow-y-auto pr-1">
+            {teams.length === 0 ? (
+              <p className="rounded-sm border border-dashed border-line px-3 py-3 text-xs text-fg-subtle">
+                No teams registered yet.
+              </p>
+            ) : (
+              teams.map((t: any) => <TeamRosterCard key={t.id} team={t} checkins={checkins} />)
+            )}
+          </div>
+        </aside>
+
+        <section className="col-span-12 space-y-6 lg:col-span-8">
+          <Card className="flex h-[360px] flex-col overflow-hidden p-0">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
+              <div className="flex items-center gap-2">
+                <GitBranch size={16} className="text-brand" />
+                <h2 className="text-sm font-bold">Bracket map</h2>
+                <span className="hidden text-xs text-fg-subtle lg:block">drag to pan · scroll to zoom · click a match to update</span>
+              </div>
+              <a
+                href={`/tournaments/${tournament.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand hover:underline"
+              >
+                Full bracket <ExternalLink size={12} />
+              </a>
+            </div>
+            <div className="relative flex-1">
+              {matches.length === 0 ? (
+                <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center">
+                  <Trophy size={26} className="text-fg-subtle" />
+                  <p className="text-sm text-fg-muted">No bracket yet — generate it from Matches once teams are seeded.</p>
+                </div>
+              ) : (
+                <PublicBracket
+                  tournamentId={tournament.id}
+                  matches={matches}
+                  onMatchClick={(id: string) => {
+                    const m = matches.find((mm) => mm.id === id);
+                    if (m) onOpenMatchModal(m);
+                  }}
+                />
+              )}
+            </div>
+          </Card>
+
+          <EonBridgePanel tournamentId={tournament.id} />
+        </section>
+      </div>
     </div>
   );
 }

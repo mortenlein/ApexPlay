@@ -27,19 +27,22 @@ export default function FirstRunCoach({ id, title, steps, cta }: FirstRunCoachPr
   }
 
   return (
-    <div className="mds-card border-[var(--mds-action)]/30 bg-[var(--mds-action-soft)] p-5">
+    <div className="mds-card border-[var(--mds-action)]/30 bg-[var(--mds-action-soft)] p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <Lightbulb size={18} className="mt-0.5 text-[var(--mds-action)]" />
+          <Lightbulb size={16} className="mt-0.5 shrink-0 text-[var(--mds-action)]" />
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-[var(--mds-action)]">First-run guide</p>
-            <h3 className="mt-1 text-lg font-black tracking-tight">{title}</h3>
-            <div className="mt-3 space-y-2 text-sm text-[var(--mds-text-muted)]">
+            <p className="mds-uppercase-label text-[var(--mds-action)]">First-run guide</p>
+            <h3 className="mt-0.5 text-base font-bold tracking-tight">{title}</h3>
+            <ul className="mt-2 space-y-1 text-sm text-[var(--mds-text-muted)]">
               {steps.map((step) => (
-                <p key={step}>- {step}</p>
+                <li key={step} className="flex gap-2">
+                  <span aria-hidden className="text-[var(--mds-text-subtle)]">·</span>
+                  <span>{step}</span>
+                </li>
               ))}
-            </div>
-            {cta ? <div className="mt-4">{cta}</div> : null}
+            </ul>
+            {cta ? <div className="mt-3">{cta}</div> : null}
           </div>
         </div>
         <button
@@ -48,7 +51,7 @@ export default function FirstRunCoach({ id, title, steps, cta }: FirstRunCoachPr
             window.localStorage.setItem(key, "dismissed");
             setVisible(false);
           }}
-          className="rounded-md border border-[var(--mds-border)] p-1 text-[var(--mds-text-subtle)] hover:text-[var(--mds-text-primary)]"
+          className="rounded-md border border-[var(--mds-border)] p-1 text-[var(--mds-text-subtle)] transition-colors hover:text-[var(--mds-text-primary)]"
           aria-label="Dismiss onboarding"
         >
           <X size={14} />

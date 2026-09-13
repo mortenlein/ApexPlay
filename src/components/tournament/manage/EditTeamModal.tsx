@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { X, Users, UserPlus, Trash2, ShieldCheck, Save, Crown, Lock, Loader2 } from 'lucide-react';
+import { X, Users, UserPlus, Trash2, Save, Crown, Lock, Loader2 } from 'lucide-react';
 
 export interface PlayerDraft {
   name: string;
@@ -50,8 +50,9 @@ const sameDraft = (a: PlayerDraft, b: PlayerDraft) =>
   a.steamId === b.steamId &&
   a.isLeader === b.isLeader;
 
-const fieldLabel = 'mds-uppercase-label text-[9px] opacity-40';
-const fieldInput = 'mds-input h-10 px-3 text-xs font-bold tracking-tight';
+const fieldLabel = 'mds-uppercase-label';
+const fieldInput = 'mds-input h-9 px-2.5 text-sm';
+const rowButton = 'h-9 px-3 flex items-center gap-1.5 rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)] text-xs font-bold transition-all disabled:opacity-30';
 
 /**
  * Staff team editor. Every field is saved explicitly (per-team "Save details", per-player "Save
@@ -168,54 +169,122 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
     }
   };
 
+  /** The five editable fields of a roster row, shared by saved rows and the draft row. */
+  const rosterFields = (draft: PlayerDraft, patch: (p: Partial<PlayerDraft>) => void, isDraftRow: boolean) => (
+    <div className="grid flex-1 grid-cols-2 gap-3 md:grid-cols-12">
+      <div className="col-span-2 space-y-1 md:col-span-3">
+        <label className={fieldLabel}>Name</label>
+        <input
+          autoFocus={isDraftRow}
+          type="text"
+          maxLength={64}
+          value={draft.name}
+          onChange={(e) => patch({ name: e.target.value })}
+          className={fieldInput}
+          placeholder="Full name"
+        />
+      </div>
+      <div className="space-y-1 md:col-span-3">
+        <label className={fieldLabel}>Nickname</label>
+        <input
+          type="text"
+          maxLength={64}
+          value={draft.nickname}
+          onChange={(e) => patch({ nickname: e.target.value })}
+          className={fieldInput}
+          placeholder="In-game"
+        />
+      </div>
+      <div className="space-y-1 md:col-span-2">
+        <label className={fieldLabel}>Seat</label>
+        <input
+          type="text"
+          maxLength={16}
+          value={draft.seating}
+          onChange={(e) => patch({ seating: e.target.value })}
+          className={`${fieldInput} mds-numeric uppercase`}
+          placeholder="A-12"
+        />
+      </div>
+      <div className="space-y-1 md:col-span-1">
+        <label className={fieldLabel}>Flag</label>
+        <input
+          type="text"
+          maxLength={8}
+          value={draft.countryCode}
+          onChange={(e) => patch({ countryCode: e.target.value.toUpperCase() })}
+          className={`${fieldInput} text-center uppercase`}
+          placeholder="NO"
+        />
+      </div>
+      <div className="col-span-2 space-y-1 md:col-span-3">
+        <label className={fieldLabel}>Steam ID {!isDraftRow && isLocked ? '(locked)' : ''}</label>
+        <input
+          type="text"
+          maxLength={64}
+          disabled={!isDraftRow && isLocked}
+          value={draft.steamId}
+          onChange={(e) => patch({ steamId: e.target.value })}
+          className={`${fieldInput} font-mono disabled:opacity-30`}
+          placeholder={isDraftRow ? 'Optional' : '7656119...'}
+          title={!isDraftRow && isLocked ? 'Unlock roster edits to change Steam IDs' : undefined}
+        />
+      </div>
+    </div>
+  );
+
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="absolute inset-0 bg-[var(--mds-overlay)] backdrop-blur-md" onClick={onClose}></div>
-      <div className="mds-card w-full max-w-5xl max-h-[92vh] p-0 relative z-10 flex flex-col overflow-hidden shadow-2xl scale-in-center duration-300 border-[var(--mds-action)]/20">
-        <header className="px-8 py-8 border-b border-[var(--mds-border)] flex items-start justify-between gap-6 bg-[var(--mds-input)]/20">
-          <div className="flex items-center gap-6 min-w-0">
-            <div className="relative h-20 w-20 bg-[var(--mds-page)] rounded-xl border border-[var(--mds-border)] flex items-center justify-center overflow-hidden shadow-lg shrink-0 transition-all hover:border-[var(--mds-action)]/30">
+      {/* 92vh with a pinned footer: at 1280x720 the roster scrolls, the window never does. */}
+      <div className="mds-card relative z-10 flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden p-0 shadow-2xl">
+        <header className="flex items-start justify-between gap-4 border-b border-[var(--mds-border)] bg-[var(--mds-input)]/20 px-6 py-4">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--mds-border)] bg-[var(--mds-page)]">
               {team.logoUrl ? (
-                <Image src={team.logoUrl} fill sizes="80px" alt="" className="object-contain p-2 grayscale brightness-125" />
+                <Image src={team.logoUrl} fill sizes="48px" alt="" className="object-contain p-1.5" />
               ) : (
-                <Users size={32} className="text-[var(--mds-action)]" />
+                <Users size={20} className="text-[var(--mds-action)]" />
               )}
             </div>
             <div className="min-w-0">
-              <h2 className="text-3xl font-black uppercase tracking-tight text-[var(--mds-text-primary)] leading-[0.95] mb-3 truncate">{team.name}</h2>
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="mds-badge bg-[var(--mds-action-soft)] text-[var(--mds-action)] font-black uppercase text-[10px] tracking-widest border-[var(--mds-action)]/20 px-3 py-1.5 shadow-sm">
-                  Seed: {team.seed || 'Unranked'}
+              <h2 className="mds-name-lg text-xl">{team.name}</h2>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <span className="mds-badge border-[var(--mds-action)]/20 bg-[var(--mds-action-soft)] text-[var(--mds-action)]">
+                  Seed {team.seed || '—'}
                 </span>
-                <span className="mds-uppercase-label text-[9px] opacity-40 uppercase tracking-[0.2em] font-black">Team ID: {String(team.id).split('-')[0].toUpperCase()}</span>
+                <span className="mds-badge border border-[var(--mds-border)] bg-[var(--mds-input)] text-[var(--mds-text-subtle)]">
+                  {players.length}/{teamSize} players
+                </span>
                 {isLocked ? (
-                  <span className="mds-badge bg-[var(--mds-amber)]/10 text-[var(--mds-amber)] border-[var(--mds-amber)]/30 font-black uppercase text-[9px] tracking-widest px-3 py-1.5 flex items-center gap-1.5">
+                  <span className="mds-badge flex items-center gap-1.5 border-[var(--mds-amber)]/30 bg-[var(--mds-amber)]/10 text-[var(--mds-amber)]">
                     <Lock size={10} /> Roster locked
                   </span>
                 ) : null}
               </div>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Close" className="mds-btn-secondary h-11 w-11 p-0 flex items-center justify-center rounded-xl bg-[var(--mds-input)] border border-[var(--mds-border)] shadow-sm active:scale-95 transition-all shrink-0">
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-[var(--mds-border)] bg-white/5 text-[var(--mds-text-primary)] transition-colors hover:bg-white/10"
+          >
             <X size={18} />
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 md:p-10 custom-scrollbar space-y-10">
+        <div className="custom-scrollbar min-h-0 flex-1 space-y-6 overflow-y-auto p-6">
           {isLocked ? (
-            <div className="rounded-xl border border-[var(--mds-amber)]/30 bg-[var(--mds-amber)]/10 px-4 py-3 text-xs text-[var(--mds-text-muted)] leading-relaxed">
+            <div className="rounded-lg border border-[var(--mds-amber)]/30 bg-[var(--mds-amber)]/10 px-4 py-3 text-sm leading-relaxed text-[var(--mds-text-muted)]">
               The bracket is in play. Name, nickname, seat and flag corrections are still allowed. Seeding, Steam IDs, leader flags and roster additions/removals need roster edits unlocked in settings.
             </div>
           ) : null}
 
           {/* TEAM DETAILS */}
           <section>
-            <div className="flex items-center gap-3 mb-6">
-              <Users size={18} className="text-[var(--mds-action)]" />
-              <h3 className="text-lg font-black uppercase tracking-tight">Team details</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-end">
-              <div className="md:col-span-5 space-y-2">
+            <h3 className="text-base font-bold tracking-tight">Team details</h3>
+            <div className="mt-3 grid grid-cols-1 items-end gap-3 md:grid-cols-12">
+              <div className="space-y-1 md:col-span-5">
                 <label className={fieldLabel}>Team name</label>
                 <input
                   type="text"
@@ -226,7 +295,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                   placeholder="Team name"
                 />
               </div>
-              <div className="md:col-span-5 space-y-2">
+              <div className="space-y-1 md:col-span-5">
                 <label className={fieldLabel}>Logo URL</label>
                 <input
                   type="text"
@@ -236,7 +305,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                   placeholder="https://... or /uploads/logos/..."
                 />
               </div>
-              <div className="md:col-span-2 space-y-2">
+              <div className="space-y-1 md:col-span-2">
                 <label className={fieldLabel}>Seed</label>
                 <input
                   type="number"
@@ -244,18 +313,18 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                   disabled={isLocked}
                   value={teamDraft.seed}
                   onChange={(e) => setTeamDraft({ ...teamDraft, seed: e.target.value })}
-                  className={`${fieldInput} text-center font-mono disabled:opacity-30`}
+                  className={`${fieldInput} mds-numeric text-center disabled:opacity-30`}
                   placeholder="—"
                   title={isLocked ? 'Seeding is locked while the bracket is in play' : undefined}
                 />
               </div>
             </div>
-            <div className="mt-5 flex justify-end">
+            <div className="mt-3 flex justify-end">
               <button
                 type="button"
                 onClick={handleSaveTeam}
                 disabled={!teamDirty || !teamDraft.name.trim() || busy === 'team'}
-                className="mds-btn-primary h-10 px-6 text-[10px] font-black uppercase tracking-widest gap-2 disabled:opacity-30"
+                className="mds-btn-primary h-9 gap-2 px-4 text-sm font-bold disabled:opacity-30"
               >
                 {busy === 'team' ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save details
               </button>
@@ -263,109 +332,44 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
           </section>
 
           {/* ROSTER */}
-          <section>
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6 border-t border-[var(--mds-border)] pt-8">
-              <div className="flex items-center gap-3">
-                <ShieldCheck size={18} className="text-[var(--mds-action)]" />
-                <h3 className="text-lg font-black uppercase tracking-tight">
-                  Active roster ({players.length}/{teamSize})
-                </h3>
-              </div>
+          <section className="border-t border-[var(--mds-border)] pt-5">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-base font-bold tracking-tight">
+                Active roster ({players.length}/{teamSize})
+              </h3>
               <button
                 type="button"
                 onClick={() => setNewPlayer(EMPTY_PLAYER)}
                 disabled={isLocked || atCap || Boolean(newPlayer)}
                 title={isLocked ? 'Unlock roster edits to add players' : atCap ? `Roster is full (${teamSize} players)` : undefined}
-                className="mds-btn-primary h-10 px-5 text-[10px] font-black uppercase tracking-widest gap-2 shadow-lg shadow-[var(--mds-action)]/20 disabled:opacity-30 disabled:shadow-none"
+                className="mds-btn-primary h-9 gap-2 px-4 text-sm font-bold disabled:opacity-30"
               >
                 <UserPlus size={14} /> Add player
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {players.map((player: any, idx: number) => {
                 const draft = rowFor(player);
                 const dirty = rowDirty(player);
                 const rowBusy = busy === player.id;
                 return (
-                  <div key={player.id} className="mds-card bg-[var(--mds-input)]/20 p-5 shadow-md">
-                    <div className="flex items-start gap-4">
-                      <div className="h-10 w-10 mt-6 bg-[var(--mds-page)] rounded-xl border border-[var(--mds-border)] flex items-center justify-center text-[var(--mds-action)] font-mono font-black text-[10px] shadow-inner shrink-0">
+                  <div key={player.id} className="mds-card bg-[var(--mds-input)]/20 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="mds-numeric mt-6 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--mds-border)] bg-[var(--mds-page)] text-xs font-bold text-[var(--mds-action)]">
                         {(idx + 1).toString().padStart(2, '0')}
                       </div>
-                      <div className="flex-1 grid grid-cols-2 md:grid-cols-12 gap-4">
-                        <div className="col-span-2 md:col-span-3 space-y-2">
-                          <label className={fieldLabel}>Name</label>
-                          <input
-                            type="text"
-                            maxLength={64}
-                            value={draft.name}
-                            onChange={(e) => patchRow(player, { name: e.target.value })}
-                            className={fieldInput}
-                            placeholder="Full name"
-                          />
-                        </div>
-                        <div className="md:col-span-3 space-y-2">
-                          <label className={fieldLabel}>Nickname</label>
-                          <input
-                            type="text"
-                            maxLength={64}
-                            value={draft.nickname}
-                            onChange={(e) => patchRow(player, { nickname: e.target.value })}
-                            className={fieldInput}
-                            placeholder="In-game"
-                          />
-                        </div>
-                        <div className="md:col-span-2 space-y-2">
-                          <label className={fieldLabel}>Seat</label>
-                          <input
-                            type="text"
-                            maxLength={16}
-                            value={draft.seating}
-                            onChange={(e) => patchRow(player, { seating: e.target.value })}
-                            className={`${fieldInput} font-mono uppercase`}
-                            placeholder="A-12"
-                          />
-                        </div>
-                        <div className="md:col-span-1 space-y-2">
-                          <label className={fieldLabel}>Flag</label>
-                          <input
-                            type="text"
-                            maxLength={8}
-                            value={draft.countryCode}
-                            onChange={(e) => patchRow(player, { countryCode: e.target.value.toUpperCase() })}
-                            className={`${fieldInput} text-center font-mono`}
-                            placeholder="NO"
-                          />
-                        </div>
-                        <div className="col-span-2 md:col-span-3 space-y-2">
-                          <label className={fieldLabel}>Steam ID {isLocked ? '(locked)' : ''}</label>
-                          <input
-                            type="text"
-                            maxLength={64}
-                            disabled={isLocked}
-                            value={draft.steamId}
-                            onChange={(e) => patchRow(player, { steamId: e.target.value })}
-                            className={`${fieldInput} font-mono disabled:opacity-30`}
-                            placeholder="7656119..."
-                            title={isLocked ? 'Unlock roster edits to change Steam IDs' : undefined}
-                          />
-                        </div>
-                      </div>
+                      {rosterFields(draft, (patch) => patchRow(player, patch), false)}
                     </div>
 
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--mds-border)]/60 pt-4">
-                      <div className="flex items-center gap-3">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--mds-border)]/60 pt-3">
+                      <div className="flex items-center gap-2">
                         <button
                           type="button"
                           disabled={isLocked}
                           onClick={() => patchRow(player, { isLeader: !draft.isLeader })}
                           title={isLocked ? 'Unlock roster edits to change the team leader' : undefined}
-                          className={`h-9 px-4 flex items-center gap-2 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-30 ${
-                            draft.isLeader
-                              ? 'bg-[var(--mds-action-soft)] border-[var(--mds-action)]/40 text-[var(--mds-action)]'
-                              : 'bg-[var(--mds-input)] border-[var(--mds-border)] text-[var(--mds-text-muted)]'
-                          }`}
+                          className={`${rowButton} ${draft.isLeader ? 'border-[var(--mds-action)]/40 bg-[var(--mds-action-soft)] text-[var(--mds-action)]' : 'text-[var(--mds-text-muted)]'}`}
                         >
                           <Crown size={13} /> {draft.isLeader ? 'Team leader' : 'Not leader'}
                         </button>
@@ -374,7 +378,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                             href={`https://steamcommunity.com/profiles/${player.steamId}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="h-9 px-4 flex items-center justify-center bg-[var(--mds-input)] border border-[var(--mds-border)] rounded-lg text-[10px] font-black uppercase tracking-widest hover:border-[var(--mds-action)]/40 transition-all shadow-sm"
+                            className={`${rowButton} text-[var(--mds-text-muted)] hover:border-[var(--mds-action)]/40`}
                           >
                             Steam
                           </a>
@@ -385,7 +389,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                           <button
                             type="button"
                             onClick={() => clearRow(player.id)}
-                            className="h-9 px-4 rounded-lg bg-[var(--mds-input)] border border-[var(--mds-border)] text-[10px] font-black uppercase tracking-widest text-[var(--mds-text-muted)] hover:border-[var(--mds-action)]/30 transition-all"
+                            className={`${rowButton} text-[var(--mds-text-muted)] hover:border-[var(--mds-action)]/30`}
                           >
                             Revert
                           </button>
@@ -394,7 +398,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                           type="button"
                           onClick={() => handleSaveRow(player)}
                           disabled={!dirty || !draft.name.trim() || rowBusy}
-                          className="mds-btn-primary h-9 px-5 text-[10px] font-black uppercase tracking-widest gap-2 disabled:opacity-30"
+                          className="mds-btn-primary h-9 gap-2 px-4 text-sm font-bold disabled:opacity-30"
                         >
                           {rowBusy ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save
                         </button>
@@ -404,9 +408,9 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                           onClick={() => handleDeleteRow(player)}
                           title={isLocked ? 'Unlock roster edits to remove players' : `Remove ${player.name}`}
                           aria-label={`Remove ${player.name}`}
-                          className="h-9 w-9 flex items-center justify-center bg-[var(--mds-input)] border border-[var(--mds-border)] rounded-lg hover:text-[var(--mds-red)] hover:border-[var(--mds-red)]/40 transition-all shadow-sm disabled:opacity-30"
+                          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)] text-[var(--mds-text-muted)] transition-all hover:border-[var(--mds-red)]/40 hover:text-[var(--mds-red)] disabled:opacity-30"
                         >
-                          <Trash2 size={15} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
@@ -415,75 +419,18 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
               })}
 
               {newPlayer ? (
-                <div className="mds-card border-[var(--mds-action)]/30 bg-[var(--mds-action-soft)]/40 p-5 shadow-md">
-                  <div className="flex items-start gap-4">
-                    <div className="h-10 w-10 mt-6 bg-[var(--mds-page)] rounded-xl border border-[var(--mds-action)]/30 flex items-center justify-center text-[var(--mds-action)] shrink-0">
-                      <UserPlus size={16} />
+                <div className="mds-card border-[var(--mds-action)]/30 bg-[var(--mds-action-soft)]/40 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-6 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--mds-action)]/30 bg-[var(--mds-page)] text-[var(--mds-action)]">
+                      <UserPlus size={15} />
                     </div>
-                    <div className="flex-1 grid grid-cols-2 md:grid-cols-12 gap-4">
-                      <div className="col-span-2 md:col-span-3 space-y-2">
-                        <label className={fieldLabel}>Name</label>
-                        <input
-                          autoFocus
-                          type="text"
-                          maxLength={64}
-                          value={newPlayer.name}
-                          onChange={(e) => setNewPlayer({ ...newPlayer, name: e.target.value })}
-                          className={fieldInput}
-                          placeholder="Full name"
-                        />
-                      </div>
-                      <div className="md:col-span-3 space-y-2">
-                        <label className={fieldLabel}>Nickname</label>
-                        <input
-                          type="text"
-                          maxLength={64}
-                          value={newPlayer.nickname}
-                          onChange={(e) => setNewPlayer({ ...newPlayer, nickname: e.target.value })}
-                          className={fieldInput}
-                          placeholder="In-game"
-                        />
-                      </div>
-                      <div className="md:col-span-2 space-y-2">
-                        <label className={fieldLabel}>Seat</label>
-                        <input
-                          type="text"
-                          maxLength={16}
-                          value={newPlayer.seating}
-                          onChange={(e) => setNewPlayer({ ...newPlayer, seating: e.target.value })}
-                          className={`${fieldInput} font-mono uppercase`}
-                          placeholder="A-12"
-                        />
-                      </div>
-                      <div className="md:col-span-1 space-y-2">
-                        <label className={fieldLabel}>Flag</label>
-                        <input
-                          type="text"
-                          maxLength={8}
-                          value={newPlayer.countryCode}
-                          onChange={(e) => setNewPlayer({ ...newPlayer, countryCode: e.target.value.toUpperCase() })}
-                          className={`${fieldInput} text-center font-mono`}
-                          placeholder="NO"
-                        />
-                      </div>
-                      <div className="col-span-2 md:col-span-3 space-y-2">
-                        <label className={fieldLabel}>Steam ID</label>
-                        <input
-                          type="text"
-                          maxLength={64}
-                          value={newPlayer.steamId}
-                          onChange={(e) => setNewPlayer({ ...newPlayer, steamId: e.target.value })}
-                          className={`${fieldInput} font-mono`}
-                          placeholder="Optional"
-                        />
-                      </div>
-                    </div>
+                    {rosterFields(newPlayer, (patch) => setNewPlayer({ ...newPlayer, ...patch }), true)}
                   </div>
-                  <div className="mt-4 flex items-center justify-end gap-2 border-t border-[var(--mds-border)]/60 pt-4">
+                  <div className="mt-3 flex items-center justify-end gap-2 border-t border-[var(--mds-border)]/60 pt-3">
                     <button
                       type="button"
                       onClick={() => setNewPlayer(null)}
-                      className="h-9 px-4 rounded-lg bg-[var(--mds-input)] border border-[var(--mds-border)] text-[10px] font-black uppercase tracking-widest text-[var(--mds-text-muted)] hover:border-[var(--mds-action)]/30 transition-all"
+                      className={`${rowButton} text-[var(--mds-text-muted)] hover:border-[var(--mds-action)]/30`}
                     >
                       Cancel
                     </button>
@@ -491,7 +438,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                       type="button"
                       onClick={handleAddPlayer}
                       disabled={!newPlayer.name.trim() || busy === 'new'}
-                      className="mds-btn-primary h-9 px-5 text-[10px] font-black uppercase tracking-widest gap-2 disabled:opacity-30"
+                      className="mds-btn-primary h-9 gap-2 px-4 text-sm font-bold disabled:opacity-30"
                     >
                       {busy === 'new' ? <Loader2 size={13} className="animate-spin" /> : <UserPlus size={13} />} Add to roster
                     </button>
@@ -500,10 +447,10 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
               ) : null}
 
               {players.length === 0 && !newPlayer ? (
-                <div className="py-24 text-center border-2 border-dashed border-[var(--mds-border)] rounded-xl bg-[var(--mds-input)]/10 opacity-40">
-                  <Users size={30} className="mx-auto mb-4 opacity-40" />
-                  <p className="mds-uppercase-label text-[11px] font-black uppercase tracking-widest">No players on this roster</p>
-                  <p className="text-[10px] font-bold mt-1 text-[var(--mds-text-subtle)] uppercase">
+                <div className="rounded-lg border border-dashed border-[var(--mds-border)] py-14 text-center">
+                  <Users size={24} className="mx-auto mb-3 text-[var(--mds-text-subtle)]" />
+                  <p className="text-sm font-bold">No players on this roster</p>
+                  <p className="mt-1 text-sm text-[var(--mds-text-muted)]">
                     {isLocked ? 'Unlock roster edits to add players' : 'Use “Add player” to build the roster'}
                   </p>
                 </div>
@@ -512,13 +459,13 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
           </section>
         </div>
 
-        <footer className="px-8 py-6 border-t border-[var(--mds-border)] bg-[var(--mds-input)]/20 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="mds-uppercase-label text-[9px] font-black uppercase tracking-widest opacity-40">
+        <footer className="flex flex-col items-center justify-between gap-3 border-t border-[var(--mds-border)] bg-[var(--mds-input)]/20 px-6 py-4 md:flex-row">
+          <p className="text-xs text-[var(--mds-text-subtle)]">
             {teamDirty || Object.keys(playerDrafts).length > 0 || newPlayer
               ? 'Unsaved changes — use the Save buttons above'
               : 'All changes saved'}
-          </div>
-          <button onClick={onClose} className="mds-btn-secondary h-11 px-10 text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all">
+          </p>
+          <button onClick={onClose} className="mds-btn-secondary h-10 px-8 text-sm font-bold">
             Close
           </button>
         </footer>

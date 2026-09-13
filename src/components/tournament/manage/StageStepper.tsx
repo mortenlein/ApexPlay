@@ -28,7 +28,8 @@ export function StageStepper({
 
   return (
     <Card className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-      <ol className="flex flex-1 items-center gap-1">
+      {/* Wraps rather than overflowing: at 390px the four stages do not fit on one line. */}
+      <ol className="flex flex-1 flex-wrap items-center gap-x-2 gap-y-1 sm:flex-nowrap">
         {STAGE_ORDER.map((s, i) => {
           const done = i < currentIndex;
           const current = i === currentIndex;
@@ -55,7 +56,7 @@ export function StageStepper({
                 </span>
               </li>
               {i < STAGE_ORDER.length - 1 && (
-                <span className={`mx-1 h-px flex-1 ${i < currentIndex ? 'bg-success/30' : 'bg-line'}`} />
+                <span className={`mx-1 hidden h-px flex-1 sm:block ${i < currentIndex ? 'bg-success/30' : 'bg-line'}`} />
               )}
             </React.Fragment>
           );
