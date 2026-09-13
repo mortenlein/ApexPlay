@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { seedLanScenario } from './helpers/seed';
 import { loginAs } from './helpers/auth';
 
@@ -39,11 +39,26 @@ test('mobile drawer nav works on small screens', async ({ page }) => {
   await expect(page).toHaveURL(/\/tournaments$/);
 });
 
+/**
+ * Open the command palette.
+ *
+ * The Ctrl+K listener is mounted by a client component, so a keypress fired the instant after
+ * goto() can land before hydration — the palette never opens and the test fails on a page that
+ * is perfectly healthy. This waits for the header's palette button (same hydration pass) and
+ * retries the keypress, so the assertion is still "Ctrl+K opens it", just not a race.
+ */
+async function openPalette(page: Page) {
+  await page.getByTestId('open-command-palette').waitFor();
+  await expect(async () => {
+    await page.keyboard.press('Control+k');
+    await expect(page.getByTestId('command-palette')).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 15000 });
+}
+
 test('global command palette opens and executes navigation', async ({ page }) => {
   await loginAs(page, 'leo');
   await page.goto('/dashboard');
-  await page.keyboard.press('Control+k');
-  await expect(page.getByTestId('command-palette')).toBeVisible();
+  await openPalette(page);
 
   // A plain player is never offered the staff boards — middleware would just bounce them.
   await page.getByTestId('command-palette-input').fill('marshal board');
@@ -58,8 +73,7 @@ test('global command palette opens and executes navigation', async ({ page }) =>
 test('command palette offers the marshal board to staff', async ({ page }) => {
   await loginAs(page, 'marcus');
   await page.goto('/dashboard');
-  await page.keyboard.press('Control+k');
-  await expect(page.getByTestId('command-palette')).toBeVisible();
+  await openPalette(page);
 
   await page.getByTestId('command-palette-input').fill('marshal board');
   await page.getByTestId('command-palette-item-go-marshal').click();
