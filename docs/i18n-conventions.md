@@ -13,8 +13,12 @@ Two languages: **nb** (bokmål, the default) and **en**. Terminology lives in
 - Switching writes `POST /api/me/locale`, which sets the cookie **and**, for a signed-in user,
   `User.locale` — push notifications are composed on the server long after that request is gone,
   and a Norwegian 12-year-old should not get an English alert.
-- Messages: `messages/en.json`, `messages/nb.json`. **Both files must always have identical
-  keys.** `npm run i18n:check` fails the build if they drift.
+- Messages: **one file per namespace per locale** — `messages/<locale>/<namespace>.json`, listed
+  in `messages/index.ts` and merged at request time. A single catalogue would turn every
+  simultaneous translator into a merge conflict in the same file; a namespace per surface means
+  each owner touches only their own. **Both languages must always have identical keys** —
+  `npm run i18n:check` fails otherwise, and also rejects empty strings, which are almost always
+  an unfinished translation rather than an intended blank.
 
 ## Writing strings
 
