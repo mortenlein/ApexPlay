@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { X, Save, RefreshCw, Send, CheckCircle2, History, Clock, Flag, Trophy, Activity, Play } from 'lucide-react';
 
 interface EditMatchModalProps {
@@ -35,6 +36,10 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
   isLoadingMatch,
   stageName,
 }) => {
+  const t = useTranslations('organizer.matchModal');
+  const tConfirm = useTranslations('organizer.confirm');
+  const tStatus = useTranslations('status');
+  const tCommon = useTranslations('common');
   const [announcing, setAnnouncing] = useState(false);
   const bothTeamsAssigned = Boolean(match.homeTeam && match.awayTeam);
   const isForfeit = match.resultType === 'FORFEIT';
@@ -51,9 +56,7 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
   const handleForfeit = (side: 'HOME' | 'AWAY') => {
     const forfeiting = side === 'HOME' ? match.homeTeam?.name : match.awayTeam?.name;
     const advancing = side === 'HOME' ? match.awayTeam?.name : match.homeTeam?.name;
-    const confirmed = window.confirm(
-      `Record a forfeit for ${forfeiting}?\n\nImpact:\n- ${advancing} is declared the winner and advances.\n- The match is marked final by forfeit.`
-    );
+    const confirmed = window.confirm(tConfirm('forfeit', { forfeiting, advancing }));
     if (!confirmed) return;
     onForfeit(side);
   };
@@ -69,20 +72,20 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
         <header className="flex items-start justify-between gap-4 border-b border-[var(--mds-border)] bg-[var(--mds-input)]/20 px-6 py-4">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h2 className="text-lg font-bold tracking-tight">Match Controls</h2>
+              <h2 className="text-lg font-bold tracking-tight">{t('title')}</h2>
               {isForfeit && (
                 <span className="mds-badge flex items-center gap-1.5 border border-[var(--mds-red)]/30 bg-[var(--mds-red)]/10 text-[var(--mds-red)]">
-                  <Flag size={10} /> Forfeit
+                  <Flag size={10} /> {t('forfeitBadge')}
                 </span>
               )}
             </div>
             <p className="mt-1 text-sm text-[var(--mds-text-muted)]">
-              {stageName} · Best of {matchForm.bestOf || 1}
+              {t('subtitle', { stage: stageName, bestOf: matchForm.bestOf || 1 })}
             </p>
           </div>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={tCommon('close')}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-[var(--mds-border)] bg-white/5 text-[var(--mds-text-primary)] transition-colors hover:bg-white/10"
           >
             <X size={18} />
@@ -92,13 +95,16 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
         <form id="edit-match-form" onSubmit={onSaveMatch} className="custom-scrollbar min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
           {/* STATUS SELECTOR */}
           <div className="space-y-2">
-            <label className="mds-uppercase-label">Match status</label>
+            <label className="mds-uppercase-label">{t('status')}</label>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {/* READY and LIVE read from the shared status vocabulary; PENDING and COMPLETED are
+                  spelled for the editor ("Not called" / "Final"), which is a choice this surface
+                  makes and the badges deliberately do not. */}
               {[
-                { id: 'PENDING', label: 'Not called', color: 'var(--mds-text-subtle)', icon: Clock },
-                { id: 'READY', label: 'Called', color: 'var(--mds-green)', icon: History },
-                { id: 'LIVE', label: 'Live', color: 'var(--mds-red)', icon: Activity },
-                { id: 'COMPLETED', label: 'Final', color: 'var(--mds-text-muted)', icon: CheckCircle2 }
+                { id: 'PENDING', label: t('statusNotCalled'), color: 'var(--mds-text-subtle)', icon: Clock },
+                { id: 'READY', label: tStatus('called'), color: 'var(--mds-green)', icon: History },
+                { id: 'LIVE', label: tStatus('live'), color: 'var(--mds-red)', icon: Activity },
+                { id: 'COMPLETED', label: t('statusFinal'), color: 'var(--mds-text-muted)', icon: CheckCircle2 }
               ].map((s) => (
                 <button
                   key={s.id}
@@ -120,8 +126,8 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
           {/* SCORE INPUT — the reason the editor is open most of the time. */}
           <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4 rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/40 p-5">
             <div className="space-y-2 text-center">
-              <label className="mds-uppercase-label" htmlFor="home-score">Home</label>
-              <div className="mds-name text-sm">{match.homeTeam?.name || 'TBD'}</div>
+              <label className="mds-uppercase-label" htmlFor="home-score">{t('home')}</label>
+              <div className="mds-name text-sm">{match.homeTeam?.name || tCommon('tbd')}</div>
               <input
                 id="home-score"
                 type="number"
@@ -131,11 +137,11 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
               />
             </div>
 
-            <div className="mds-uppercase-label pt-9 text-[var(--mds-text-subtle)]">vs</div>
+            <div className="mds-uppercase-label pt-9 text-[var(--mds-text-subtle)]">{t('vs')}</div>
 
             <div className="space-y-2 text-center">
-              <label className="mds-uppercase-label" htmlFor="away-score">Away</label>
-              <div className="mds-name text-sm">{match.awayTeam?.name || 'TBD'}</div>
+              <label className="mds-uppercase-label" htmlFor="away-score">{t('away')}</label>
+              <div className="mds-name text-sm">{match.awayTeam?.name || tCommon('tbd')}</div>
               <input
                 id="away-score"
                 type="number"
@@ -149,17 +155,17 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
           {/* MAP SCORES (Conditional) */}
           {matchForm.bestOf > 1 && (
             <div className="space-y-2">
-              <label className="mds-uppercase-label">Map scores</label>
+              <label className="mds-uppercase-label">{t('mapScores')}</label>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {[...Array(matchForm.bestOf)].map((_, i) => {
                   const score = (matchForm.mapScores || [])[i] || { home: 0, away: 0, map: '' };
                   return (
                     <div key={i} className="space-y-2 rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)] p-3">
-                      <span className="mds-uppercase-label text-[var(--mds-text-subtle)]">Map {i + 1}</span>
+                      <span className="mds-uppercase-label text-[var(--mds-text-subtle)]">{t('map', { n: i + 1 })}</span>
                       <div className="flex items-center gap-2">
                         <input
                           type="number"
-                          aria-label={`Map ${i + 1} home score`}
+                          aria-label={t('mapHomeScore', { n: i + 1 })}
                           value={score.home}
                           onChange={(e) => {
                             const newScores = [...(matchForm.mapScores || [])];
@@ -171,7 +177,7 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
                         <span className="text-xs text-[var(--mds-text-subtle)]">:</span>
                         <input
                           type="number"
-                          aria-label={`Map ${i + 1} away score`}
+                          aria-label={t('mapAwayScore', { n: i + 1 })}
                           value={score.away}
                           onChange={(e) => {
                             const newScores = [...(matchForm.mapScores || [])];
@@ -191,20 +197,20 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
           {/* SETTINGS & ACTIONS */}
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="mds-uppercase-label" htmlFor="series-length">Series length</label>
+              <label className="mds-uppercase-label" htmlFor="series-length">{t('seriesLength')}</label>
               <select
                 id="series-length"
                 value={matchForm.bestOf}
                 onChange={(e) => setMatchForm({ ...matchForm, bestOf: parseInt(e.target.value) })}
                 className="mds-input h-11 text-sm font-semibold"
               >
-                <option value={1}>Best of 1 (BO1)</option>
-                <option value={3}>Best of 3 (BO3)</option>
-                <option value={5}>Best of 5 (BO5)</option>
+                <option value={1}>{t('bo1')}</option>
+                <option value={3}>{t('bo3')}</option>
+                <option value={5}>{t('bo5')}</option>
               </select>
             </div>
             <div className="space-y-2">
-              <label className="mds-uppercase-label">Match actions</label>
+              <label className="mds-uppercase-label">{t('actions')}</label>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -214,7 +220,7 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
                   className={`${actionButton} border-[var(--mds-action)]/30 text-[var(--mds-action)] hover:border-[var(--mds-action)] hover:bg-[var(--mds-action)]/10`}
                 >
                   {isLoadingMatch ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />}
-                  Start Match
+                  {t('startMatch')}
                 </button>
                 <button
                   type="button"
@@ -223,7 +229,7 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
                   data-testid="notify-players-button"
                   className={`${actionButton} border-[#5865F2]/30 text-[#5865F2] hover:border-[#5865F2] hover:bg-[#5865F2]/10`}
                 >
-                  <Send size={14} /> Notify Players
+                  <Send size={14} /> {t('notifyPlayers')}
                 </button>
                 <button
                   type="button"
@@ -231,7 +237,7 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
                   disabled={announcing}
                   className={`${actionButton} border-[var(--mds-green)]/30 text-[var(--mds-green)] hover:border-[var(--mds-green)] hover:bg-[var(--mds-green)]/10`}
                 >
-                  <Trophy size={14} /> Send Result
+                  <Trophy size={14} /> {t('sendResult')}
                 </button>
               </div>
             </div>
@@ -239,7 +245,7 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
 
           {/* FORFEIT / WALKOVER */}
           <div className="space-y-2">
-            <label className="mds-uppercase-label">Forfeit</label>
+            <label className="mds-uppercase-label">{t('forfeit')}</label>
             <div className="flex flex-wrap gap-2">
               {(['HOME', 'AWAY'] as const).map((side) => (
                 <button
@@ -251,14 +257,12 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
                   className={`${actionButton} border-[var(--mds-red)]/30 text-[var(--mds-red)] hover:border-[var(--mds-red)] hover:bg-[var(--mds-red)]/10 disabled:hover:border-[var(--mds-red)]/30 disabled:hover:bg-transparent`}
                 >
                   <Flag size={14} />
-                  {side === 'HOME' ? 'Home forfeits' : 'Away forfeits'}
+                  {t(side === 'HOME' ? 'homeForfeits' : 'awayForfeits')}
                 </button>
               ))}
             </div>
             <p className="text-xs text-[var(--mds-text-subtle)]">
-              {bothTeamsAssigned
-                ? 'Declares the other team the winner and advances them immediately.'
-                : 'Both teams must be assigned before a forfeit can be recorded.'}
+              {t(bothTeamsAssigned ? 'forfeitHint' : 'forfeitBlocked')}
             </p>
           </div>
         </form>
@@ -272,7 +276,7 @@ export const EditMatchModal: React.FC<EditMatchModalProps> = ({
             className="mds-btn-primary h-12 w-full gap-2 text-sm font-bold"
           >
             {isSaving ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
-            Update Match Data
+            {t('save')}
           </button>
         </footer>
       </div>

@@ -2,6 +2,7 @@
 
 import { byPlayOrder, isCalled, isDone, isLive } from '@/lib/match-status';
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Users, Sword, Zap, RefreshCw, Copy, Check, ArrowRight, Bell } from 'lucide-react';
 import { InlineNotice } from '@/components/workspace/WorkspaceChrome';
 import { Badge, StatusBadge } from '@/components/ui';
@@ -21,7 +22,19 @@ interface ManageOverviewProps {
 }
 
 /** A copyable URL row: label, the link itself, and one button that confirms it copied. */
-function LinkField({ label, url, onCopy }: { label: string; url: string; onCopy?: () => void }) {
+function LinkField({
+  label,
+  copyLabel,
+  url,
+  onCopy,
+}: {
+  label: string;
+  /** Spelled out rather than derived from `label`: a lower-cased English phrase is not a
+      translation, and several languages do not lower-case the way English does. */
+  copyLabel: string;
+  url: string;
+  onCopy?: () => void;
+}) {
   const [copied, setCopied] = useState(false);
   return (
     <div>
@@ -30,7 +43,7 @@ function LinkField({ label, url, onCopy }: { label: string; url: string; onCopy?
         <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-[var(--mds-action)]">{url}</code>
         <button
           type="button"
-          aria-label={`Copy ${label.toLowerCase()}`}
+          aria-label={copyLabel}
           onClick={() => {
             if (onCopy) onCopy();
             else navigator.clipboard?.writeText(url);
@@ -58,25 +71,29 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
   onSetTab,
   onCopyPublicLink,
 }) => {
+  const t = useTranslations('organizer.overview');
+  const tConfirm = useTranslations('organizer.confirm');
+  const tCommon = useTranslations('common');
   const liveMatches = matches.filter((match) => isLive(match.status)).length;
   const waitingMatches = matches.filter((match) => isCalled(match.status)).length;
   const completedMatches = matches.filter((match) => isDone(match.status)).length;
   const totalRounds = totalRoundsOf(matches);
-  const bracketStatus =
+  const bracketStatus = t(
     matches.length === 0
-      ? 'Not generated'
+      ? 'statusNotGenerated'
       : liveMatches > 0
-        ? 'Live matches running'
+        ? 'statusLiveRunning'
         : waitingMatches > 0
-          ? 'Players joining'
-          : 'Ready for the next round';
+          ? 'statusPlayersJoining'
+          : 'statusReadyNextRound'
+  );
 
   const stats = [
-    { label: 'Teams', value: teams.length, icon: Users, color: 'var(--mds-action)' },
-    { label: 'Matches', value: matches.length, icon: Sword, color: 'var(--mds-red)' },
-    { label: 'Live', value: liveMatches, icon: Zap, color: 'var(--mds-red)' },
-    { label: 'Waiting', value: waitingMatches, icon: Bell, color: 'var(--mds-amber)' },
-    { label: 'Played', value: completedMatches, icon: Check, color: 'var(--mds-green)' },
+    { label: t('statTeams'), value: teams.length, icon: Users, color: 'var(--mds-action)' },
+    { label: t('statMatches'), value: matches.length, icon: Sword, color: 'var(--mds-red)' },
+    { label: t('statLive'), value: liveMatches, icon: Zap, color: 'var(--mds-red)' },
+    { label: t('statWaiting'), value: waitingMatches, icon: Bell, color: 'var(--mds-amber)' },
+    { label: t('statPlayed'), value: completedMatches, icon: Check, color: 'var(--mds-green)' },
   ];
 
   const timeline = [...activity, ...notifications]
@@ -109,27 +126,27 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
         {tournament.rosterLocked ? (
           <InlineNotice
             tone="warning"
-            title="Bracket safety lock enabled"
-            description="Team edits, seeding changes, and bracket regeneration are paused until roster edits are unlocked in settings."
+            title={t('lockTitle')}
+            description={t('lockHint')}
           />
         ) : null}
 
         <div className="mds-card p-6">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-base font-bold tracking-tight">Tournament Progress</h2>
+              <h2 className="text-base font-bold tracking-tight">{t('progressTitle')}</h2>
               <p className="mt-0.5 text-xs text-[var(--mds-text-muted)]">
                 {matches.length === 0
-                  ? 'No bracket generated yet.'
-                  : `${completedMatches} of ${matches.length} matches played · ${bracketStatus}`}
+                  ? t('progressNone')
+                  : t('progressCount', { played: completedMatches, total: matches.length, status: bracketStatus })}
               </p>
             </div>
             <button
               onClick={() => {
-                const summary = matches.length > 0
-                  ? 'This will regenerate bracket rounds and may reshuffle pending matches.'
-                  : 'This will create the initial bracket rounds for all currently seeded teams.';
-                if (!window.confirm(`${matches.length > 0 ? 'Regenerate' : 'Generate'} bracket now?\n\nImpact:\n- ${summary}\n- Staff and player views will refresh.`)) {
+                const message = tConfirm(
+                  matches.length > 0 ? 'regenerateBracketOverview' : 'generateBracketOverview'
+                );
+                if (!window.confirm(message)) {
                   return;
                 }
                 onGenerateMatches();
@@ -138,18 +155,18 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
               className="mds-btn-primary h-10 gap-2 px-5 text-sm font-bold disabled:opacity-30"
             >
               {generating ? <RefreshCw size={14} className="animate-spin" /> : <Zap size={14} />}
-              {matches.length > 0 ? 'Regenerate Bracket' : 'Generate Bracket'}
+              {t(matches.length > 0 ? 'regenerate' : 'generate')}
             </button>
           </div>
 
           {matches.length === 0 ? (
             <div className="rounded-lg border border-dashed border-[var(--mds-border)] py-14 text-center">
-              <p className="text-sm font-bold">Bracket not generated yet</p>
-              <p className="mt-1 text-sm text-[var(--mds-text-muted)]">Register at least 2 teams to generate the first round.</p>
+              <p className="text-sm font-bold">{t('emptyTitle')}</p>
+              <p className="mt-1 text-sm text-[var(--mds-text-muted)]">{t('emptyHint')}</p>
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="mds-uppercase-label">{unplayed.length > 0 ? 'Next up' : 'Last results'}</p>
+              <p className="mds-uppercase-label">{t(unplayed.length > 0 ? 'nextUp' : 'lastResults')}</p>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {recent.map((match: any) => (
                   <button
@@ -164,8 +181,8 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
                         </span>
                         <StatusBadge status={match.status} />
                       </div>
-                      <p className="mds-name text-sm">{match.homeTeam?.name || 'TBD'}</p>
-                      <p className="mds-name text-sm">{match.awayTeam?.name || 'TBD'}</p>
+                      <p className="mds-name text-sm">{match.homeTeam?.name || tCommon('tbd')}</p>
+                      <p className="mds-name text-sm">{match.awayTeam?.name || tCommon('tbd')}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
                       <span className="mds-numeric text-sm font-bold text-[var(--mds-text-muted)]">
@@ -183,20 +200,25 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
 
       <div className="space-y-6 lg:col-span-4">
         <div className="mds-card space-y-4 p-5">
-          <h3 className="text-sm font-bold tracking-tight">Share</h3>
-          <LinkField label="Public tournament page" url={`${origin}/tournaments/${tournament.id}`} onCopy={onCopyPublicLink} />
-          <LinkField label="OBS stream overlay" url={`${origin}/bracket/${tournament.id}/overlay`} />
+          <h3 className="text-sm font-bold tracking-tight">{t('share')}</h3>
+          <LinkField
+            label={t('publicPage')}
+            copyLabel={t('copyPublicPage')}
+            url={`${origin}/tournaments/${tournament.id}`}
+            onCopy={onCopyPublicLink}
+          />
+          <LinkField label={t('overlay')} copyLabel={t('copyOverlay')} url={`${origin}/bracket/${tournament.id}/overlay`} />
         </div>
 
         <div className="mds-card p-5">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h3 className="text-sm font-bold tracking-tight">Top seeds</h3>
+            <h3 className="text-sm font-bold tracking-tight">{t('topSeeds')}</h3>
             {teams.length > 5 ? (
               <button
                 onClick={() => onSetTab('participants')}
                 className="text-xs font-semibold text-[var(--mds-action)] hover:underline"
               >
-                All {teams.length} teams
+                {t('allTeams', { count: teams.length })}
               </button>
             ) : null}
           </div>
@@ -209,18 +231,18 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
                   </span>
                   <span className="mds-name text-sm">{team.name}</span>
                 </div>
-                <Badge tone="neutral">Seed {team.seed || index + 1}</Badge>
+                <Badge tone="neutral">{t('seed', { seed: team.seed || index + 1 })}</Badge>
               </div>
             ))}
             {teams.length === 0 ? (
-              <p className="py-6 text-center text-sm text-[var(--mds-text-subtle)]">No teams registered</p>
+              <p className="py-6 text-center text-sm text-[var(--mds-text-subtle)]">{t('noTeams')}</p>
             ) : null}
           </div>
         </div>
 
         <div className="mds-card p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-bold tracking-tight">Activity</h3>
+            <h3 className="text-sm font-bold tracking-tight">{t('activity')}</h3>
             <Bell size={15} className="text-[var(--mds-action)] opacity-60" />
           </div>
           {/* Scrolls in place: the activity feed is unbounded and would otherwise run hundreds of
@@ -236,7 +258,7 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
             ))}
             {timeline.length === 0 ? (
               <p className="rounded-lg border border-dashed border-[var(--mds-border)] px-3 py-5 text-center text-sm text-[var(--mds-text-subtle)]">
-                No activity yet
+                {t('noActivity')}
               </p>
             ) : null}
           </div>

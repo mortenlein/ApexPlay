@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { X, Users, UserPlus, Trash2, Save, Crown, Lock, Loader2 } from 'lucide-react';
 
@@ -72,6 +73,9 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
   onSavePlayer,
   onDeletePlayer,
 }) => {
+  const t = useTranslations('organizer.teamModal');
+  const tConfirm = useTranslations('organizer.confirm');
+  const tCommon = useTranslations('common');
   const isLocked = Boolean(tournament?.rosterLocked);
   const teamSize = Number(tournament?.teamSize) || 5;
   const players: any[] = team.players || [];
@@ -159,7 +163,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
   };
 
   const handleDeleteRow = async (player: any) => {
-    if (!window.confirm(`Remove ${player.name} from ${team.name}?`)) return;
+    if (!window.confirm(tConfirm('removePlayer', { player: player.name, team: team.name }))) return;
     setBusy(player.id);
     try {
       const removed = await onDeletePlayer(player.id);
@@ -173,7 +177,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
   const rosterFields = (draft: PlayerDraft, patch: (p: Partial<PlayerDraft>) => void, isDraftRow: boolean) => (
     <div className="grid flex-1 grid-cols-2 gap-3 md:grid-cols-12">
       <div className="col-span-2 space-y-1 md:col-span-3">
-        <label className={fieldLabel}>Name</label>
+        <label className={fieldLabel}>{t('name')}</label>
         <input
           autoFocus={isDraftRow}
           type="text"
@@ -181,44 +185,44 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
           value={draft.name}
           onChange={(e) => patch({ name: e.target.value })}
           className={fieldInput}
-          placeholder="Full name"
+          placeholder={t('namePlaceholder')}
         />
       </div>
       <div className="space-y-1 md:col-span-3">
-        <label className={fieldLabel}>Nickname</label>
+        <label className={fieldLabel}>{t('nickname')}</label>
         <input
           type="text"
           maxLength={64}
           value={draft.nickname}
           onChange={(e) => patch({ nickname: e.target.value })}
           className={fieldInput}
-          placeholder="In-game"
+          placeholder={t('nicknamePlaceholder')}
         />
       </div>
       <div className="space-y-1 md:col-span-2">
-        <label className={fieldLabel}>Seat</label>
+        <label className={fieldLabel}>{tCommon('seat')}</label>
         <input
           type="text"
           maxLength={16}
           value={draft.seating}
           onChange={(e) => patch({ seating: e.target.value })}
           className={`${fieldInput} mds-numeric uppercase`}
-          placeholder="A-12"
+          placeholder={t('seatPlaceholder')}
         />
       </div>
       <div className="space-y-1 md:col-span-1">
-        <label className={fieldLabel}>Flag</label>
+        <label className={fieldLabel}>{t('flag')}</label>
         <input
           type="text"
           maxLength={8}
           value={draft.countryCode}
           onChange={(e) => patch({ countryCode: e.target.value.toUpperCase() })}
           className={`${fieldInput} text-center uppercase`}
-          placeholder="NO"
+          placeholder={t('flagPlaceholder')}
         />
       </div>
       <div className="col-span-2 space-y-1 md:col-span-3">
-        <label className={fieldLabel}>Steam ID {!isDraftRow && isLocked ? '(locked)' : ''}</label>
+        <label className={fieldLabel}>{t(!isDraftRow && isLocked ? 'steamIdLocked' : 'steamId')}</label>
         <input
           type="text"
           maxLength={64}
@@ -226,8 +230,8 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
           value={draft.steamId}
           onChange={(e) => patch({ steamId: e.target.value })}
           className={`${fieldInput} font-mono disabled:opacity-30`}
-          placeholder={isDraftRow ? 'Optional' : '7656119...'}
-          title={!isDraftRow && isLocked ? 'Unlock roster edits to change Steam IDs' : undefined}
+          placeholder={t(isDraftRow ? 'steamIdOptional' : 'steamIdPlaceholder')}
+          title={!isDraftRow && isLocked ? t('steamIdLockedTitle') : undefined}
         />
       </div>
     </div>
@@ -251,14 +255,14 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
               <h2 className="mds-name-lg text-xl">{team.name}</h2>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <span className="mds-badge border-[var(--mds-action)]/20 bg-[var(--mds-action-soft)] text-[var(--mds-action)]">
-                  Seed {team.seed || '—'}
+                  {t('seed', { seed: team.seed || '—' })}
                 </span>
                 <span className="mds-badge border border-[var(--mds-border)] bg-[var(--mds-input)] text-[var(--mds-text-subtle)]">
-                  {players.length}/{teamSize} players
+                  {t('playerCount', { count: players.length, size: teamSize })}
                 </span>
                 {isLocked ? (
                   <span className="mds-badge flex items-center gap-1.5 border-[var(--mds-amber)]/30 bg-[var(--mds-amber)]/10 text-[var(--mds-amber)]">
-                    <Lock size={10} /> Roster locked
+                    <Lock size={10} /> {t('rosterLocked')}
                   </span>
                 ) : null}
               </div>
@@ -266,7 +270,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={tCommon('close')}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-[var(--mds-border)] bg-white/5 text-[var(--mds-text-primary)] transition-colors hover:bg-white/10"
           >
             <X size={18} />
@@ -276,37 +280,37 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
         <div className="custom-scrollbar min-h-0 flex-1 space-y-6 overflow-y-auto p-6">
           {isLocked ? (
             <div className="rounded-lg border border-[var(--mds-amber)]/30 bg-[var(--mds-amber)]/10 px-4 py-3 text-sm leading-relaxed text-[var(--mds-text-muted)]">
-              The bracket is in play. Name, nickname, seat and flag corrections are still allowed. Seeding, Steam IDs, leader flags and roster additions/removals need roster edits unlocked in settings.
+              {t('lockedNotice')}
             </div>
           ) : null}
 
           {/* TEAM DETAILS */}
           <section>
-            <h3 className="text-base font-bold tracking-tight">Team details</h3>
+            <h3 className="text-base font-bold tracking-tight">{t('teamDetails')}</h3>
             <div className="mt-3 grid grid-cols-1 items-end gap-3 md:grid-cols-12">
               <div className="space-y-1 md:col-span-5">
-                <label className={fieldLabel}>Team name</label>
+                <label className={fieldLabel}>{t('teamName')}</label>
                 <input
                   type="text"
                   maxLength={64}
                   value={teamDraft.name}
                   onChange={(e) => setTeamDraft({ ...teamDraft, name: e.target.value })}
                   className={fieldInput}
-                  placeholder="Team name"
+                  placeholder={t('teamNamePlaceholder')}
                 />
               </div>
               <div className="space-y-1 md:col-span-5">
-                <label className={fieldLabel}>Logo URL</label>
+                <label className={fieldLabel}>{t('logoUrl')}</label>
                 <input
                   type="text"
                   value={teamDraft.logoUrl}
                   onChange={(e) => setTeamDraft({ ...teamDraft, logoUrl: e.target.value })}
                   className={fieldInput}
-                  placeholder="https://... or /uploads/logos/..."
+                  placeholder={t('logoUrlPlaceholder')}
                 />
               </div>
               <div className="space-y-1 md:col-span-2">
-                <label className={fieldLabel}>Seed</label>
+                <label className={fieldLabel}>{t('seedLabel')}</label>
                 <input
                   type="number"
                   min={1}
@@ -314,8 +318,8 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                   value={teamDraft.seed}
                   onChange={(e) => setTeamDraft({ ...teamDraft, seed: e.target.value })}
                   className={`${fieldInput} mds-numeric text-center disabled:opacity-30`}
-                  placeholder="—"
-                  title={isLocked ? 'Seeding is locked while the bracket is in play' : undefined}
+                  placeholder={t('seedPlaceholder')}
+                  title={isLocked ? t('seedLockedTitle') : undefined}
                 />
               </div>
             </div>
@@ -326,7 +330,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                 disabled={!teamDirty || !teamDraft.name.trim() || busy === 'team'}
                 className="mds-btn-primary h-9 gap-2 px-4 text-sm font-bold disabled:opacity-30"
               >
-                {busy === 'team' ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save details
+                {busy === 'team' ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} {t('saveDetails')}
               </button>
             </div>
           </section>
@@ -335,16 +339,16 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
           <section className="border-t border-[var(--mds-border)] pt-5">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <h3 className="text-base font-bold tracking-tight">
-                Active roster ({players.length}/{teamSize})
+                {t('activeRoster', { count: players.length, size: teamSize })}
               </h3>
               <button
                 type="button"
                 onClick={() => setNewPlayer(EMPTY_PLAYER)}
                 disabled={isLocked || atCap || Boolean(newPlayer)}
-                title={isLocked ? 'Unlock roster edits to add players' : atCap ? `Roster is full (${teamSize} players)` : undefined}
+                title={isLocked ? t('addPlayerLocked') : atCap ? t('rosterFull', { size: teamSize }) : undefined}
                 className="mds-btn-primary h-9 gap-2 px-4 text-sm font-bold disabled:opacity-30"
               >
-                <UserPlus size={14} /> Add player
+                <UserPlus size={14} /> {t('addPlayer')}
               </button>
             </div>
 
@@ -368,10 +372,10 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                           type="button"
                           disabled={isLocked}
                           onClick={() => patchRow(player, { isLeader: !draft.isLeader })}
-                          title={isLocked ? 'Unlock roster edits to change the team leader' : undefined}
+                          title={isLocked ? t('leaderLockedTitle') : undefined}
                           className={`${rowButton} ${draft.isLeader ? 'border-[var(--mds-action)]/40 bg-[var(--mds-action-soft)] text-[var(--mds-action)]' : 'text-[var(--mds-text-muted)]'}`}
                         >
-                          <Crown size={13} /> {draft.isLeader ? 'Team leader' : 'Not leader'}
+                          <Crown size={13} /> {t(draft.isLeader ? 'teamLeader' : 'notLeader')}
                         </button>
                         {player.steamId ? (
                           <a
@@ -380,7 +384,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                             rel="noopener noreferrer"
                             className={`${rowButton} text-[var(--mds-text-muted)] hover:border-[var(--mds-action)]/40`}
                           >
-                            Steam
+                            {t('steam')}
                           </a>
                         ) : null}
                       </div>
@@ -391,7 +395,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                             onClick={() => clearRow(player.id)}
                             className={`${rowButton} text-[var(--mds-text-muted)] hover:border-[var(--mds-action)]/30`}
                           >
-                            Revert
+                            {t('revert')}
                           </button>
                         ) : null}
                         <button
@@ -400,14 +404,14 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                           disabled={!dirty || !draft.name.trim() || rowBusy}
                           className="mds-btn-primary h-9 gap-2 px-4 text-sm font-bold disabled:opacity-30"
                         >
-                          {rowBusy ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save
+                          {rowBusy ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} {tCommon('save')}
                         </button>
                         <button
                           type="button"
                           disabled={isLocked || rowBusy}
                           onClick={() => handleDeleteRow(player)}
-                          title={isLocked ? 'Unlock roster edits to remove players' : `Remove ${player.name}`}
-                          aria-label={`Remove ${player.name}`}
+                          title={isLocked ? t('removeLockedTitle') : t('removePlayer', { name: player.name })}
+                          aria-label={t('removePlayer', { name: player.name })}
                           className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)] text-[var(--mds-text-muted)] transition-all hover:border-[var(--mds-red)]/40 hover:text-[var(--mds-red)] disabled:opacity-30"
                         >
                           <Trash2 size={14} />
@@ -432,7 +436,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                       onClick={() => setNewPlayer(null)}
                       className={`${rowButton} text-[var(--mds-text-muted)] hover:border-[var(--mds-action)]/30`}
                     >
-                      Cancel
+                      {tCommon('cancel')}
                     </button>
                     <button
                       type="button"
@@ -440,7 +444,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                       disabled={!newPlayer.name.trim() || busy === 'new'}
                       className="mds-btn-primary h-9 gap-2 px-4 text-sm font-bold disabled:opacity-30"
                     >
-                      {busy === 'new' ? <Loader2 size={13} className="animate-spin" /> : <UserPlus size={13} />} Add to roster
+                      {busy === 'new' ? <Loader2 size={13} className="animate-spin" /> : <UserPlus size={13} />} {t('addToRoster')}
                     </button>
                   </div>
                 </div>
@@ -449,9 +453,9 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
               {players.length === 0 && !newPlayer ? (
                 <div className="rounded-lg border border-dashed border-[var(--mds-border)] py-14 text-center">
                   <Users size={24} className="mx-auto mb-3 text-[var(--mds-text-subtle)]" />
-                  <p className="text-sm font-bold">No players on this roster</p>
+                  <p className="text-sm font-bold">{t('emptyTitle')}</p>
                   <p className="mt-1 text-sm text-[var(--mds-text-muted)]">
-                    {isLocked ? 'Unlock roster edits to add players' : 'Use “Add player” to build the roster'}
+                    {t(isLocked ? 'emptyLocked' : 'emptyHint')}
                   </p>
                 </div>
               ) : null}
@@ -461,12 +465,10 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
 
         <footer className="flex flex-col items-center justify-between gap-3 border-t border-[var(--mds-border)] bg-[var(--mds-input)]/20 px-6 py-4 md:flex-row">
           <p className="text-xs text-[var(--mds-text-subtle)]">
-            {teamDirty || Object.keys(playerDrafts).length > 0 || newPlayer
-              ? 'Unsaved changes — use the Save buttons above'
-              : 'All changes saved'}
+            {t(teamDirty || Object.keys(playerDrafts).length > 0 || newPlayer ? 'unsaved' : 'allSaved')}
           </p>
           <button onClick={onClose} className="mds-btn-secondary h-10 px-8 text-sm font-bold">
-            Close
+            {tCommon('close')}
           </button>
         </footer>
       </div>

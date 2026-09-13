@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { ArrowLeft, Activity, Users, Sword, Settings2, ExternalLink, X, LayoutGrid } from 'lucide-react';
 
@@ -21,12 +22,13 @@ export const ManageSidebar: React.FC<ManageSidebarProps> = ({
   setIsMenuOpen,
   category
 }) => {
+  const t = useTranslations('organizer.sidebar');
   const tabs = [
-    { id: "control", icon: LayoutGrid, label: "Control" },
-    { id: "overview", icon: Activity, label: "Overview" },
-    { id: "participants", icon: Users, label: "Teams" },
-    { id: category === 'BATTLE_ROYALE' ? "scoreboard" : "matches", icon: Sword, label: "Matches" },
-    { id: "settings", icon: Settings2, label: "Settings" },
+    { id: "control", icon: LayoutGrid, label: t('control') },
+    { id: "overview", icon: Activity, label: t('overview') },
+    { id: "participants", icon: Users, label: t('teams') },
+    { id: category === 'BATTLE_ROYALE' ? "scoreboard" : "matches", icon: Sword, label: t('matches') },
+    { id: "settings", icon: Settings2, label: t('settings') },
   ];
 
   return (
@@ -37,7 +39,7 @@ export const ManageSidebar: React.FC<ManageSidebarProps> = ({
             <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)] transition-all group-hover:border-[var(--mds-action)]/40">
               <ArrowLeft size={16} className="group-hover:text-[var(--mds-action)]" />
             </div>
-            <span className="mds-uppercase-label transition-colors group-hover:text-[var(--mds-text-primary)]">All tournaments</span>
+            <span className="mds-uppercase-label transition-colors group-hover:text-[var(--mds-text-primary)]">{t('allTournaments')}</span>
           </Link>
           <button onClick={() => setIsMenuOpen(false)} className="md:hidden p-2 hover:bg-[var(--mds-border)]/20 rounded-lg">
             <X size={20} />
@@ -71,7 +73,7 @@ export const ManageSidebar: React.FC<ManageSidebarProps> = ({
             className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--mds-text-muted)] transition-all hover:text-[var(--mds-text-primary)]"
           >
             <ExternalLink size={18} className="group-hover:translate-x-0.5 transition-transform" />
-            <span>Open Public Page</span>
+            <span>{t('openPublicPage')}</span>
           </Link>
         </div>
       </div>

@@ -1,14 +1,34 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { Check, ArrowRight } from 'lucide-react';
 import { Button, Card } from '@/components/ui';
-import {
-  getTournamentStage,
-  STAGE_ORDER,
-  STAGE_META,
-  type TournamentStage,
-} from '@/lib/tournament-stage';
+import { getTournamentStage, STAGE_ORDER, type TournamentStage } from '@/lib/tournament-stage';
+
+/**
+ * DRAFT/REGISTRATION/LIVE/COMPLETE are shared vocabulary: the stage *name* comes from the
+ * `stage` namespace (the same words the public badges use), and only the organizer-only
+ * "what's next" hint and action live in this surface's own catalogue.
+ */
+const STAGE_KEY: Record<TournamentStage, string> = {
+  DRAFT: 'draft',
+  REGISTRATION: 'registration',
+  LIVE: 'live',
+  COMPLETE: 'complete',
+};
+const HINT_KEY: Record<TournamentStage, string> = {
+  DRAFT: 'hintDraft',
+  REGISTRATION: 'hintRegistration',
+  LIVE: 'hintLive',
+  COMPLETE: 'hintComplete',
+};
+const ACTION_KEY: Record<TournamentStage, string> = {
+  DRAFT: 'actionDraft',
+  REGISTRATION: 'actionRegistration',
+  LIVE: 'actionLive',
+  COMPLETE: 'actionComplete',
+};
 
 /**
  * Lifecycle stepper for the manage view: shows Draft → Registration → Live → Complete with
@@ -23,6 +43,8 @@ export function StageStepper({
   matches: any[];
   onAction: (stage: TournamentStage) => void;
 }) {
+  const t = useTranslations('organizer.stepper');
+  const tStage = useTranslations('stage');
   const stage = getTournamentStage(teams, matches);
   const currentIndex = STAGE_ORDER.indexOf(stage);
 
@@ -52,7 +74,7 @@ export function StageStepper({
                     current ? 'text-fg' : done ? 'text-fg-muted' : 'text-fg-subtle'
                   }`}
                 >
-                  {STAGE_META[s].label}
+                  {tStage(STAGE_KEY[s])}
                 </span>
               </li>
               {i < STAGE_ORDER.length - 1 && (
@@ -64,9 +86,9 @@ export function StageStepper({
       </ol>
 
       <div className="flex items-center gap-4 lg:shrink-0">
-        <p className="hidden text-xs text-fg-muted xl:block">{STAGE_META[stage].hint}</p>
+        <p className="hidden text-xs text-fg-muted xl:block">{t(HINT_KEY[stage])}</p>
         <Button size="sm" variant={stage === 'COMPLETE' ? 'secondary' : 'primary'} onClick={() => onAction(stage)}>
-          {STAGE_META[stage].action}
+          {t(ACTION_KEY[stage])}
           <ArrowRight size={14} />
         </Button>
       </div>

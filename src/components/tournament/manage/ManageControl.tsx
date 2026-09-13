@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Check, ChevronDown, ChevronRight, MapPin, Crown, Users, Trophy, GitBranch, ExternalLink } from 'lucide-react';
 import PublicBracket from '@/components/PublicBracket';
 import { Card, Badge, StatusBadge } from '@/components/ui';
@@ -53,12 +54,14 @@ function TeamLine({
   won: boolean;
   showCheckin: boolean;
 }) {
+  const t = useTranslations('organizer.control');
+  const tCommon = useTranslations('common');
   const { seated, total } = checkedIn(team);
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
         <span className={`mds-name block text-sm ${won ? 'text-brand' : 'text-fg'}`}>
-          {team?.name || 'TBD'}
+          {team?.name || tCommon('tbd')}
         </span>
         {showCheckin && total > 0 && (
           /* Check-in is progress, not an alarm: green once the roster is complete, amber while it
@@ -70,7 +73,7 @@ function TeamLine({
             }`}
           >
             {seated === total ? <Check size={11} /> : null}
-            <span className="mds-numeric">{seated}/{total}</span> at seat
+            <span className="mds-numeric">{t('atSeat', { seated, total })}</span>
           </span>
         )}
       </div>
@@ -168,6 +171,7 @@ function checkinsFromMatches(matches: any[]): Record<string, boolean> {
 }
 
 function TeamRosterCard({ team, checkins }: { team: any; checkins: Record<string, boolean> }) {
+  const t = useTranslations('organizer.control');
   const [open, setOpen] = useState(true);
   const players = team.players || [];
   const seated = players.filter((p: any) => checkins[p.id]).length;
@@ -194,7 +198,7 @@ function TeamRosterCard({ team, checkins }: { team: any; checkins: Record<string
       {open && (
         <div className="space-y-1 border-t border-line px-3 py-2">
           {players.length === 0 ? (
-            <p className="text-xs text-fg-subtle">No players yet</p>
+            <p className="text-xs text-fg-subtle">{t('noPlayers')}</p>
           ) : (
             players.map((p: any) => (
               <div key={p.id} className="flex items-center gap-2 text-sm">
@@ -208,7 +212,7 @@ function TeamRosterCard({ team, checkins }: { team: any; checkins: Record<string
                 )}
                 {checkins[p.id] && (
                   <span
-                    title="Checked in at seat by floor staff"
+                    title={t('checkedIn')}
                     className="inline-flex shrink-0 items-center rounded-sm bg-success/15 px-1 py-0.5 text-success"
                   >
                     <Check size={11} />
@@ -251,6 +255,7 @@ export function totalRoundsOf(matches: any[]) {
 }
 
 export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: ManageControlProps) {
+  const t = useTranslations('organizer.control');
   const totalRounds = totalRoundsOf(matches);
   const checkins = useMemo(() => checkinsFromMatches(matches), [matches]);
 
@@ -277,30 +282,30 @@ export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
         <GamesSection
           className="md:col-span-5"
-          title="Now"
+          title={t('now')}
           icon={<span className="h-2 w-2 rounded-full bg-danger" />}
           matches={now}
           totalRounds={totalRounds}
           onOpen={onOpenMatchModal}
-          empty="Nothing called or live."
+          empty={t('nowEmpty')}
         />
         <GamesSection
           className="md:col-span-4"
-          title="Up next"
+          title={t('upNext')}
           icon={<span className="h-2 w-2 rounded-full bg-warning" />}
           matches={upNext}
           totalRounds={totalRounds}
           onOpen={onOpenMatchModal}
-          empty="Nothing queued — later rounds appear once both teams are known."
+          empty={t('upNextEmpty')}
         />
         <GamesSection
           className="md:col-span-3"
-          title="Completed"
+          title={t('completed')}
           icon={<span className="h-2 w-2 rounded-full bg-success" />}
           matches={previous}
           totalRounds={totalRounds}
           onOpen={onOpenMatchModal}
-          empty="No results yet."
+          empty={t('completedEmpty')}
         />
       </div>
 
@@ -309,7 +314,7 @@ export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: 
         <aside className="col-span-12 space-y-3 lg:col-span-4">
           <div className="flex items-center gap-2">
             <Users size={16} className="text-brand" />
-            <h2 className="mds-uppercase-label text-fg-subtle">Teams &amp; rosters</h2>
+            <h2 className="mds-uppercase-label text-fg-subtle">{t('rosters')}</h2>
             <Badge tone="neutral">{teams.length}</Badge>
           </div>
           {/* The rosters are the tallest thing here (8 teams x 5 players); they scroll in place so
@@ -317,7 +322,7 @@ export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: 
           <div className="custom-scrollbar max-h-[420px] space-y-2 overflow-y-auto pr-1">
             {teams.length === 0 ? (
               <p className="rounded-sm border border-dashed border-line px-3 py-3 text-xs text-fg-subtle">
-                No teams registered yet.
+                {t('noTeams')}
               </p>
             ) : (
               teams.map((t: any) => <TeamRosterCard key={t.id} team={t} checkins={checkins} />)
@@ -330,8 +335,8 @@ export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: 
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
               <div className="flex items-center gap-2">
                 <GitBranch size={16} className="text-brand" />
-                <h2 className="text-sm font-bold">Bracket map</h2>
-                <span className="hidden text-xs text-fg-subtle lg:block">drag to pan · scroll to zoom · click a match to update</span>
+                <h2 className="text-sm font-bold">{t('bracketMap')}</h2>
+                <span className="hidden text-xs text-fg-subtle lg:block">{t('bracketMapHint')}</span>
               </div>
               <a
                 href={`/tournaments/${tournament.id}`}
@@ -339,14 +344,14 @@ export function ManageControl({ tournament, teams, matches, onOpenMatchModal }: 
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand hover:underline"
               >
-                Full bracket <ExternalLink size={12} />
+                {t('fullBracket')} <ExternalLink size={12} />
               </a>
             </div>
             <div className="relative flex-1">
               {matches.length === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center">
                   <Trophy size={26} className="text-fg-subtle" />
-                  <p className="text-sm text-fg-muted">No bracket yet — generate it from Matches once teams are seeded.</p>
+                  <p className="text-sm text-fg-muted">{t('noBracket')}</p>
                 </div>
               ) : (
                 <PublicBracket

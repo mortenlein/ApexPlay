@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMatchStream } from '@/hooks/useMatchStream';
@@ -32,6 +33,10 @@ export const buildMatchForm = (match: any) => ({
  * whose `updatedAt` is the concurrency token every save carries.
  */
 export function useManageWorkspace(tournamentId: string) {
+    // Every toast and every window.confirm in here is read by an organizer mid-LAN, so they go
+    // through the catalogue like any other copy — `useTranslations` is a hook and works here.
+    const t = useTranslations('organizer.toast');
+    const tConfirm = useTranslations('organizer.confirm');
     const queryClient = useQueryClient();
     const router = useRouter();
     const toast = useToast();
@@ -98,7 +103,7 @@ export function useManageWorkspace(tournamentId: string) {
     const showMutationError = (error: unknown, fallback: string) => {
         if (error instanceof ApiError) {
             if (error.status === 409) {
-                toast.error('Refresh needed', error.message);
+                toast.error(t('refreshNeeded'), error.message);
                 void invalidateWorkspace();
                 return;
             }
@@ -139,14 +144,14 @@ export function useManageWorkspace(tournamentId: string) {
         },
         onSuccess: () => {
             setNewTeam({ name: '', logoUrl: '', seed: '', players: [] });
-            toast.success('Team added', 'The team was added to the tournament roster.');
+            toast.success(t('teamAdded'), t('teamAddedHint'));
             void invalidateWorkspace();
         },
         onError: (error, _variables, context) => {
             if (context?.previousTeams) {
                 queryClient.setQueryData(['teams', tournamentId], context.previousTeams);
             }
-            showMutationError(error, 'Could not add team');
+            showMutationError(error, t('couldNotAddTeam'));
         },
     });
 
@@ -159,13 +164,13 @@ export function useManageWorkspace(tournamentId: string) {
             const teamSnapshot = variables.force ? undefined : variables.teamSnapshot;
             const matchesAffected = Number(result?.matchesAffected) || 0;
             toast.success(
-                'Team removed',
+                t('teamRemoved'),
                 matchesAffected > 0
-                    ? `The team was removed and pulled out of ${matchesAffected} match${matchesAffected === 1 ? '' : 'es'}.`
-                    : 'The team was removed from the bracket roster.',
+                    ? t('teamRemovedMatchesHint', { count: matchesAffected })
+                    : t('teamRemovedHint'),
                 teamSnapshot
                     ? {
-                        label: 'Undo',
+                        label: t('undo'),
                         onAction: () => {
                             void apiRequest(`/api/tournaments/${tournamentId}/teams`, {
                                 method: 'POST',
@@ -185,17 +190,17 @@ export function useManageWorkspace(tournamentId: string) {
                                 }),
                             })
                                 .then(() => {
-                                    toast.success('Team restored', `${teamSnapshot.name} has been restored.`);
+                                    toast.success(t('teamRestored'), t('teamRestoredHint', { name: teamSnapshot.name }));
                                     void invalidateWorkspace();
                                 })
-                                .catch((error) => showMutationError(error, 'Could not restore team'));
+                                .catch((error) => showMutationError(error, t('couldNotRestoreTeam')));
                         },
                     }
                     : undefined
             );
             void invalidateWorkspace();
         },
-        onError: (error) => showMutationError(error, 'Could not remove team'),
+        onError: (error) => showMutationError(error, t('couldNotRemoveTeam')),
     });
 
     const updateSeedsMutation = useMutation({
@@ -208,10 +213,10 @@ export function useManageWorkspace(tournamentId: string) {
                 })
             )),
         onSuccess: () => {
-            toast.success('Seeding updated', 'Bracket seed positions have been saved.');
+            toast.success(t('seedingUpdated'), t('seedingUpdatedHint'));
             void invalidateWorkspace();
         },
-        onError: (error) => showMutationError(error, 'Could not save seeds'),
+        onError: (error) => showMutationError(error, t('couldNotSaveSeeds')),
     });
 
     // Generating locks the roster, so every regeneration has to pass overrideLock or the second
@@ -230,10 +235,10 @@ export function useManageWorkspace(tournamentId: string) {
             }
         },
         onSuccess: (_data, variables) => {
-            toast.success(variables.overrideLock ? 'Bracket regenerated' : 'Bracket generated', 'Match structure is ready for staff and players.');
+            toast.success(t(variables.overrideLock ? 'bracketRegenerated' : 'bracketGenerated'), t('bracketReadyHint'));
             void invalidateWorkspace();
         },
-        onError: (error) => showMutationError(error, 'Could not generate bracket'),
+        onError: (error) => showMutationError(error, t('couldNotGenerate')),
     });
 
     /**
@@ -243,9 +248,7 @@ export function useManageWorkspace(tournamentId: string) {
     const handleGenerateMatches = (alreadyConfirmed = false) => {
         const regenerating = matches.length > 0;
         if (!alreadyConfirmed) {
-            const message = regenerating
-                ? 'This will delete all existing matches and results and rebuild the bracket. Continue?'
-                : 'Generate the bracket now?\n\nThis creates the first round from the seeded teams and locks roster edits.';
+            const message = tConfirm(regenerating ? 'rebuildBracket' : 'generateBracket');
             if (!window.confirm(message)) return;
         }
         generateMatchesMutation.mutate({ overrideLock: regenerating });
@@ -263,18 +266,18 @@ export function useManageWorkspace(tournamentId: string) {
             }),
         onSuccess: () => {
             setEditingMatch(null);
-            toast.success('Match saved', 'Scores and match status were updated.');
+            toast.success(t('matchSaved'), t('matchSavedHint'));
             void invalidateWorkspace();
         },
         onError: (error) => {
             // Both guards on this route answer 409 — the optimistic-concurrency check and the
             // "downstream match already started" refusal — so show the server's own wording.
             if (error instanceof ApiError && error.status === 409) {
-                toast.error('Match not saved', error.message);
+                toast.error(t('matchNotSaved'), error.message);
                 void invalidateWorkspace();
                 return;
             }
-            showMutationError(error, 'Could not save match');
+            showMutationError(error, t('couldNotSaveMatch'));
         },
     });
 
@@ -286,7 +289,7 @@ export function useManageWorkspace(tournamentId: string) {
         onSuccess: () => {
             void invalidateWorkspace();
         },
-        onError: (error) => showMutationError(error, 'Could not start match'),
+        onError: (error) => showMutationError(error, t('couldNotStartMatch')),
     });
 
     const updateTournamentMutation = useMutation({
@@ -306,14 +309,14 @@ export function useManageWorkspace(tournamentId: string) {
             return { previousTournament };
         },
         onSuccess: () => {
-            toast.success('Settings updated', 'Tournament settings were saved.');
+            toast.success(t('settingsUpdated'), t('settingsUpdatedHint'));
             void invalidateWorkspace();
         },
         onError: (error, _variables, context) => {
             if (context?.previousTournament) {
                 queryClient.setQueryData(['tournament', tournamentId], context.previousTournament);
             }
-            showMutationError(error, 'Could not update tournament');
+            showMutationError(error, t('couldNotUpdateTournament'));
         },
     });
 
@@ -329,10 +332,10 @@ export function useManageWorkspace(tournamentId: string) {
             }),
         onSuccess: (result: any) => {
             setImportCsv('');
-            toast.success('Teams imported', `${result.count || 0} teams were added from CSV.`);
+            toast.success(t('teamsImported'), t('teamsImportedHint', { count: result.count || 0 }));
             void invalidateWorkspace();
         },
-        onError: (error) => showMutationError(error, 'Could not import teams'),
+        onError: (error) => showMutationError(error, t('couldNotImportTeams')),
     });
 
     const handleSaveSeeds = async () => {
@@ -361,11 +364,11 @@ export function useManageWorkspace(tournamentId: string) {
                 ...(isRosterLocked ? {} : { seed: payload.seed }),
                 expectedUpdatedAt: team?.updatedAt,
             });
-            toast.success('Team saved', 'Team details were updated.');
+            toast.success(t('teamSaved'), t('teamSavedHint'));
             await invalidateWorkspace();
             return true;
         } catch (error) {
-            showMutationError(error, 'Could not save team');
+            showMutationError(error, t('couldNotSaveTeam'));
             return false;
         }
     };
@@ -382,11 +385,11 @@ export function useManageWorkspace(tournamentId: string) {
     const handleSavePlayer = async (playerId: string, draft: any) => {
         try {
             await clientApi.updatePlayer(playerId, buildPlayerPayload(draft, !isRosterLocked));
-            toast.success('Player saved', `${draft.name} was updated.`);
+            toast.success(t('playerSaved'), t('playerSavedHint', { name: draft.name }));
             await invalidateWorkspace();
             return true;
         } catch (error) {
-            showMutationError(error, 'Could not save player');
+            showMutationError(error, t('couldNotSavePlayer'));
             return false;
         }
     };
@@ -394,11 +397,11 @@ export function useManageWorkspace(tournamentId: string) {
     const handleAddPlayer = async (teamId: string, draft: any) => {
         try {
             await clientApi.addTeamPlayer(teamId, buildPlayerPayload(draft, true));
-            toast.success('Player added', `${draft.name} joined the roster.`);
+            toast.success(t('playerAdded'), t('playerAddedHint', { name: draft.name }));
             await invalidateWorkspace();
             return true;
         } catch (error) {
-            showMutationError(error, 'Could not add player');
+            showMutationError(error, t('couldNotAddPlayer'));
             return false;
         }
     };
@@ -406,11 +409,11 @@ export function useManageWorkspace(tournamentId: string) {
     const handleDeletePlayer = async (playerId: string) => {
         try {
             await clientApi.deletePlayer(playerId);
-            toast.success('Player removed', 'The player was removed from the roster.');
+            toast.success(t('playerRemoved'), t('playerRemovedHint'));
             await invalidateWorkspace();
             return true;
         } catch (error) {
-            showMutationError(error, 'Could not remove player');
+            showMutationError(error, t('couldNotRemovePlayer'));
             return false;
         }
     };
@@ -421,9 +424,7 @@ export function useManageWorkspace(tournamentId: string) {
 
         // While the roster is locked the team is already placed in the bracket, so the removal has
         // to be forced and the dialog says exactly what that does to the matches.
-        const message = isRosterLocked
-            ? `Force-remove ${teamSnapshot.name} while the bracket is live?\n\nImpact:\n- The team is pulled out of every match it is placed in (those slots go back to TBD).\n- Any win recorded for this team is cleared.\n- This cannot be undone from here — the team has to be re-registered with roster edits unlocked.`
-            : `Remove ${teamSnapshot.name} from this tournament?\n\nImpact:\n- Team and roster are removed from bracket participation.\n- Match slots may become TBD.\n\nYou can undo immediately from the success toast.`;
+        const message = tConfirm(isRosterLocked ? 'forceRemoveTeam' : 'removeTeam', { name: teamSnapshot.name });
         if (!window.confirm(message)) return;
 
         deleteTeamMutation.mutate({ teamId, teamSnapshot, force: isRosterLocked });
@@ -440,10 +441,10 @@ export function useManageWorkspace(tournamentId: string) {
                     type,
                 }),
             });
-            toast.success('Announcement sent', 'The update was written to the notification stream.');
+            toast.success(t('announcementSent'), t('announcementSentHint'));
             void invalidateWorkspace();
         } catch (error) {
-            showMutationError(error, 'Could not send match update');
+            showMutationError(error, t('couldNotAnnounce'));
             throw error;
         }
     };
@@ -454,12 +455,12 @@ export function useManageWorkspace(tournamentId: string) {
 
     const handleExportCsv = () => {
         window.open(`/api/tournaments/${tournamentId}/teams?format=csv`, '_blank', 'noopener,noreferrer');
-        toast.info('Export started', 'A CSV download should open in a new tab.');
+        toast.info(t('exportStarted'), t('exportStartedHint'));
     };
 
     const handleCopyPublicLink = async () => {
         await navigator.clipboard.writeText(`${window.location.origin}/tournaments/${tournamentId}`);
-        toast.success('Link copied', 'The public tournament link is on your clipboard.');
+        toast.success(t('linkCopied'), t('linkCopiedHint'));
     };
 
     const onDragStart = (e: React.DragEvent, index: number) => {
@@ -521,9 +522,9 @@ export function useManageWorkspace(tournamentId: string) {
     const loadMatch = async (matchId: string) => {
         try {
             const result: any = await loadMatchMutation.mutateAsync(matchId);
-            toast.success('Match called', result.message || 'Both teams were notified.');
+            toast.success(t('matchCalled'), result.message || t('matchCalledHint'));
         } catch (error) {
-            showMutationError(error, 'Could not start match');
+            showMutationError(error, t('couldNotStartMatch'));
         }
     };
 
@@ -531,14 +532,14 @@ export function useManageWorkspace(tournamentId: string) {
     const deleteTournament = async () => {
         try {
             await apiRequest(`/api/tournaments/${tournamentId}`, { method: 'DELETE' });
-            toast.success('Tournament deleted', 'The tournament and related data were removed.', {
-                label: 'Open Admin',
+            toast.success(t('tournamentDeleted'), t('tournamentDeletedHint'), {
+                label: t('openAdmin'),
                 onAction: () => router.push('/admin'),
             });
             router.push('/admin');
             router.refresh();
         } catch (error) {
-            showMutationError(error, 'Could not delete tournament');
+            showMutationError(error, t('couldNotDeleteTournament'));
         }
     };
 
