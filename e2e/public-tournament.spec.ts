@@ -78,9 +78,9 @@ test('matches tab groups every round and states each match status', async ({ pag
   await expect(board.getByRole('heading', { name: 'Semi-Finals' })).toBeVisible();
   await expect(board.getByRole('heading', { name: 'Grand Final' })).toBeVisible();
 
-  // Played matches read FINAL with their score; the called one reads LIVE.
+  // Played matches read Done with their score; the live one reads Live.
   const statuses = board.getByTestId('public-match-status');
-  await expect(statuses.filter({ hasText: 'FINAL' })).toHaveCount(playedMatches.length);
+  await expect(statuses.filter({ hasText: 'Done' })).toHaveCount(playedMatches.length);
   await expect(statuses.filter({ hasText: 'LIVE' })).toHaveCount(1);
   const playedScores = board.getByTestId(`public-match-${playedMatches[0].id}`).locator('span.mds-numeric');
   await expect(playedScores.nth(0)).toHaveText('1');
