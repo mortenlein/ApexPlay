@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ShieldAlert, Globe, ChevronRight, AlertTriangle } from 'lucide-react';
 import {
   BO3_STAGES,
@@ -10,6 +11,12 @@ import {
   getGameMetadata,
   teamSizeLabel,
 } from '@/lib/games';
+
+/** Format names are one set for the whole organizer surface; they live with the wizard keys. */
+const FORMAT_KEYS: Record<string, { name: string; desc: string }> = {
+  SINGLE_ELIMINATION: { name: 'formatSingleName', desc: 'formatSingleDesc' },
+  DOUBLE_ELIMINATION: { name: 'formatDoubleName', desc: 'formatDoubleDesc' },
+};
 
 interface ManageSettingsProps {
   tournament: any;
@@ -77,6 +84,9 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
   onDeleteTournament,
   updating,
 }) => {
+  const t = useTranslations('organizer.settings');
+  const tWizard = useTranslations('organizer.wizard');
+  const tConfirm = useTranslations('organizer.confirm');
   // Renaming is a local edit until the organizer commits it. Every PATCH carries the
   // tournament's `updatedAt` as a concurrency token, so a request per keystroke would
   // make each keystroke after the first conflict.
@@ -118,7 +128,7 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
   };
 
   const handleDelete = () => {
-    if (window.confirm(`Delete "${tournament.name}" permanently?\n\nThis removes the tournament, its teams, matches, and standings. This cannot be undone.`)) {
+    if (window.confirm(tConfirm('deleteTournament', { name: tournament.name }))) {
       onDeleteTournament();
     }
   };
@@ -127,11 +137,11 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <SettingsCard title="Tournament Settings" hint="Name, signup rules, and the operations lock.">
+      <SettingsCard title={t('title')} hint={t('hint')}>
         <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-1.5">
-              <label className="mds-uppercase-label" htmlFor="tournament-name">Tournament name</label>
+              <label className="mds-uppercase-label" htmlFor="tournament-name">{t('name')}</label>
               <input
                 id="tournament-name"
                 type="text"
@@ -148,11 +158,11 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
                   }
                 }}
                 className="mds-input mds-name h-11 px-4 text-sm"
-                placeholder="e.g. Invitational Finals"
+                placeholder={t('namePlaceholder')}
               />
               <div className="flex min-h-[2.25rem] items-center justify-between gap-3">
                 <p className="text-xs text-[var(--mds-text-subtle)]">
-                  {nameDirty ? 'Unsaved change - press Enter or save.' : 'Saved.'}
+                  {t(nameDirty ? 'unsaved' : 'saved')}
                 </p>
                 <button
                   type="button"
@@ -160,36 +170,36 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
                   disabled={!nameDirty || updating}
                   className="mds-btn-secondary h-9 px-4 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-30"
                 >
-                  {updating ? 'Saving…' : 'Save Name'}
+                  {t(updating ? 'saving' : 'saveName')}
                 </button>
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="mds-uppercase-label">Game</label>
+              <label className="mds-uppercase-label">{t('game')}</label>
               <div
                 className="mds-input flex h-11 cursor-not-allowed items-center px-4 text-sm text-[var(--mds-text-muted)] opacity-60"
-                title="The game is fixed when the tournament is created"
+                title={t('gameFixed')}
               >
-                {`${gameMeta?.name || tournament.game} · Locked`}
+                {t('gameLocked', { game: gameMeta?.name || tournament.game })}
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <ToggleRow
-              label="Require Steam sign-in"
-              description="Players sign in with Steam to register themselves."
+              label={t('requireSteam')}
+              description={t('requireSteamHint')}
               checked={Boolean(tournament.steamSignupEnabled)}
-              ariaLabel="Toggle Steam sign-in requirement"
+              ariaLabel={t('toggleSteam')}
               onToggle={() => onUpdateTournament({ steamSignupEnabled: !tournament.steamSignupEnabled })}
             />
             <div className="flex items-center justify-between gap-4 rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/20 px-4 py-3.5">
               <div className="flex items-center gap-2.5">
                 <Globe size={15} className="text-[var(--mds-green)]" />
-                <span className="text-sm font-semibold">Public page</span>
+                <span className="text-sm font-semibold">{t('publicPage')}</span>
               </div>
               <span className="mds-badge border border-[var(--mds-green)]/20 bg-[var(--mds-green)]/10 text-[var(--mds-green)]">
-                Visible
+                {t('visible')}
               </span>
             </div>
           </div>
@@ -197,28 +207,28 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <ToggleRow
-                label="Lock roster and seeding"
-                description="Stops team edits and bracket regeneration until an admin unlocks it."
+                label={t('lockRoster')}
+                description={t('lockRosterHint')}
                 checked={Boolean(tournament.rosterLocked)}
-                ariaLabel="Toggle roster lock"
+                ariaLabel={t('toggleLock')}
                 tone="warning"
                 onToggle={() => onUpdateTournament({ rosterLocked: !tournament.rosterLocked })}
               />
               <div className="flex items-center justify-between rounded-lg border border-[var(--mds-border)] bg-[var(--mds-page)] px-4 py-2.5">
-                <span className="mds-uppercase-label">Current state</span>
+                <span className="mds-uppercase-label">{t('currentState')}</span>
                 <span className={`mds-badge ${tournament.rosterLocked ? 'border border-[var(--mds-amber)]/20 bg-[var(--mds-amber)]/10 text-[var(--mds-amber)]' : 'border border-[var(--mds-green)]/20 bg-[var(--mds-green)]/10 text-[var(--mds-green)]'}`}>
-                  {tournament.rosterLocked ? 'Locked' : 'Editable'}
+                  {t(tournament.rosterLocked ? 'locked' : 'editable')}
                 </span>
               </div>
             </div>
 
             <div className="rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/20 px-4 py-3.5">
-              <p className="mds-uppercase-label">Last updated</p>
+              <p className="mds-uppercase-label">{t('lastUpdated')}</p>
               <p className="mds-numeric mt-1.5 text-sm font-semibold">
                 {new Date(tournament.updatedAt).toLocaleString()}
               </p>
               <p className="mt-1.5 text-xs leading-relaxed text-[var(--mds-text-muted)]">
-                Conflict protection uses this timestamp to stop older edits from overwriting newer ones.
+                {t('conflictHint')}
               </p>
             </div>
           </div>
@@ -226,20 +236,18 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
       </SettingsCard>
 
       {/* BRACKET SETTINGS */}
-      <SettingsCard title="Bracket Settings" hint="Format, team size, and series rules — each change saves immediately.">
+      <SettingsCard title={t('bracketTitle')} hint={t('bracketHint')}>
         {bracketExists && (
           <div className="mb-5 flex items-center gap-2.5 rounded-lg border border-[var(--mds-amber)]/30 bg-[var(--mds-amber)]/5 px-4 py-3">
             <AlertTriangle size={15} className="shrink-0 text-[var(--mds-amber)]" />
-            <p className="text-sm font-semibold text-[var(--mds-amber)]">
-              Regenerate the bracket after changing these
-            </p>
+            <p className="text-sm font-semibold text-[var(--mds-amber)]">{t('regenerateWarning')}</p>
           </div>
         )}
 
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="mds-uppercase-label">Bracket style</label>
+              <label className="mds-uppercase-label">{t('bracketStyle')}</label>
               {FORMAT_OPTIONS.map((f) => (
                 <button
                   key={f.id}
@@ -249,14 +257,14 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
                   onClick={() => tournament.format !== f.id && saveBracketField({ format: f.id })}
                   className={`w-full rounded-lg border-2 p-4 text-left transition-all disabled:cursor-not-allowed disabled:opacity-50 ${tournament.format === f.id ? 'border-[var(--mds-action)] bg-[var(--mds-action)]/10' : 'border-[var(--mds-border)] bg-[var(--mds-input)]/20 hover:border-[var(--mds-action)]/40'}`}
                 >
-                  <div className="text-sm font-bold">{f.name}</div>
-                  <div className="mt-0.5 text-xs text-[var(--mds-text-muted)]">{f.desc}</div>
+                  <div className="text-sm font-bold">{tWizard(FORMAT_KEYS[f.id].name)}</div>
+                  <div className="mt-0.5 text-xs text-[var(--mds-text-muted)]">{tWizard(FORMAT_KEYS[f.id].desc)}</div>
                 </button>
               ))}
             </div>
 
             <div className="space-y-2">
-              <label className="mds-uppercase-label">Team size</label>
+              <label className="mds-uppercase-label">{t('teamSize')}</label>
               <div className="grid grid-cols-2 gap-2">
                 {teamSizeOptions.map((size: number) => (
                   <button
@@ -274,10 +282,10 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
 
               <div className="pt-2">
                 <ToggleRow
-                  label="3rd place match"
-                  description="Decides the bronze medal between the two losing semi-finalists."
+                  label={t('thirdPlace')}
+                  description={t('thirdPlaceHint')}
                   checked={Boolean(tournament.hasThirdPlace)}
-                  ariaLabel="Toggle third place match"
+                  ariaLabel={t('toggleThirdPlace')}
                   disabled={updating}
                   onToggle={() => saveBracketField({ hasThirdPlace: !tournament.hasThirdPlace })}
                 />
@@ -287,7 +295,7 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-1.5">
-              <label className="mds-uppercase-label" htmlFor="bo3-stage">BO3 from stage</label>
+              <label className="mds-uppercase-label" htmlFor="bo3-stage">{t('bo3From')}</label>
               <div className="relative">
                 <select
                   id="bo3-stage"
@@ -307,10 +315,10 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
                   <ChevronRight size={15} className="rotate-90" />
                 </div>
               </div>
-              <p className="text-xs leading-relaxed text-[var(--mds-text-subtle)]">BO3 applies from this stage through to the final. Earlier rounds stay BO1.</p>
+              <p className="text-xs leading-relaxed text-[var(--mds-text-subtle)]">{t('bo3Help')}</p>
             </div>
             <div className="space-y-1.5">
-              <label className="mds-uppercase-label" htmlFor="bo5-stage">BO5 from stage</label>
+              <label className="mds-uppercase-label" htmlFor="bo5-stage">{t('bo5From')}</label>
               <div className="relative">
                 <select
                   id="bo5-stage"
@@ -330,7 +338,7 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
                   <ChevronRight size={15} className="rotate-90" />
                 </div>
               </div>
-              <p className="text-xs leading-relaxed text-[var(--mds-text-subtle)]">BO5 overrides BO3 for the stages they share.</p>
+              <p className="text-xs leading-relaxed text-[var(--mds-text-subtle)]">{t('bo5Help')}</p>
             </div>
           </div>
         </div>
@@ -341,11 +349,9 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
         <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div>
             <h3 className="flex items-center gap-2 text-base font-bold text-[var(--mds-red)]">
-              <ShieldAlert size={16} /> Delete Tournament
+              <ShieldAlert size={16} /> {t('deleteTitle')}
             </h3>
-            <p className="mt-1 text-sm text-[var(--mds-text-muted)]">
-              Permanently removes the tournament, its teams, matches, and standings.
-            </p>
+            <p className="mt-1 text-sm text-[var(--mds-text-muted)]">{t('deleteHint')}</p>
           </div>
           <button
             type="button"
@@ -354,7 +360,7 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
                Tailwind bg utility, which rendered the destructive action in brand blue. */
             className="inline-flex h-11 shrink-0 items-center justify-center rounded-sm bg-[var(--mds-red)] px-6 text-sm font-bold text-white transition-opacity hover:opacity-90"
           >
-            Delete Tournament
+            {t('deleteTitle')}
           </button>
         </div>
       </div>

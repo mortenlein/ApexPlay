@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { Plus, Users, Settings2, Trash2, Save, Info, GripVertical } from 'lucide-react';
 import Image from 'next/image';
 import { Badge } from '@/components/ui';
@@ -48,6 +49,7 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
   onExportCsv,
   importing,
 }) => {
+  const t = useTranslations('organizer.participants');
   const sortedTeams = [...teams].sort((a, b) => (Number(a.seed) || 999) - (Number(b.seed) || 999));
   const isLocked = tournament.rosterLocked;
   const teamSize = Number(tournament.teamSize) || 5;
@@ -73,8 +75,8 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
         <div className="mds-card overflow-hidden p-0">
           <header className="flex flex-col gap-3 border-b border-[var(--mds-border)] bg-[var(--mds-input)]/20 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <h2 className="text-lg font-bold tracking-tight">Teams</h2>
-              <Badge tone="neutral">{teams.length} registered</Badge>
+              <h2 className="text-lg font-bold tracking-tight">{t('teams')}</h2>
+              <Badge tone="neutral">{t('registered', { count: teams.length })}</Badge>
             </div>
             {Object.keys(draftSeeds).length > 0 ? (
               <button
@@ -82,7 +84,7 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                 disabled={isLocked}
                 className="mds-btn-primary h-9 gap-2 px-4 text-sm font-bold disabled:opacity-40"
               >
-                <Save size={14} /> Save seeding
+                <Save size={14} /> {t('saveSeeding')}
               </button>
             ) : null}
           </header>
@@ -104,7 +106,7 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                   <div className="w-14 shrink-0">
                     <input
                       type="number"
-                      aria-label={`Seed for ${team.name}`}
+                      aria-label={t('seedFor', { name: team.name })}
                       disabled={isLocked}
                       onClick={(e) => e.stopPropagation()}
                       onChange={(e) => {
@@ -125,7 +127,7 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                   <div className="min-w-0">
                     <p className="mds-name text-sm">{team.name}</p>
                     <p className="mt-0.5 text-xs text-[var(--mds-text-subtle)]">
-                      {team.players?.length || 0} of {teamSize} players
+                      {t('playerCount', { count: team.players?.length || 0, size: teamSize })}
                     </p>
                   </div>
                 </div>
@@ -135,16 +137,16 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                 <div className="ml-auto flex shrink-0 items-center gap-2">
                   <button
                     onClick={() => onEditTeam(team)}
-                    title={`Edit ${team.name}`}
-                    aria-label={`Edit ${team.name}`}
+                    title={t('editTeam', { name: team.name })}
+                    aria-label={t('editTeam', { name: team.name })}
                     className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)] text-[var(--mds-text-muted)] transition-all hover:border-[var(--mds-action)]/40 hover:text-[var(--mds-action)]"
                   >
                     <Settings2 size={15} />
                   </button>
                   <button
                     onClick={() => onDeleteTeam(team.id)}
-                    title={`Remove ${team.name}`}
-                    aria-label={`Remove ${team.name}`}
+                    title={t('removeTeam', { name: team.name })}
+                    aria-label={t('removeTeam', { name: team.name })}
                     className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)] text-[var(--mds-text-muted)] transition-all hover:border-[var(--mds-red)]/40 hover:text-[var(--mds-red)]"
                   >
                     <Trash2 size={15} />
@@ -157,9 +159,9 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
               <div className="flex flex-col items-center gap-3 py-20 text-center">
                 <Users size={28} className="text-[var(--mds-text-subtle)]" />
                 <div>
-                  <p className="text-sm font-bold">No teams yet</p>
+                  <p className="text-sm font-bold">{t('emptyTitle')}</p>
                   <p className="mt-1 text-sm text-[var(--mds-text-muted)]">
-                    {isLocked ? 'Unlock roster edits to add teams' : 'Register a team with the form, or paste a CSV.'}
+                    {t(isLocked ? 'emptyLocked' : 'emptyHint')}
                   </p>
                 </div>
               </div>
@@ -170,15 +172,15 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
 
       <div className="space-y-6 lg:col-span-4 lg:order-1">
         <div className="mds-card p-5">
-          <h2 className="text-lg font-bold tracking-tight">Register Team</h2>
+          <h2 className="text-lg font-bold tracking-tight">{t('registerTeam')}</h2>
           <form onSubmit={onAddTeam} className="mt-4 space-y-4">
             {isLocked ? (
               <div className="rounded-lg border border-[var(--mds-amber)]/30 bg-[var(--mds-amber)]/10 px-3 py-3 text-sm leading-relaxed text-[var(--mds-text-muted)]">
-                Roster edits are locked because the bracket is already in play. Unlock roster edits in settings before adding or removing teams.
+                {t('lockedNotice')}
               </div>
             ) : null}
             <div className="space-y-1.5">
-              <label className="mds-uppercase-label" htmlFor="new-team-name">Team name</label>
+              <label className="mds-uppercase-label" htmlFor="new-team-name">{t('teamName')}</label>
               <input
                 id="new-team-name"
                 type="text"
@@ -187,11 +189,11 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                 value={newTeam.name}
                 onChange={(e) => setNewTeam({ ...newTeam, name: e.target.value })}
                 className={fieldInput}
-                placeholder="Enter team name"
+                placeholder={t('teamNamePlaceholder')}
               />
             </div>
             <div className="space-y-1.5">
-              <label className="mds-uppercase-label" htmlFor="new-team-seed">Initial seed (1-99)</label>
+              <label className="mds-uppercase-label" htmlFor="new-team-seed">{t('initialSeed')}</label>
               <input
                 id="new-team-seed"
                 type="number"
@@ -199,14 +201,14 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                 value={newTeam.seed}
                 onChange={(e) => setNewTeam({ ...newTeam, seed: e.target.value })}
                 className={`${fieldInput} mds-numeric`}
-                placeholder="Seed position"
+                placeholder={t('seedPlaceholder')}
               />
             </div>
 
             <div className="space-y-2 border-t border-[var(--mds-border)] pt-4">
               <div className="flex items-baseline justify-between gap-3">
-                <span className="mds-uppercase-label">Roster ({filledRosterCount}/{teamSize})</span>
-                <span className="text-xs text-[var(--mds-text-subtle)]">Blank rows are skipped</span>
+                <span className="mds-uppercase-label">{t('roster', { filled: filledRosterCount, size: teamSize })}</span>
+                <span className="text-xs text-[var(--mds-text-subtle)]">{t('blankRows')}</span>
               </div>
               {rosterRows.map((row, index) => (
                 <div key={index} className="space-y-2 rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/20 p-2.5">
@@ -221,7 +223,7 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                       value={row.name || ''}
                       onChange={(e) => setRosterRow(index, { name: e.target.value })}
                       className="mds-input h-9 px-2.5 text-sm"
-                      placeholder={index === 0 ? 'Player name (captain)' : 'Player name'}
+                      placeholder={t(index === 0 ? 'captainPlaceholder' : 'playerPlaceholder')}
                     />
                   </div>
                   <div className="grid grid-cols-3 gap-2 pl-7">
@@ -232,7 +234,7 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                       value={row.nickname || ''}
                       onChange={(e) => setRosterRow(index, { nickname: e.target.value })}
                       className="mds-input h-9 px-2 text-xs"
-                      placeholder="Nick"
+                      placeholder={t('nickPlaceholder')}
                     />
                     <input
                       type="text"
@@ -241,7 +243,7 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                       value={row.seating || ''}
                       onChange={(e) => setRosterRow(index, { seating: e.target.value })}
                       className="mds-input mds-numeric h-9 px-2 text-xs uppercase"
-                      placeholder="Seat"
+                      placeholder={t('seatPlaceholder')}
                     />
                     <input
                       type="text"
@@ -250,7 +252,7 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
                       value={row.steamId || ''}
                       onChange={(e) => setRosterRow(index, { steamId: e.target.value })}
                       className="mds-input mds-numeric h-9 px-2 text-xs"
-                      placeholder="SteamID"
+                      placeholder={t('steamIdPlaceholder')}
                     />
                   </div>
                 </div>
@@ -258,7 +260,7 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
             </div>
 
             <button type="submit" disabled={isLocked} className="mds-btn-primary h-11 w-full gap-2 text-sm font-bold disabled:opacity-40">
-              <Plus size={16} /> Add Team
+              <Plus size={16} /> {t('addTeam')}
             </button>
           </form>
         </div>
@@ -266,21 +268,18 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
         <div className="mds-card border-[var(--mds-action)]/20 bg-[var(--mds-action-soft)] p-5">
           <div className="flex items-start gap-3">
             <Info size={16} className="mt-0.5 shrink-0 text-[var(--mds-action)]" />
-            <p className="text-sm leading-relaxed text-[var(--mds-text-muted)]">
-              Drag teams to reorder the bracket seeds, or type a seed number directly. Once the bracket is live,
-              lock roster edits in settings to prevent accidental changes.
-            </p>
+            <p className="text-sm leading-relaxed text-[var(--mds-text-muted)]">{t('seedingHint')}</p>
           </div>
         </div>
 
         <div className="mds-card p-5">
           <div className="mb-3 flex items-start justify-between gap-3">
             <div>
-              <h3 className="text-sm font-bold tracking-tight">Bulk import</h3>
-              <p className="mt-0.5 text-xs text-[var(--mds-text-muted)]">Paste CSV rows to register several teams at once.</p>
+              <h3 className="text-sm font-bold tracking-tight">{t('bulkImport')}</h3>
+              <p className="mt-0.5 text-xs text-[var(--mds-text-muted)]">{t('bulkImportHint')}</p>
             </div>
             <button type="button" onClick={onExportCsv} className="mds-btn-secondary h-9 shrink-0 px-4 text-sm font-bold">
-              Export CSV
+              {t('exportCsv')}
             </button>
           </div>
           <textarea
@@ -296,7 +295,7 @@ export const ManageParticipants: React.FC<ManageParticipantsProps> = ({
             onClick={onImportCsv}
             className="mds-btn-primary mt-3 h-10 w-full text-sm font-bold disabled:opacity-40"
           >
-            {importing ? 'Importing teams…' : 'Import teams'}
+            {t(importing ? 'importing' : 'importTeams')}
           </button>
         </div>
       </div>

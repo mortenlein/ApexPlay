@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Plus, Trophy, ExternalLink, Radio, Users, Swords, Activity, AlertTriangle, Shield, Copy, Megaphone, CalendarClock, Eye, EyeOff, Gauge } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -17,6 +18,10 @@ import { usePerformanceBudget } from '@/hooks/usePerformanceBudget';
 
 export default function AdminDashboardClient() {
   usePerformanceBudget('AdminDashboardClient', 220);
+  const t = useTranslations('organizer.dashboard');
+  const tToast = useTranslations('organizer.toast');
+  const tConfirm = useTranslations('organizer.confirm');
+  const tCommon = useTranslations('common');
   const queryClient = useQueryClient();
   const router = useRouter();
   const toast = useToast();
@@ -52,11 +57,11 @@ export default function AdminDashboardClient() {
       await queryClient.invalidateQueries({ queryKey: ['tournaments'] });
       await queryClient.invalidateQueries({ queryKey: ['activity'] });
       // The wizard stays open on its final step (share link / go to setup); its Close calls onClose.
-      toast.success('Tournament created', `${result.name} is ready for setup.`);
+      toast.success(tToast('tournamentCreated'), tToast('readyForSetup', { name: result.name }));
       return result.id;
     } catch (creationError) {
-      const message = creationError instanceof ApiError ? creationError.message : 'Could not create tournament.';
-      toast.error('Creation failed', message);
+      const message = creationError instanceof ApiError ? creationError.message : tToast('couldNotCreate');
+      toast.error(tToast('creationFailed'), message);
       throw creationError;
     }
   };
@@ -92,8 +97,8 @@ export default function AdminDashboardClient() {
     };
     const created = await clientApi.createTournament(payload);
     await queryClient.invalidateQueries({ queryKey: ['tournaments'] });
-    toast.success('Tournament duplicated', `${created.name} is ready for setup.`, {
-      label: 'Open',
+    toast.success(tToast('tournamentDuplicated'), tToast('readyForSetup', { name: created.name }), {
+      label: tToast('openAction'),
       onAction: () => router.push(`/admin/tournaments/${created.id}`),
     });
   };
@@ -109,17 +114,21 @@ export default function AdminDashboardClient() {
       }),
     });
     await queryClient.invalidateQueries({ queryKey: ['tournaments'] });
-    toast.success(nextPublished ? 'Tournament published' : 'Tournament unpublished', `${tournament.name} ${nextPublished ? 'is now open for player sign-up' : 'is now hidden from sign-up'}.`, {
-      label: nextPublished ? 'Unpublish' : 'Publish',
-      onAction: () => {
-        void togglePublished({ ...tournament, steamSignupEnabled: nextPublished });
-      },
-    });
+    toast.success(
+      tToast(nextPublished ? 'published' : 'unpublished'),
+      tToast(nextPublished ? 'publishedHint' : 'unpublishedHint', { name: tournament.name }),
+      {
+        label: t(nextPublished ? 'actionUnpublish' : 'actionPublish'),
+        onAction: () => {
+          void togglePublished({ ...tournament, steamSignupEnabled: nextPublished });
+        },
+      }
+    );
   };
 
   const bulkSchedule = async (tournamentId: string, teamsCount: number, matchesCount: number) => {
     if (teamsCount < 2) {
-      toast.info('Not enough teams', 'At least two teams are required to generate rounds.');
+      toast.info(tToast('notEnoughTeams'), tToast('notEnoughTeamsHint'));
       return;
     }
 
@@ -132,10 +141,8 @@ export default function AdminDashboardClient() {
       body: JSON.stringify(regenerating ? { overrideLock: true } : {}),
     });
     toast.success(
-      regenerating ? 'Bracket regenerated' : 'Bracket generated',
-      regenerating
-        ? 'Existing matches were replaced with a fresh bracket.'
-        : 'Bracket rounds were generated for this tournament.'
+      tToast(regenerating ? 'bracketRegenerated' : 'bracketGenerated'),
+      tToast(regenerating ? 'bracketRegeneratedHint' : 'bracketGeneratedHint')
     );
   };
 
@@ -143,7 +150,7 @@ export default function AdminDashboardClient() {
     const matches = await clientApi.getMatches(tournamentId);
     const targets = matches.filter((match: any) => isActive(match.status) || isDone(match.status)).slice(0, 8);
     if (targets.length === 0) {
-      toast.info('No matches to announce', 'Create or load matches before broadcasting updates.');
+      toast.info(tToast('nothingToAnnounce'), tToast('nothingToAnnounceHint'));
       return;
     }
 
@@ -156,69 +163,71 @@ export default function AdminDashboardClient() {
         type: match.status === 'COMPLETED' ? 'RESULT' : 'START',
       }),
     })));
-    toast.success('Bulk announcements sent', `${targets.length} match update(s) were sent to Discord.`);
+    toast.success(tToast('bulkAnnounced'), tToast('bulkAnnouncedHint', { count: targets.length }));
   };
 
   /** What this tournament still needs from the organizer — the only per-row state the list payload can back. */
   const setupState = (tournament: any) => {
     const teamCount = tournament._count?.teams || 0;
     const matchCount = tournament._count?.matches || 0;
-    if (teamCount === 0) return { label: 'Needs teams', tone: 'pending' as const };
-    if (matchCount === 0) return { label: 'Ready to bracket', tone: 'info' as const };
-    return { label: 'Bracket live', tone: 'ready' as const };
+    if (teamCount === 0) return { label: t('needsTeams'), tone: 'pending' as const };
+    if (matchCount === 0) return { label: t('readyToBracket'), tone: 'info' as const };
+    return { label: t('bracketLive'), tone: 'ready' as const };
   };
 
   /** The secondary actions on a tournament row: real work, but never competing with Open. */
   const rowActions = (tournament: any) => [
     {
-      label: 'Overlay',
+      label: t('actionOverlay'),
       icon: ExternalLink,
       run: () => window.open(`/bracket/${tournament.id}/overlay`, '_blank', 'noopener,noreferrer'),
     },
     {
-      label: 'Duplicate',
+      label: t('actionDuplicate'),
       icon: Copy,
       run: () => {
-        const confirmed = window.confirm(`Duplicate ${tournament.name}?\n\nImpact:\n- Creates a new tournament with copied settings.\n- Teams, matches, and logs are not copied.`);
+        const confirmed = window.confirm(tConfirm('duplicate', { name: tournament.name }));
         if (!confirmed) return;
         void duplicateTournament(tournament.id).catch((duplicateError) => {
-          toast.error('Duplicate failed', duplicateError instanceof Error ? duplicateError.message : 'Unable to duplicate tournament');
+          toast.error(tToast('duplicateFailed'), duplicateError instanceof Error ? duplicateError.message : tToast('duplicateFailedHint'));
         });
       },
     },
     {
-      label: tournament.steamSignupEnabled ? 'Unpublish' : 'Publish',
+      label: t(tournament.steamSignupEnabled ? 'actionUnpublish' : 'actionPublish'),
       icon: tournament.steamSignupEnabled ? EyeOff : Eye,
       run: () => {
-        const confirmed = window.confirm(`${tournament.steamSignupEnabled ? 'Unpublish' : 'Publish'} ${tournament.name}?\n\nImpact:\n- ${tournament.steamSignupEnabled ? 'Players can no longer join via sign-up.' : 'Players can join via sign-up.'}`);
+        const confirmed = window.confirm(
+          tConfirm(tournament.steamSignupEnabled ? 'unpublish' : 'publish', { name: tournament.name })
+        );
         if (!confirmed) return;
         void togglePublished(tournament).catch((publishError) => {
-          toast.error('Publish toggle failed', publishError instanceof Error ? publishError.message : 'Unable to update visibility');
+          toast.error(tToast('publishFailed'), publishError instanceof Error ? publishError.message : tToast('publishFailedHint'));
         });
       },
     },
     {
-      label: 'Schedule',
+      label: t('actionSchedule'),
       icon: CalendarClock,
       run: () => {
         const hasMatches = (tournament._count?.matches || 0) > 0;
-        const confirmed = window.confirm(hasMatches
-          ? 'This will delete all existing matches and results and rebuild the bracket. Continue?'
-          : `Schedule rounds for ${tournament.name} now?\n\nImpact:\n- The first round is created from the seeded teams and roster edits are locked.`);
+        const confirmed = window.confirm(
+          hasMatches ? tConfirm('rebuildBracket') : tConfirm('schedule', { name: tournament.name })
+        );
         if (!confirmed) return;
         void bulkSchedule(tournament.id, tournament._count?.teams || 0, tournament._count?.matches || 0).catch((scheduleError) => {
-          toast.error('Scheduling failed', scheduleError instanceof Error ? scheduleError.message : 'Unable to schedule rounds');
+          toast.error(tToast('scheduleFailed'), scheduleError instanceof Error ? scheduleError.message : tToast('scheduleFailedHint'));
         });
       },
     },
     {
-      label: 'Announce',
+      label: t('actionAnnounce'),
       icon: Megaphone,
       run: () => {
-        const confirmed = window.confirm(`Send bulk Discord announcements for ${tournament.name}?\n\nImpact:\n- START/RESULT updates will be pushed for active matches.`);
+        const confirmed = window.confirm(tConfirm('announce', { name: tournament.name }));
         if (!confirmed) return;
         void bulkAnnounce(tournament.id).catch((announceError) => {
-          toast.error('Announcement failed', announceError instanceof Error ? announceError.message : 'Unable to send announcements');
+          toast.error(tToast('announceFailed'), announceError instanceof Error ? announceError.message : tToast('announceFailedHint'));
         });
       },
     },
@@ -229,45 +238,39 @@ export default function AdminDashboardClient() {
       <main className="mds-container space-y-6 py-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="mds-uppercase-label text-brand">Admin</p>
-            <h1 className="mt-1 font-brand text-2xl font-bold tracking-tight">Tournament control center</h1>
-            <p className="mt-1.5 max-w-2xl text-sm text-fg-muted">
-              Create events, see what still needs setting up, and open the workspace you run the LAN from.
-            </p>
+            <p className="mds-uppercase-label text-brand">{t('eyebrow')}</p>
+            <h1 className="mt-1 font-brand text-2xl font-bold tracking-tight">{t('title')}</h1>
+            <p className="mt-1.5 max-w-2xl text-sm text-fg-muted">{t('lede')}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <Link href="/marshal/dashboard" className="mds-btn-secondary h-10 gap-2 px-4 text-sm font-bold">
               <Radio size={14} />
-              Marshal board
+              {t('marshalBoard')}
             </Link>
             <button onClick={() => setIsCreating(true)} className="mds-btn-primary h-10 gap-2 px-4 text-sm font-bold">
               <Plus size={15} />
-              Create
+              {t('create')}
             </button>
           </div>
         </div>
 
         <FirstRunCoach
           id="admin"
-          title="Run your first tournament"
-          steps={[
-            'Create or duplicate a tournament from this dashboard.',
-            'Seed teams, generate rounds, then open the marshal board.',
-            'Use bulk announce once matches are ready for players.',
-          ]}
+          title={t('coachTitle')}
+          steps={[t('coachStep1'), t('coachStep2'), t('coachStep3')]}
           cta={
             <button onClick={() => setIsCreating(true)} className="mds-btn-primary h-9 px-4 text-sm font-bold">
-              Create Tournament
+              {t('createTournament')}
             </button>
           }
         />
 
         <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
           {[
-            { label: 'Tournaments', value: tournaments.length, icon: Trophy, note: 'In this workspace' },
-            { label: 'Teams', value: totalTeams, icon: Users, note: 'Across all events' },
-            { label: 'Matches', value: totalMatches, icon: Swords, note: 'Created so far' },
-            { label: 'Need attention', value: needsSetup + readyForBracket, icon: AlertTriangle, note: 'Setup or bracket tasks' },
+            { label: tCommon('tournaments'), value: tournaments.length, icon: Trophy, note: t('statTournaments') },
+            { label: tCommon('teams'), value: totalTeams, icon: Users, note: t('statTeams') },
+            { label: tCommon('matches'), value: totalMatches, icon: Swords, note: t('statMatches') },
+            { label: t('needAttention'), value: needsSetup + readyForBracket, icon: AlertTriangle, note: t('statNeedAttention') },
           ].map((stat) => (
             <div key={stat.label} className="mds-card p-4">
               <div className="flex items-center justify-between gap-2">
@@ -282,35 +285,35 @@ export default function AdminDashboardClient() {
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.7fr_1fr]">
           <section className="space-y-3">
-            <h2 className="mds-uppercase-label">Tournaments</h2>
+            <h2 className="mds-uppercase-label">{tCommon('tournaments')}</h2>
 
             {error ? (
               <EmptyState
                 icon={<Shield size={24} />}
-                title="Could not load tournaments"
-                description={error instanceof Error ? error.message : 'Try refreshing the page.'}
+                title={t('loadFailedTitle')}
+                description={error instanceof Error ? error.message : t('loadFailedHint')}
                 action={
                   <button
                     onClick={() => queryClient.invalidateQueries({ queryKey: ['tournaments'] })}
                     className="mds-btn-primary h-10 px-5 text-sm font-bold"
                   >
-                    Retry
+                    {tCommon('retry')}
                   </button>
                 }
               />
             ) : isLoading ? (
               <div className="py-20 text-center">
                 <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
-                <p className="mds-uppercase-label mt-4">Loading tournaments…</p>
+                <p className="mds-uppercase-label mt-4">{t('loading')}</p>
               </div>
             ) : tournaments.length === 0 ? (
               <EmptyState
                 icon={<Trophy size={28} />}
-                title="No tournaments yet"
-                description="Create your first tournament to start adding teams, generating brackets, and running matches."
+                title={t('emptyTitle')}
+                description={t('emptyHint')}
                 action={
                   <button onClick={() => setIsCreating(true)} className="mds-btn-primary h-11 gap-2 px-6 text-sm font-bold">
-                    <Plus size={16} /> Create Tournament
+                    <Plus size={16} /> {t('createTournament')}
                   </button>
                 }
               />
@@ -324,20 +327,24 @@ export default function AdminDashboardClient() {
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="mds-name text-base">{tournament.name}</h3>
                           <Badge tone={state.tone}>{state.label}</Badge>
-                          {tournament.rosterLocked ? <Badge tone="pending">Locked</Badge> : null}
+                          {tournament.rosterLocked ? <Badge tone="pending">{t('locked')}</Badge> : null}
                         </div>
                         <p className="mt-1 text-sm text-fg-muted">
-                          {tournament._count?.teams || 0} teams, {tournament._count?.matches || 0} matches, {getGameMetadata(tournament.game)?.name || tournament.game}
+                          {t('rowMeta', {
+                            teams: tournament._count?.teams || 0,
+                            matches: tournament._count?.matches || 0,
+                            game: getGameMetadata(tournament.game)?.name || tournament.game,
+                          })}
                           {' · '}
-                          {tournament.steamSignupEnabled ? 'Steam sign-up open' : 'Sign-up closed'}
+                          {t(tournament.steamSignupEnabled ? 'signupOpen' : 'signupClosed')}
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         <Link href={`/admin/tournaments/${tournament.id}`} className="mds-btn-primary h-9 px-4 text-sm font-bold">
-                          Open
+                          {t('open')}
                         </Link>
                         <Link href={`/tournaments/${tournament.id}`} className="mds-btn-secondary h-9 px-4 text-sm font-bold">
-                          Public page
+                          {t('publicPage')}
                         </Link>
                       </div>
                     </div>
@@ -364,19 +371,19 @@ export default function AdminDashboardClient() {
           <aside className="space-y-4">
             <div className="mds-card p-4">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-bold tracking-tight">Live ops health</h2>
+                <h2 className="text-sm font-bold tracking-tight">{t('healthTitle')}</h2>
                 <Gauge size={15} className="text-brand" />
               </div>
               <div className="space-y-2">
                 {[
                   {
-                    label: 'Notification queue',
-                    value: health.queueHealthy ? 'Healthy' : 'Errors',
+                    label: t('healthQueue'),
+                    value: health.queueHealthy ? t('healthHealthy') : t('healthErrors'),
                     className: health.queueHealthy ? 'text-success' : 'text-danger',
                   },
-                  { label: 'Stale tournaments', value: String(health.staleTournaments), className: 'text-fg' },
+                  { label: t('healthStale'), value: String(health.staleTournaments), className: 'text-fg' },
                   {
-                    label: 'Failed notifications',
+                    label: t('healthFailed'),
                     value: String(health.failedNotifications),
                     className: health.failedNotifications > 0 ? 'text-danger' : 'text-fg',
                   },
@@ -390,7 +397,7 @@ export default function AdminDashboardClient() {
             </div>
 
             <div className="mds-card p-4">
-              <h2 className="mb-3 text-sm font-bold tracking-tight">Recent activity</h2>
+              <h2 className="mb-3 text-sm font-bold tracking-tight">{t('activityTitle')}</h2>
               <div className="space-y-2">
                 {timeline.length > 0 ? timeline.map((entry: any, index: number) => (
                   <div key={`${entry.id}-${index}`} className="rounded-sm border border-line px-3 py-2">
@@ -402,8 +409,8 @@ export default function AdminDashboardClient() {
                 )) : (
                   <EmptyState
                     icon={<Activity size={24} />}
-                    title="No activity yet"
-                    description="Bracket generation, announcements, and roster updates appear here."
+                    title={t('activityEmptyTitle')}
+                    description={t('activityEmptyHint')}
                   />
                 )}
               </div>

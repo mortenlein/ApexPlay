@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { Lightbulb, X } from "lucide-react";
 
 interface FirstRunCoachProps {
@@ -11,6 +12,7 @@ interface FirstRunCoachProps {
 }
 
 export default function FirstRunCoach({ id, title, steps, cta }: FirstRunCoachProps) {
+  const t = useTranslations("organizer.coach");
   const key = `apexplay-onboarding-${id}`;
   const [visible, setVisible] = React.useState(false);
 
@@ -32,7 +34,7 @@ export default function FirstRunCoach({ id, title, steps, cta }: FirstRunCoachPr
         <div className="flex items-start gap-3">
           <Lightbulb size={16} className="mt-0.5 shrink-0 text-[var(--mds-action)]" />
           <div>
-            <p className="mds-uppercase-label text-[var(--mds-action)]">First-run guide</p>
+            <p className="mds-uppercase-label text-[var(--mds-action)]">{t("eyebrow")}</p>
             <h3 className="mt-0.5 text-base font-bold tracking-tight">{title}</h3>
             <ul className="mt-2 space-y-1 text-sm text-[var(--mds-text-muted)]">
               {steps.map((step) => (
@@ -52,7 +54,7 @@ export default function FirstRunCoach({ id, title, steps, cta }: FirstRunCoachPr
             setVisible(false);
           }}
           className="rounded-md border border-[var(--mds-border)] p-1 text-[var(--mds-text-subtle)] transition-colors hover:text-[var(--mds-text-primary)]"
-          aria-label="Dismiss onboarding"
+          aria-label={t("dismiss")}
         >
           <X size={14} />
         </button>

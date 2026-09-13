@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Loader2, Menu } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { getGameMetadata } from '@/lib/games';
@@ -28,6 +29,7 @@ interface TournamentManageClientProps {
  */
 export default function TournamentManageClient({ tournamentId }: TournamentManageClientProps) {
     usePerformanceBudget('TournamentManageClient', 250);
+    const t = useTranslations('organizer.workspace');
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -55,7 +57,7 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
         return (
             <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--mds-page)]">
                 <Loader2 className="h-10 w-10 animate-spin text-[var(--mds-action)]" />
-                <span className="mds-uppercase-label opacity-60">Loading tournament workspace…</span>
+                <span className="mds-uppercase-label opacity-60">{t('loading')}</span>
             </div>
         );
     }
@@ -64,16 +66,14 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
         return (
             <div className="min-h-screen bg-[var(--mds-page)] p-8 text-[var(--mds-text-primary)]">
                 <div className="mx-auto mt-20 max-w-xl rounded-xl border border-[var(--mds-border)] bg-[var(--mds-card)] p-8 text-center">
-                    <h1 className="text-2xl font-bold tracking-tight">Tournament not found</h1>
-                    <p className="mt-3 text-sm text-[var(--mds-text-muted)]">
-                        This workspace can no longer find the requested tournament.
-                    </p>
+                    <h1 className="text-2xl font-bold tracking-tight">{t('notFoundTitle')}</h1>
+                    <p className="mt-3 text-sm text-[var(--mds-text-muted)]">{t('notFoundHint')}</p>
                     <button
                         type="button"
                         onClick={() => router.push('/admin')}
                         className="mds-btn-primary mt-6 h-11 px-8 text-sm font-bold"
                     >
-                        Back to admin
+                        {t('backToAdmin')}
                     </button>
                 </div>
             </div>
@@ -114,7 +114,7 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
                         <div className="relative z-10 flex items-center gap-4 px-6 py-5 lg:px-10">
                             <button
                                 onClick={() => setIsMenuOpen(true)}
-                                aria-label="Open workspace menu"
+                                aria-label={t('openMenu')}
                                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)] text-[var(--mds-text-primary)] transition-all hover:border-[var(--mds-action)]/40 md:hidden"
                             >
                                 <Menu size={20} />
@@ -122,7 +122,7 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
 
                             <div className="min-w-0 flex-1">
                                 <p className="mds-uppercase-label text-[var(--mds-action)]">
-                                    Organizer workspace · {gameMeta?.name || tournament.game}
+                                    {t('eyebrow', { game: gameMeta?.name || tournament.game })}
                                 </p>
                                 <h1 className="mds-name-lg mt-1 text-2xl leading-tight md:text-3xl">
                                     {tournament.name}

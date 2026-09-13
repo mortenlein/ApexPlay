@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Radio, Copy, Check } from 'lucide-react';
 import { Button, Card, Badge } from '@/components/ui';
 import { apiRequest } from '@/lib/client-api';
@@ -13,6 +14,7 @@ interface BridgeStatus {
 /** Activate the EON live-score bridge for this tournament and show the operator the
  * endpoint + token to paste into EON's apexplay-bridge config on the observer machine. */
 export function EonBridgePanel({ tournamentId }: { tournamentId: string }) {
+  const t = useTranslations('organizer.eon');
   const [status, setStatus] = useState<BridgeStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -65,30 +67,28 @@ export function EonBridgePanel({ tournamentId }: { tournamentId: string }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Radio size={15} className="text-brand" />
-          <h3 className="text-sm font-bold">EON live scores</h3>
+          <h3 className="text-sm font-bold">{t('title')}</h3>
         </div>
-        <Badge tone={status?.enabled ? 'ready' : 'neutral'}>{status?.enabled ? 'On' : 'Off'}</Badge>
+        <Badge tone={status?.enabled ? 'ready' : 'neutral'}>{t(status?.enabled ? 'on' : 'off')}</Badge>
       </div>
 
       {status?.enabled && status.token ? (
         <>
-          <Field label="Bridge endpoint" value={endpoint} k="url" />
-          <Field label="Bridge token" value={status.token} k="token" />
+          <Field label={t('endpoint')} value={endpoint} k="url" />
+          <Field label={t('token')} value={status.token} k="token" />
           <p className="text-xs text-fg-muted">
-            Set these in EON&apos;s <code className="font-mono">apexplay-bridge</code> config on the observer machine, then enable it there.
+            {t.rich('configHint', { code: (chunks) => <code className="font-mono">{chunks}</code> })}
           </p>
           <div className="flex gap-2">
-            <Button size="sm" variant="secondary" disabled={busy} onClick={() => act('rotate')}>Rotate token</Button>
-            <Button size="sm" variant="danger" disabled={busy} onClick={() => act('disable')}>Disable</Button>
+            <Button size="sm" variant="secondary" disabled={busy} onClick={() => act('rotate')}>{t('rotate')}</Button>
+            <Button size="sm" variant="danger" disabled={busy} onClick={() => act('disable')}>{t('disable')}</Button>
           </div>
         </>
       ) : (
         <>
-          <p className="text-xs text-fg-muted">
-            Pull live CS2 scores straight from EON on the observer machine — no manual updates.
-          </p>
+          <p className="text-xs text-fg-muted">{t('pitch')}</p>
           <Button size="sm" disabled={busy} onClick={() => act('enable')}>
-            {busy ? 'Enabling…' : 'Enable bridge'}
+            {t(busy ? 'enabling' : 'enable')}
           </Button>
         </>
       )}

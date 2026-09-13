@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { AlertTriangle, Check, ChevronRight, ChevronLeft, Trophy, X, Copy, Loader2, Plus, Zap } from 'lucide-react';
 import {
@@ -19,7 +20,18 @@ interface TournamentWizardProps {
     onComplete: (data: any) => Promise<string | void>;
 }
 
-const STEP_TITLES = ['Select Game', 'Tournament Details', 'Format & Rules', 'Series Rules', 'Review Setup', 'Tournament Live'];
+/** The six step headings, in order — keyed so the wizard chrome and the step body share one name. */
+const STEP_KEYS = ['step1', 'step2', 'step3', 'step4', 'step5', 'step6'] as const;
+
+/**
+ * Format and game-type labels live in `@/lib/games` as stable ids; these map them onto the
+ * organizer catalogue so a Norwegian arrangør never reads a raw English constant.
+ */
+const FORMAT_KEYS: Record<string, { name: string; desc: string }> = {
+    SINGLE_ELIMINATION: { name: 'formatSingleName', desc: 'formatSingleDesc' },
+    DOUBLE_ELIMINATION: { name: 'formatDoubleName', desc: 'formatDoubleDesc' },
+};
+const GAME_TYPE_KEYS: Record<string, string> = { Tactical: 'gameTypeTactical', Royale: 'gameTypeRoyale' };
 
 /** Step heading + one line of context. The heading is furniture, so it may shout; nothing else does. */
 function StepHeader({ title, hint }: { title: string; hint: string }) {
@@ -32,6 +44,8 @@ function StepHeader({ title, hint }: { title: string; hint: string }) {
 }
 
 export default function TournamentWizard({ onClose, onComplete }: TournamentWizardProps) {
+    const t = useTranslations('organizer.wizard');
+    const tCommon = useTranslations('common');
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         name: '',
@@ -71,7 +85,7 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
             }
         } catch (error) {
             // The parent toasts as well, but keep the organizer on the review step with the reason.
-            setSubmitError(error instanceof Error ? error.message : 'Could not create the tournament. Try again.');
+            setSubmitError(error instanceof Error ? error.message : t('createFailed'));
             setStep(5);
         } finally {
             setIsSubmitting(false);
@@ -110,11 +124,13 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                             <Plus size={18} />
                         </div>
                         <div>
-                            <h2 className="text-base font-bold tracking-tight">Create Tournament</h2>
-                            <p className="mds-uppercase-label">Step {step} of 6 · {STEP_TITLES[step - 1]}</p>
+                            <h2 className="text-base font-bold tracking-tight">{t('heading')}</h2>
+                            <p className="mds-uppercase-label">
+                                {t('progress', { step, total: 6, title: t(STEP_KEYS[step - 1]) })}
+                            </p>
                         </div>
                     </div>
-                    <button onClick={onClose} aria-label="Close" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-[var(--mds-border)] bg-white/5 text-[var(--mds-text-primary)] transition-colors hover:bg-white/10">
+                    <button onClick={onClose} aria-label={tCommon('close')} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-[var(--mds-border)] bg-white/5 text-[var(--mds-text-primary)] transition-colors hover:bg-white/10">
                         <X size={18} />
                     </button>
                 </header>
@@ -123,7 +139,7 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                     {/* STEP 1: GAME SELECTION */}
                     {step === 1 && (
                         <div className="space-y-5">
-                            <StepHeader title="Select Game" hint="Choose the game for this tournament." />
+                            <StepHeader title={t('step1')} hint={t('gameHint')} />
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 {SUPPORTED_GAMES.map((game) => (
                                     <button
@@ -143,7 +159,9 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                                 <Image src={game.logoUrl} width={20} height={20} className="object-contain" alt="" />
                                             </div>
                                             <span className="mds-name text-base">{game.name}</span>
-                                            <span className="mds-uppercase-label">{game.type}</span>
+                                            <span className="mds-uppercase-label">
+                                                {GAME_TYPE_KEYS[game.type] ? t(GAME_TYPE_KEYS[game.type]) : game.type}
+                                            </span>
                                         </div>
                                         {formData.game === game.id && (
                                             <div className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--mds-action)]">
@@ -159,9 +177,9 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                     {/* STEP 2: IDENTITY */}
                     {step === 2 && (
                         <div className="space-y-5">
-                            <StepHeader title="Tournament Details" hint="What should players and spectators see this event called?" />
+                            <StepHeader title={t('step2')} hint={t('detailsHint')} />
                             <div className="space-y-1.5">
-                                <label className="mds-uppercase-label" htmlFor="wizard-name">Tournament name</label>
+                                <label className="mds-uppercase-label" htmlFor="wizard-name">{t('nameLabel')}</label>
                                 <input
                                     id="wizard-name"
                                     autoFocus
@@ -170,7 +188,7 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     onKeyDown={(e) => e.key === 'Enter' && formData.name && nextStep()}
                                     className="mds-input mds-name h-12 px-4 text-base"
-                                    placeholder="e.g. Winter Invitational 2024"
+                                    placeholder={t('namePlaceholder')}
                                 />
                             </div>
                         </div>
@@ -179,24 +197,24 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                     {/* STEP 3: FORMAT */}
                     {step === 3 && (
                         <div className="space-y-5">
-                            <StepHeader title="Format & Rules" hint="How the bracket is built and how many players are on a team." />
+                            <StepHeader title={t('step3')} hint={t('formatHint')} />
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 <div className="space-y-2">
-                                    <label className="mds-uppercase-label">Bracket style</label>
+                                    <label className="mds-uppercase-label">{t('bracketStyle')}</label>
                                     {FORMAT_OPTIONS.map(f => (
                                         <button
                                             key={f.id}
                                             onClick={() => setFormData({ ...formData, format: f.id })}
                                             className={`w-full ${optionCard(formData.format === f.id)}`}
                                         >
-                                            <div className="text-sm font-bold">{f.name}</div>
-                                            <div className="mt-0.5 text-xs text-[var(--mds-text-muted)]">{f.desc}</div>
+                                            <div className="text-sm font-bold">{t(FORMAT_KEYS[f.id].name)}</div>
+                                            <div className="mt-0.5 text-xs text-[var(--mds-text-muted)]">{t(FORMAT_KEYS[f.id].desc)}</div>
                                         </button>
                                     ))}
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="mds-uppercase-label">Team size</label>
+                                    <label className="mds-uppercase-label">{t('teamSize')}</label>
                                     <div className="grid grid-cols-2 gap-2">
                                         {selectedGame?.teamSize.map(size => (
                                             <button
@@ -211,11 +229,11 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
 
                                     <div className="mds-card flex items-center justify-between gap-4 bg-[var(--mds-input)]/20 p-4">
                                         <div>
-                                            <div className="text-sm font-semibold">3rd Place Match</div>
-                                            <div className="mt-0.5 text-xs text-[var(--mds-text-muted)]">Decides the bronze medal</div>
+                                            <div className="text-sm font-semibold">{t('thirdPlace')}</div>
+                                            <div className="mt-0.5 text-xs text-[var(--mds-text-muted)]">{t('thirdPlaceHint')}</div>
                                         </div>
                                         <button
-                                            aria-label="Toggle third place match"
+                                            aria-label={t('toggleThirdPlace')}
                                             aria-pressed={formData.hasThirdPlace}
                                             onClick={() => setFormData({ ...formData, hasThirdPlace: !formData.hasThirdPlace })}
                                             className={`relative h-6 w-11 shrink-0 rounded-full transition-all ${formData.hasThirdPlace ? 'bg-[var(--mds-action)]' : 'bg-gray-700'}`}
@@ -231,11 +249,11 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                     {/* STEP 4: SERIES SETTINGS */}
                     {step === 4 && (
                         <div className="space-y-5">
-                            <StepHeader title="Series Rules" hint="Choose where the bracket switches from single maps to longer series." />
+                            <StepHeader title={t('step4')} hint={t('seriesHint')} />
 
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 <div className="space-y-1.5">
-                                    <label className="mds-uppercase-label" htmlFor="wizard-bo3">BO3 from stage</label>
+                                    <label className="mds-uppercase-label" htmlFor="wizard-bo3">{t('bo3From')}</label>
                                     <div className="relative">
                                         <select
                                             id="wizard-bo3"
@@ -251,10 +269,10 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                             <ChevronRight size={15} className="rotate-90" />
                                         </div>
                                     </div>
-                                    <p className="text-xs leading-relaxed text-[var(--mds-text-subtle)]">BO3 applies from this stage through to the final. Earlier rounds stay BO1.</p>
+                                    <p className="text-xs leading-relaxed text-[var(--mds-text-subtle)]">{t('bo3Help')}</p>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="mds-uppercase-label" htmlFor="wizard-bo5">BO5 from stage</label>
+                                    <label className="mds-uppercase-label" htmlFor="wizard-bo5">{t('bo5From')}</label>
                                     <div className="relative">
                                         <select
                                             id="wizard-bo5"
@@ -270,15 +288,12 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                             <ChevronRight size={15} className="rotate-90" />
                                         </div>
                                     </div>
-                                    <p className="text-xs leading-relaxed text-[var(--mds-text-subtle)]">BO5 overrides BO3 for the stages they share.</p>
+                                    <p className="text-xs leading-relaxed text-[var(--mds-text-subtle)]">{t('bo5Help')}</p>
                                 </div>
                             </div>
                             <div className="mds-card flex items-start gap-3 border-[var(--mds-action)]/20 bg-[var(--mds-action-soft)] p-4">
                                 <Zap size={16} className="mt-0.5 shrink-0 text-[var(--mds-action)]" />
-                                <p className="text-sm leading-relaxed text-[var(--mds-text-muted)]">
-                                    Where both apply, BO5 wins: set BO5 to the grand final and BO3 to the semi-finals and you get
-                                    BO1 early, BO3 in the semis, BO5 in the final.
-                                </p>
+                                <p className="text-sm leading-relaxed text-[var(--mds-text-muted)]">{t('seriesNote')}</p>
                             </div>
                         </div>
                     )}
@@ -286,7 +301,7 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                     {/* STEP 5: REVIEW */}
                     {step === 5 && (
                         <div className="space-y-5">
-                            <StepHeader title="Review Setup" hint="Check the setup before the tournament is created." />
+                            <StepHeader title={t('step5')} hint={t('reviewHint')} />
                             <div className="mds-card space-y-5 bg-[var(--mds-input)]/20 p-5">
                                 <div className="flex items-center gap-4">
                                     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-[var(--mds-border)] bg-[var(--mds-page)] p-2.5">
@@ -297,18 +312,18 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                         <div className="mt-1.5 flex flex-wrap items-center gap-2">
                                             <span className="mds-badge bg-[var(--mds-action-soft)] text-[var(--mds-action)]">{selectedGame?.name}</span>
                                             <span className="mds-badge border border-[var(--mds-border)] bg-[var(--mds-input)] text-[var(--mds-text-subtle)]">
-                                                {selectedFormat?.name}
+                                                {selectedFormat ? t(FORMAT_KEYS[selectedFormat.id].name) : ''}
                                             </span>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 border-t border-[var(--mds-border)] pt-5 lg:grid-cols-4">
                                     {[
-                                        { label: 'Format Style', value: formData.format === 'SINGLE_ELIMINATION' ? 'Single' : 'Double' },
-                                        { label: 'Decider Match', value: formData.hasThirdPlace ? 'Active' : 'None' },
-                                        { label: 'Team Size', value: teamSizeLabel(selectedGame, Number.parseInt(formData.teamSize, 10)) },
-                                        { label: 'BO3 From', value: stageLabel(Number.parseInt(formData.bo3LastRounds, 10)) },
-                                        { label: 'BO5 From', value: stageLabel(Number.parseInt(formData.bo5LastRounds, 10)) },
+                                        { label: t('reviewFormat'), value: t(formData.format === 'SINGLE_ELIMINATION' ? 'reviewFormatSingle' : 'reviewFormatDouble') },
+                                        { label: t('reviewDecider'), value: t(formData.hasThirdPlace ? 'reviewDeciderOn' : 'reviewDeciderOff') },
+                                        { label: t('reviewTeamSize'), value: teamSizeLabel(selectedGame, Number.parseInt(formData.teamSize, 10)) },
+                                        { label: t('reviewBo3'), value: stageLabel(Number.parseInt(formData.bo3LastRounds, 10)) },
+                                        { label: t('reviewBo5'), value: stageLabel(Number.parseInt(formData.bo5LastRounds, 10)) },
                                     ].map(item => (
                                         <div key={item.label}>
                                             <p className="mds-uppercase-label">{item.label}</p>
@@ -333,20 +348,23 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                 <Trophy size={28} className="text-[var(--mds-action)]" />
                             </div>
                             <div>
-                                <h3 className="font-brand text-2xl font-bold tracking-tight">Tournament Live</h3>
+                                <h3 className="font-brand text-2xl font-bold tracking-tight">{t('step6')}</h3>
                                 <p className="mt-1.5 text-sm text-[var(--mds-text-muted)]">
-                                    <span className="mds-name">{formData.name}</span> is created. Share the link and players can register.
+                                    {t.rich('createdLine', {
+                                        name: formData.name,
+                                        b: (chunks) => <span className="mds-name">{chunks}</span>,
+                                    })}
                                 </p>
                             </div>
 
                             <div className="mx-auto max-w-md space-y-4">
                                 <div className="rounded-lg border border-[var(--mds-border)] bg-[var(--mds-input)]/40 p-4 text-left">
-                                    <p className="mds-uppercase-label">Registration link</p>
+                                    <p className="mds-uppercase-label">{t('registrationLink')}</p>
                                     <div className="mt-2 flex gap-2">
                                         <div className="flex-1 truncate rounded-lg border border-[var(--mds-border)] bg-[var(--mds-page)] px-3 py-2.5 text-left font-mono text-xs text-[var(--mds-action)]">
                                             {typeof window !== 'undefined' ? `${window.location.host}/tournaments/${createdId}` : ''}
                                         </div>
-                                        <button onClick={copyLink} aria-label="Copy registration link" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm bg-[var(--mds-action)] text-white transition-colors hover:bg-[var(--mds-action-hover)]">
+                                        <button onClick={copyLink} aria-label={t('copyRegistrationLink')} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm bg-[var(--mds-action)] text-white transition-colors hover:bg-[var(--mds-action-hover)]">
                                             <Copy size={16} />
                                         </button>
                                     </div>
@@ -354,13 +372,13 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
 
                                 <div className="flex flex-col gap-3 sm:flex-row">
                                     <button onClick={onClose} className="mds-btn-secondary h-11 flex-1 px-6 text-sm font-bold">
-                                        Close
+                                        {tCommon('close')}
                                     </button>
                                     <button
                                         onClick={() => window.location.href = `/admin/tournaments/${createdId}?tab=participants`}
                                         className="mds-btn-primary h-11 flex-1 px-6 text-sm font-bold"
                                     >
-                                        Add teams
+                                        {t('addTeams')}
                                     </button>
                                 </div>
                             </div>
@@ -374,7 +392,7 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                         <div className="flex w-full gap-3 sm:w-auto">
                             {step > 1 && (
                                 <button onClick={prevStep} className="mds-btn-secondary h-11 flex-1 gap-2 px-6 text-sm font-bold sm:flex-initial">
-                                    <ChevronLeft size={15} /> Back
+                                    <ChevronLeft size={15} /> {tCommon('back')}
                                 </button>
                             )}
                             {step < 5 ? (
@@ -383,7 +401,7 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                     onClick={nextStep}
                                     className="mds-btn-primary h-11 flex-1 gap-2 px-8 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-30 sm:flex-initial"
                                 >
-                                    Continue <ChevronRight size={15} />
+                                    {t('continue')} <ChevronRight size={15} />
                                 </button>
                             ) : (
                                 <button
@@ -392,9 +410,9 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                     className="mds-btn-primary h-11 min-w-[190px] flex-1 gap-2 px-8 text-sm font-bold disabled:opacity-30 sm:flex-initial"
                                 >
                                     {isSubmitting ? (
-                                        <><Loader2 size={15} className="animate-spin" /> Creating…</>
+                                        <><Loader2 size={15} className="animate-spin" /> {t('creating')}</>
                                     ) : (
-                                        <><Trophy size={15} /> Create Tournament</>
+                                        <><Trophy size={15} /> {t('heading')}</>
                                     )}
                                 </button>
                             )}
