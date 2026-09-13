@@ -1,4 +1,5 @@
 import React from "react";
+import { matchStatusLabel } from "@/lib/match-status";
 
 type Tone = "neutral" | "live" | "ready" | "pending" | "done" | "danger" | "info";
 
@@ -50,19 +51,17 @@ const STATUS_TONE: Record<string, Tone> = {
   COMPLETE: "done",
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  LIVE: "Live",
-  IN_PROGRESS: "Live",
-  READY: "Ready",
-  WAITING_FOR_PLAYERS: "Waiting",
-  PENDING: "Pending",
-  COMPLETED: "Complete",
-  FINISHED: "Complete",
-  CANCELLED: "Cancelled",
-  FORFEIT: "Forfeit",
+/**
+ * Tournament *stages* only. Match statuses deliberately have no table here — they come from
+ * `matchStatusLabel` in src/lib/match-status.ts, so the badge and the public board cannot drift
+ * into calling the same state two different things.
+ */
+const STAGE_LABEL: Record<string, string> = {
   DRAFT: "Draft",
   REGISTRATION: "Registration",
   COMPLETE: "Complete",
+  CANCELLED: "Cancelled",
+  FORFEIT: "Forfeit",
 };
 
 /**
@@ -79,7 +78,9 @@ function humanize(key: string) {
 export function StatusBadge({ status }: { status?: string | null }) {
   const key = (status || "PENDING").toUpperCase();
   const tone = STATUS_TONE[key] ?? "neutral";
-  const label = STATUS_LABEL[key] ?? humanize(key);
+  // Stage words first (DRAFT/REGISTRATION/COMPLETE are tournament states, not match states),
+  // then the canonical match vocabulary, then the never-leak-an-enum fallback.
+  const label = STAGE_LABEL[key] ?? (key in STATUS_TONE ? matchStatusLabel(key) : humanize(key));
   return <Badge tone={tone}>{label}</Badge>;
 }
 

@@ -60,8 +60,8 @@ test('overlay marks the live match and never calls a pending match in progress',
 
   await page.goto(`/bracket/${tournamentId}/overlay`);
 
-  await expect(streamNode(page, liveMatch!.id)).toContainText('LIVE');
-  await expect(streamNode(page, playedMatches[0].id)).toContainText('FINAL');
+  await expect(streamNode(page, liveMatch!.id)).toContainText('Live');
+  await expect(streamNode(page, playedMatches[0].id)).toContainText('Final');
   await expect(streamNode(page, grandFinal.id)).not.toContainText('IN PROGRESS');
 });
 

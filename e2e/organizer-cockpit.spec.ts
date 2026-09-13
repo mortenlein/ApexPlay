@@ -52,7 +52,7 @@ test('calling a match from the editor moves it into Now, and a result moves it t
   await expect(nowGroup.getByRole('button')).toHaveCount(1);
   await expect(nowGroup).toContainText(home.name);
   await expect(nowGroup).toContainText(away.name);
-  await expect(nowGroup).toContainText('Ready');
+  await expect(nowGroup).toContainText('Called');
   await expect(gamesSection(page, 'Up next')).toContainText('Nothing queued');
 
   // Once it is played it belongs to the third column.

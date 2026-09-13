@@ -94,7 +94,7 @@ test('matches tab groups every round and states each match status', async ({ pag
 
   const liveCard = board.locator('div.mds-card').filter({ hasText: teamName(teams, liveMatch!.homeTeamId) }).first();
   await expect(liveCard).toContainText(teamName(teams, liveMatch!.awayTeamId));
-  await expect(liveCard).toContainText('LIVE');
+  await expect(liveCard).toContainText('Live');
 });
 
 test('teams tab lists every roster and its players', async ({ page }) => {

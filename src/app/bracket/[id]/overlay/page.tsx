@@ -6,25 +6,30 @@ import ReactFlow, { Background, Edge, Node, Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useMatchStream } from '@/hooks/useMatchStream';
 import { clientApi } from '@/lib/client-api';
-import { isCalled, isDone, isLive } from '@/lib/match-status';
+import { isCalled, isDone, isLive, matchStatusLabel } from '@/lib/match-status';
 
 /**
  * The one place the overlay prints a match's state, so it is derived from the canonical
  * status vocabulary (src/lib/match-status.ts) rather than from string comparisons: a status
  * added there shows up on stream without another edit here.
  */
+/**
+ * Broadcast status line. The WORDS come from the canonical vocabulary
+ * (matchStatusLabel) so the stream can never disagree with the admin screen; the SHOUTING is
+ * CSS, which is also why tests read "Live" here and viewers see "LIVE".
+ */
 const StreamState = ({ status }: { status?: string | null }) => {
-    if (isDone(status)) return <span className="text-green-500">FINAL</span>;
+    const label = matchStatusLabel(status);
     if (isLive(status)) {
         return (
-            <span className="text-red-500 flex items-center gap-2">
+            <span className="text-red-500 flex items-center gap-2 uppercase">
                 <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]"></span>
-                LIVE
+                {label}
             </span>
         );
     }
-    if (isCalled(status)) return <span className="text-blue-400">CALLED</span>;
-    return <span className="text-gray-500">UPCOMING</span>;
+    const tone = isDone(status) ? 'text-green-500' : isCalled(status) ? 'text-blue-400' : 'text-gray-500';
+    return <span className={`${tone} uppercase`}>{label}</span>;
 };
 
 // A custom high-contrast node for the overlay

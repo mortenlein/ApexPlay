@@ -63,3 +63,18 @@ export function byPlayOrder(
     a.matchOrder - b.matchOrder
   );
 }
+
+/**
+ * The one human label per match state. Both the shared `StatusBadge` and the public board read
+ * this, so a match never reads "Complete" in the admin and "FINAL" on the spectator page for
+ * the same row. Casing is a presentation choice — the broadcast surfaces uppercase it in CSS.
+ *
+ * This is also the seam i18n plugs into: one function to swap for a message lookup, rather than
+ * two hand-rolled tables.
+ */
+export function matchStatusLabel(status: string | null | undefined): string {
+  if (isLive(status)) return 'Live';
+  if (isDone(status)) return 'Final';
+  if (isCalled(status)) return 'Called';
+  return 'Scheduled';
+}

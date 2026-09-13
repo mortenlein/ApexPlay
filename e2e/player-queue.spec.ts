@@ -147,7 +147,7 @@ test('calling the match flips the queue to "you\'re up", then to live, with no r
   await page.goto('/dashboard');
   const card = queueSection(page).locator('.mds-card').filter({ hasText: tournamentName });
   await expect(card).toContainText("You're up next");
-  await expect(card).toContainText('Pending');
+  await expect(card).toContainText('Scheduled');
 
   // Mia is floor staff: calling a match is her job, not the organizer's.
   const mia = await apiAs('mia');
@@ -155,7 +155,7 @@ test('calling the match flips the queue to "you\'re up", then to live, with no r
 
   // MyQueue polls every 15s — no reload, no navigation.
   await expect(card).toContainText("You're up — go to your station", { timeout: 35_000 });
-  await expect(card).toContainText('Ready');
+  await expect(card).toContainText('Called');
 
   expect((await mia.post(`/api/matches/${mine.id}`, { data: { status: 'LIVE' } })).status()).toBe(200);
   await expect(card).toContainText('Live now — get to your station', { timeout: 35_000 });

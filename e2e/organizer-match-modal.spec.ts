@@ -126,7 +126,7 @@ test('a forfeit recorded in the modal hands the match to the other team', async 
   });
 
   // The card carries the result, so the organizer can at least see it was decided.
-  await expect(page.getByTestId(`match-card-${semiB.id}`)).toContainText('Completed');
+  await expect(page.getByTestId(`match-card-${semiB.id}`)).toContainText('Final');
 });
 
 /**

@@ -127,12 +127,9 @@ export function slotLabel(match: StageMatch, side: "HOME" | "AWAY", matches: Sta
 }
 
 /** Uppercase is fine here: a status is a label, not something a human typed. */
-export function matchStatusLabel(status: string | null | undefined): string {
-  if (isLive(status)) return "LIVE";
-  if (isDone(status)) return "FINAL";
-  if (isCalled(status)) return "CALLED";
-  return "SCHEDULED";
-}
+// Re-exported from the canonical vocabulary: one label per state, app-wide. The broadcast
+// surfaces uppercase it in CSS rather than owning a second set of words.
+export { matchStatusLabel } from "@/lib/match-status";
 
 /** Token classes for a status chip — live shouts, everything else stays calm. */
 export function matchStatusTone(status: string | null | undefined): string {
