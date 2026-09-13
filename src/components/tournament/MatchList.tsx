@@ -2,91 +2,144 @@
 
 import React from "react";
 import Image from "next/image";
-import { Trophy, Play } from "lucide-react";
+import { Trophy, Layout } from "lucide-react";
 import Link from "next/link";
+import { byPlayOrder, isLive } from "@/lib/match-status";
+import { matchRef, matchStatusLabel, matchStatusTone, slotLabel, stageName } from "./match-labels";
 
 interface MatchListProps {
   matches: any[];
   tournamentId: string;
 }
 
+function TeamRow({ team, name, score, won, dim }: { team: any; name: string; score: number; won: boolean; dim: boolean }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded-sm border border-line bg-page">
+        {team?.logoUrl ? (
+          <Image src={team.logoUrl} alt="" fill className="object-contain p-0.5" />
+        ) : (
+          <Trophy size={12} className="absolute inset-0 m-auto text-fg-subtle opacity-50" />
+        )}
+      </div>
+      <span
+        className={`mds-name min-w-0 flex-1 text-[13px] ${
+          dim || !team?.name ? "text-fg-subtle" : "text-fg"
+        }`}
+      >
+        {name}
+      </span>
+      <span
+        className={`mds-numeric text-lg font-bold ${
+          won ? "text-brand" : "text-fg-subtle"
+        }`}
+      >
+        {score}
+      </span>
+    </div>
+  );
+}
+
 export function MatchList({ matches, tournamentId }: MatchListProps) {
-  const rounds = [...new Set(matches.map((m: any) => m.round))].sort((a: any, b: any) => a - b);
+  // Grouped by stage in play order — in a double-elimination bracket "round 1" is two different
+  // stages (winners and losers), so grouping by the round number mixed them into one heading.
+  const groups: { label: string; matches: any[] }[] = [];
+  matches
+    .slice()
+    .sort(byPlayOrder)
+    .forEach((match: any) => {
+      const label = stageName(match, matches);
+      const group = groups.find((g) => g.label === label);
+      if (group) {
+        group.matches.push(match);
+      } else {
+        groups.push({ label, matches: [match] });
+      }
+    });
 
   return (
-    <div className="space-y-16 pb-20 animate-in fade-in duration-500">
-      {rounds.map((round: any) => (
-        <div key={round} className="space-y-8">
-          <div className="flex items-center gap-6">
-            <h2 className="mds-uppercase-label text-[var(--mds-action)] font-black text-[14px]">Round {round}</h2>
-            <div className="h-px flex-1 bg-gradient-to-r from-[var(--mds-border)] to-transparent" />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {matches
-              .filter((m: any) => m.round === round)
-              .sort((a: any, b: any) => a.matchOrder - b.matchOrder)
-              .map((match: any, idx: number) => (
-                <div key={match.id} className="mds-card group p-6 hover:border-[var(--mds-action)]/40 transition-all flex flex-col gap-6 relative overflow-hidden bg-[var(--mds-card)]">
-                  <div className="absolute top-0 right-0 px-3 py-1 bg-[var(--mds-input)] text-[9px] font-bold text-[var(--mds-text-subtle)] border-l border-b border-[var(--mds-border)] uppercase tracking-wider">
-                    Match #{idx + 1}
-                  </div>
-                  
-                  <div className="flex items-center justify-between gap-4 mt-2">
-                    <div className="flex-1 flex flex-col items-center gap-3">
-                      <div className="h-12 w-12 rounded-lg border border-[var(--mds-border)] bg-[var(--mds-page)] p-2 shadow-sm transition-transform group-hover:scale-110">
-                        {match.homeTeam?.logoUrl ? (
-                          <Image src={match.homeTeam.logoUrl} alt="" width={32} height={32} className="h-full w-full object-contain grayscale group-hover:grayscale-0" />
-                        ) : (
-                          <div className="h-full w-full flex items-center justify-center opacity-20"><Trophy size={16} /></div>
-                        )}
-                      </div>
-                      <span className="text-[12px] font-bold text-[var(--mds-text-primary)] truncate max-w-[100px] text-center uppercase tracking-tight">{match.homeTeam?.name || "TBD"}</span>
-                    </div>
+    <div
+      data-testid="public-match-board"
+      className="space-y-10 animate-in fade-in duration-500"
+    >
+      {groups.map(({ label, matches: roundMatches }) => {
+        return (
+          <section key={label} className="space-y-4">
+            <div className="flex items-center gap-4">
+              {/* The stage a spectator knows the round by, not "Round 3". */}
+              <h2 className="m-0 text-base font-bold tracking-tight">{label}</h2>
+              <div className="h-px flex-1 bg-line" />
+            </div>
 
-                    <div className="flex flex-col items-center gap-1.5 min-w-[120px]">
-                      <span className={`text-3xl font-black tracking-tighter tabular-nums ${match.status === 'LIVE' ? 'text-[var(--mds-red)] text-shadow-[0_0_10px_var(--mds-red)]' : 'text-[var(--mds-text-primary)]'}`}>
-                        {match.homeScore} : {match.awayScore}
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {roundMatches.map((match: any) => {
+                const live = isLive(match.status);
+                const homeWon = Boolean(match.winnerId) && match.winnerId === match.homeTeam?.id;
+                const awayWon = Boolean(match.winnerId) && match.winnerId === match.awayTeam?.id;
+
+                return (
+                  <div
+                    key={match.id}
+                    data-testid={`public-match-${match.id}`}
+                    className={`mds-card flex flex-col gap-3 p-4 ${
+                      live ? "border-danger" : ""
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      {/* The same short reference other views point at ("Winner of QF3"). */}
+                      <span className="mds-uppercase-label text-[10px]">
+                        {matchRef(match, matches)}
+                        {match.bestOf > 1 ? ` · BO${match.bestOf}` : ""}
                       </span>
-                      <div className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2 ${
-                        match.status === 'LIVE' ? 'bg-[var(--mds-red)]/10 border-[var(--mds-red)]/40 text-[var(--mds-red)] animate-pulse' : 
-                        match.status === 'COMPLETED' ? 'bg-[var(--mds-green)]/10 border-[var(--mds-green)]/40 text-[var(--mds-green)]' : 
-                        'bg-[var(--mds-input)] border-[var(--mds-border)] text-[var(--mds-text-muted)]'
-                      }`}>
-                        {match.status === 'LIVE' && <span className="h-1.5 w-1.5 rounded-full bg-current" />}
-                        {match.status === 'COMPLETED' ? 'FINAL' : match.status}
-                      </div>
-                    </div>
-
-                    <div className="flex-1 flex flex-col items-center gap-3">
-                      <div className="h-12 w-12 rounded-lg border border-[var(--mds-border)] bg-[var(--mds-page)] p-2 shadow-sm transition-transform group-hover:scale-110">
-                        {match.awayTeam?.logoUrl ? (
-                          <Image src={match.awayTeam.logoUrl} alt="" width={32} height={32} className="h-full w-full object-contain grayscale group-hover:grayscale-0" />
-                        ) : (
-                          <div className="h-full w-full flex items-center justify-center opacity-20"><Trophy size={16} /></div>
-                        )}
-                      </div>
-                      <span className="text-[12px] font-bold text-[var(--mds-text-primary)] truncate max-w-[100px] text-center uppercase tracking-tight">{match.awayTeam?.name || "TBD"}</span>
-                    </div>
-                  </div>
-
-                  {match.status === 'LIVE' && (
-                    <div className="flex flex-col gap-2">
-                      <Link 
-                        href={`/bracket/${tournamentId}/overlay`}
-                        target="_blank"
-                        className="mds-btn-primary h-10 w-full text-[11px] gap-2 font-bold uppercase tracking-widest"
+                      <span
+                        data-testid="public-match-status"
+                        className={`mds-badge shrink-0 border ${matchStatusTone(match.status)} ${
+                          live ? "animate-pulse" : ""
+                        }`}
                       >
-                        <Play size={14} fill="currentColor" /> Watch Stream
-                      </Link>
-                      
+                        {matchStatusLabel(match.status)}
+                      </span>
                     </div>
-                  )}
-                </div>
-              ))}
-          </div>
-        </div>
-      ))}
+
+                    <div className="space-y-2">
+                      <TeamRow
+                        team={match.homeTeam}
+                        name={slotLabel(match, "HOME", matches)}
+                        score={match.homeScore}
+                        won={homeWon}
+                        dim={awayWon}
+                      />
+                      <TeamRow
+                        team={match.awayTeam}
+                        name={slotLabel(match, "AWAY", matches)}
+                        score={match.awayScore}
+                        won={awayWon}
+                        dim={homeWon}
+                      />
+                    </div>
+
+                    {live && (
+                      <Link
+                        href={`/tournaments/${tournamentId}?tab=bracket`}
+                        className="mds-btn-secondary h-9 w-full text-xs"
+                      >
+                        <Layout size={14} />
+                        Open bracket view
+                      </Link>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
+
+      {matches.length === 0 && (
+        <p className="text-sm text-fg-muted">
+          No matches yet — the bracket has not been generated.
+        </p>
+      )}
     </div>
   );
 }

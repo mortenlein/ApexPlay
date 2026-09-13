@@ -1,60 +1,50 @@
 import React from 'react';
 
+/**
+ * Mirrors the real page's shape so nothing jumps when the data lands: a compact hero band, one
+ * row of tabs, the content column and the score rail.
+ */
 export default function TournamentSkeleton() {
   return (
-    <div className="flex h-screen bg-[var(--mds-page)] overflow-hidden animate-pulse">
-      {/* SIDEBAR SKELETON */}
-      <aside className="w-72 bg-[var(--mds-input)]/40 border-r border-[var(--mds-border)] flex flex-col py-10 px-8 gap-12 shrink-0">
-        <div className="w-12 h-12 bg-[var(--mds-border)]/20 rounded-mds-comfortable"></div>
-        <div className="flex flex-col gap-6">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="w-full h-10 bg-[var(--mds-border)]/10 rounded-mds-comfortable"></div>
+    <div className="flex h-[calc(100vh-3.5rem)] flex-col overflow-hidden bg-page animate-pulse">
+      {/* HERO BAND */}
+      <header className="shrink-0 border-b border-line bg-card px-4 py-4 lg:px-10 lg:py-5">
+        <div className="mx-auto flex max-w-content items-center gap-4">
+          <div className="hidden h-11 w-11 rounded bg-line sm:block" />
+          <div className="flex-1 space-y-2">
+            <div className="h-6 w-64 rounded bg-line" />
+            <div className="h-3 w-48 rounded bg-line" />
+          </div>
+          <div className="hidden h-9 w-24 rounded bg-line sm:block" />
+        </div>
+      </header>
+
+      {/* TABS */}
+      <div className="hidden shrink-0 border-b border-line bg-card px-10 lg:block">
+        <div className="mx-auto flex max-w-content gap-6 py-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-4 w-20 rounded bg-line" />
           ))}
         </div>
-      </aside>
+      </div>
 
-      {/* MAIN COMMAND CONSOLE SKELETON */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* HEADER MONITOR SKELETON */}
-        <header className="h-44 border-b border-[var(--mds-border)] bg-[var(--mds-input)]/20 p-10 flex flex-col justify-center gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-24 h-6 bg-[var(--mds-border)]/20 rounded-mds-comfortable"></div>
-            <div className="w-16 h-4 bg-[var(--mds-border)]/10 rounded-mds-comfortable"></div>
-          </div>
-          <div className="flex items-end justify-between">
-            <div className="w-[500px] h-12 bg-[var(--mds-border)]/20 rounded-mds-comfortable"></div>
-            <div className="flex gap-4">
-                <div className="w-40 h-10 bg-[var(--mds-border)]/20 rounded-mds-comfortable"></div>
-                <div className="w-40 h-10 bg-[var(--mds-border)]/10 rounded-mds-comfortable"></div>
+      <div className="flex flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden px-4 py-6 lg:px-10">
+          <div className="mx-auto max-w-content space-y-6">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-40 rounded-lg border border-line bg-line" />
+              ))}
             </div>
-          </div>
-        </header>
-
-        {/* OPERATIONAL INTERFACE SKELETON */}
-        <div className="flex-1 p-12 overflow-hidden">
-          <div className="max-w-[1400px] mx-auto space-y-12">
-            <div className="grid grid-cols-3 gap-8">
-               {[1, 2, 3].map(i => (
-                  <div key={i} className="h-28 bg-[var(--mds-border)]/10 rounded-mds-card border border-[var(--mds-border)]/20"></div>
-               ))}
-            </div>
-            
-            <div className="flex items-center gap-6">
-               <div className="w-48 h-5 bg-[var(--mds-border)]/20 rounded-mds-comfortable"></div>
-               <div className="h-px flex-1 bg-[var(--mds-border)]/30"></div>
-            </div>
-
-            <div className="grid grid-cols-12 gap-10">
-               <div className="col-span-8 space-y-8">
-                  <div className="h-[450px] bg-[var(--mds-border)]/10 rounded-mds-card border border-[var(--mds-border)]/20"></div>
-               </div>
-               <div className="col-span-4 space-y-8">
-                  <div className="h-64 bg-[var(--mds-border)]/10 rounded-mds-card border border-[var(--mds-border)]/20"></div>
-                  <div className="h-48 bg-[var(--mds-border)]/10 rounded-mds-card border border-[var(--mds-border)]/20"></div>
-               </div>
-            </div>
+            <div className="h-72 rounded-lg border border-line bg-line" />
           </div>
         </div>
+
+        <aside className="hidden w-72 shrink-0 flex-col gap-6 border-l border-line bg-card p-5 lg:flex">
+          <div className="h-12 rounded bg-line" />
+          <div className="h-28 rounded bg-line" />
+          <div className="h-40 rounded bg-line" />
+        </aside>
       </div>
     </div>
   );

@@ -31,14 +31,21 @@ test('bracket tab renders every match, marks the winner and flags the live one',
 
   // All 7 matches of an 8-team single elimination are on the canvas.
   await expect(page.locator('.react-flow__node')).toHaveCount(7);
-  // …labelled by stage, so a spectator knows what they are looking at.
-  await expect(page.getByText('Grand Finals')).toBeVisible();
-  await expect(page.getByText('Semi Finals').first()).toBeVisible();
+  // …labelled by stage, so a spectator knows what they are looking at. The names come from
+  // STAGE_LABELS (src/lib/games.ts), the same map the organizer picks best-of stages from.
+  // Scoped to the canvas: the score rail names the same stages.
+  const canvas = page.locator('.react-flow');
+  await expect(canvas.getByText('Grand Final')).toBeVisible();
+  await expect(canvas.getByText('Semi-Finals').first()).toBeVisible();
+  await expect(canvas.getByText('Quarter-Finals').first()).toBeVisible();
 
-  // Round 1 shows real team names (round 2+ still reads as awaiting teams).
+  // Round 1 shows real team names; a slot with no team yet names its feeder ("Winner of QF3")
+  // rather than the old machine noise ("INITIALIZING...").
   for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
-    await expect(page.getByText(`Seed ${seed}`, { exact: true }).first()).toBeVisible();
+    await expect(canvas.getByText(`Seed ${seed}`, { exact: true }).first()).toBeVisible();
   }
+  await expect(canvas.getByText(/Winner of QF/).first()).toBeVisible();
+  await expect(canvas.getByText('INITIALIZING...')).toHaveCount(0);
 
   // A completed match shows its score and dims the loser's side — that is the "winner" marker.
   const played = playedMatches[0];
@@ -64,18 +71,26 @@ test('matches tab groups every round and states each match status', async ({ pag
 
   await page.goto(`/tournaments/${tournamentId}?tab=matches`);
 
-  // Scoped to the match board: the desktop "Live Broadcast" rail repeats the same live match.
+  // Scoped to the match board: the desktop score rail repeats the same live match.
   const board = page.locator('main');
-  await expect(board.getByRole('heading', { name: 'Round 1' })).toBeVisible();
-  await expect(board.getByRole('heading', { name: 'Round 2' })).toBeVisible();
-  await expect(board.getByRole('heading', { name: 'Round 3' })).toBeVisible();
+  // Rounds are grouped under the stage a spectator knows them by, not "Round 3".
+  await expect(board.getByRole('heading', { name: 'Quarter-Finals' })).toBeVisible();
+  await expect(board.getByRole('heading', { name: 'Semi-Finals' })).toBeVisible();
+  await expect(board.getByRole('heading', { name: 'Grand Final' })).toBeVisible();
 
   // Played matches read FINAL with their score; the called one reads LIVE.
-  await expect(board.getByText('FINAL')).toHaveCount(playedMatches.length);
-  await expect(board.getByText('LIVE', { exact: true })).toHaveCount(1);
-  await expect(board.getByText('1 : 0').first()).toBeVisible();
-  // A live match offers the stream/overlay link, which is what a spectator is after.
-  await expect(board.getByRole('link', { name: /Watch Stream/i })).toBeVisible();
+  const statuses = board.getByTestId('public-match-status');
+  await expect(statuses.filter({ hasText: 'FINAL' })).toHaveCount(playedMatches.length);
+  await expect(statuses.filter({ hasText: 'LIVE' })).toHaveCount(1);
+  const playedScores = board.getByTestId(`public-match-${playedMatches[0].id}`).locator('span.mds-numeric');
+  await expect(playedScores.nth(0)).toHaveText('1');
+  await expect(playedScores.nth(1)).toHaveText('0');
+  // A live match links to the bracket — and says so. It used to offer "Watch Stream", which
+  // opened the transparent OBS overlay; no stream URL exists anywhere in the schema.
+  const liveLink = board.getByTestId(`public-match-${liveMatch!.id}`).getByRole('link');
+  await expect(liveLink).toHaveText(/Open bracket view/i);
+  await expect(liveLink).toHaveAttribute('href', /tab=bracket/);
+  await expect(board.getByRole('link', { name: /Watch Stream/i })).toHaveCount(0);
 
   const liveCard = board.locator('div.mds-card').filter({ hasText: teamName(teams, liveMatch!.homeTeamId) }).first();
   await expect(liveCard).toContainText(teamName(teams, liveMatch!.awayTeamId));
@@ -142,7 +157,7 @@ test('deep links open the requested tab straight from the URL', async ({ page })
 
   // An unknown tab falls back to the overview rather than rendering nothing.
   await page.goto(`/tournaments/${tournamentId}?tab=not-a-tab`);
-  await expect(page.getByRole('heading', { name: 'Tournament Overview' })).toBeVisible();
+  await expect(page.getByTestId('tournament-overview')).toBeVisible();
 });
 
 test('a missing tournament id renders the not-found state with a way back', async ({ page }) => {
@@ -252,11 +267,13 @@ test('a double-elimination bracket shows winners, losers, grand final and the lo
   await page.goto(`/tournaments/${tournamentId}?tab=bracket`);
 
   await expect(page.locator('.react-flow__node')).toHaveCount(matches.length);
-  await expect(page.getByText('WB Round 1').first()).toBeVisible();
-  await expect(page.getByText('Winners Final')).toBeVisible();
-  await expect(page.getByText('LB Round 1').first()).toBeVisible();
-  await expect(page.getByText('Losers Final')).toBeVisible();
-  await expect(page.getByText('Grand Final', { exact: true })).toBeVisible();
+  // Scoped to the canvas: the score rail names the same stages.
+  const canvas = page.locator('.react-flow');
+  await expect(canvas.getByText('WB Round 1').first()).toBeVisible();
+  await expect(canvas.getByText('Winners Final')).toBeVisible();
+  await expect(canvas.getByText('LB Round 1').first()).toBeVisible();
+  await expect(canvas.getByText('Losers Final')).toBeVisible();
+  await expect(canvas.getByText('Grand Final', { exact: true })).toBeVisible();
 
   // The loser of a played winners match has dropped into the losers bracket…
   const dropped = matches.find((m) => m.bracketType === 'WINNERS' && m.round === 1 && m.loserNextMatchId)!;

@@ -8,12 +8,12 @@ test('mobile tournament tabs expose overflow sections', async ({ page }) => {
 
   await page.goto(`/tournaments/${tournamentId}`);
   await page.getByTestId('tournament-mobile-tab-teams').click();
-  await expect(page.getByText('Verified participants currently enrolled in the tournament.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Teams', exact: true })).toBeVisible();
 
   await page.getByTestId('tournament-mobile-tab-more').click();
   await expect(page.getByTestId('tournament-mobile-more-sheet')).toBeVisible();
   await page.getByTestId('tournament-mobile-tab-overflow-matches').click();
-  await expect(page.getByText(/Round\s+1/i)).toBeVisible();
+  await expect(page.getByTestId('public-match-board')).toBeVisible();
 });
 
 test('player surface nav reaches profile', async ({ page }) => {
@@ -87,14 +87,14 @@ test('tab state survives back-forward and deep-link reload', async ({ page }) =>
   const { tournamentId } = await seedLanScenario();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/tournaments/${tournamentId}?tab=matches`);
-  await expect(page.getByText(/Round\s+1/i)).toBeVisible();
+  await expect(page.getByTestId('public-match-board')).toBeVisible();
 
   await page.getByTestId('tournament-mobile-tab-teams').click();
   await expect(page).toHaveURL(new RegExp(`/tournaments/${tournamentId}\\?tab=teams`));
   await page.goBack();
   await expect(page).toHaveURL(new RegExp(`/tournaments/${tournamentId}\\?tab=matches`));
   await page.reload();
-  await expect(page.getByText(/Round\s+1/i)).toBeVisible();
+  await expect(page.getByTestId('public-match-board')).toBeVisible();
 });
 
 test('unauthorized protected route keeps callback destination', async ({ page }) => {

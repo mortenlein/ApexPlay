@@ -5,10 +5,9 @@ import React from "react";
 interface StatsTableProps {
   players: any[];
   onViewPlayer: (player: any) => void;
-  getFlagUrl: (countryCode: string | null) => string | null;
 }
 
-export function StatsTable({ players, onViewPlayer, getFlagUrl }: StatsTableProps) {
+export function StatsTable({ players, onViewPlayer }: StatsTableProps) {
   const sortedPlayers = [...players].sort((a: any, b: any) => {
     const teamCompare = String(a.teamName || "").localeCompare(String(b.teamName || ""));
     if (teamCompare !== 0) {
@@ -19,51 +18,68 @@ export function StatsTable({ players, onViewPlayer, getFlagUrl }: StatsTableProp
   });
 
   return (
-    <div className="mds-card overflow-hidden p-0 animate-in fade-in duration-500 shadow-xl border-[var(--mds-border)]">
-      <header className="px-10 py-8 border-b border-[var(--mds-border)] bg-[var(--mds-input)]/30 backdrop-blur-md">
-        <h2 className="text-xl font-black uppercase tracking-tight m-0 leading-none">Player Directory</h2>
-        <p className="mds-uppercase-label text-[9px] mt-2 opacity-50 tracking-[0.2em]">Tracked roster and seating details</p>
+    <div className="mds-card overflow-hidden p-0 animate-in fade-in duration-500">
+      <header className="border-b border-line px-5 py-4">
+        <h2 className="m-0 text-lg font-bold tracking-tight">Player Directory</h2>
+        <p className="m-0 mt-0.5 text-xs text-fg-muted">
+          Who is playing, for which team, and where they sit.
+        </p>
       </header>
 
-      <div className="overflow-x-auto custom-scrollbar">
-        <table className="mds-table">
+      <div className="custom-scrollbar overflow-x-auto">
+        {/* On a phone the team moves under the player's name and country drops out, so the
+            seat — the column a LAN spectator came for — stays on screen without scrolling. */}
+        <table className="mds-table w-full">
           <thead>
-            <tr className="bg-[var(--mds-page)]/50">
+            <tr>
               <th>Player</th>
-              <th>Team</th>
-              <th className="text-center">Country</th>
+              <th className="hidden sm:table-cell">Team</th>
+              <th className="hidden text-center sm:table-cell">Country</th>
               <th className="text-right">Seat</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--mds-border)]/30">
+          <tbody>
             {sortedPlayers.map((player: any) => (
-                <tr 
-                  key={player.id} 
-                  onClick={() => onViewPlayer(player)}
-                  className="mds-table-row cursor-pointer transition-colors"
-                >
-                  <td>
-                    <div className="flex items-center gap-3">
-                      <span className="font-black text-[13px] uppercase tracking-tight text-[var(--mds-text-primary)] hover:text-[var(--mds-action)] transition-colors">
-                        {player.nickname || player.name.split(' ')[0]}
-                      </span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className="mds-uppercase-label text-[9px] font-bold opacity-60 tracking-wider truncate max-w-[120px]">
-                      {player.teamName}
-                    </span>
-                  </td>
-                  <td className="text-center font-black text-[12px] text-[var(--mds-text-muted)]">
-                    {player.countryCode?.toUpperCase() || 'N/A'}
-                  </td>
-                  <td className="text-right">
-                    <span className="text-sm font-black tracking-tight text-[var(--mds-action)]">
-                      {player.seating || 'Not assigned'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              <tr
+                key={player.id}
+                onClick={() => onViewPlayer(player)}
+                className="mds-table-row cursor-pointer"
+              >
+                <td>
+                  {/* Names get the column, not 40px and an ellipsis. */}
+                  <span className="mds-name block text-[13px] text-fg">
+                    {player.nickname || player.name}
+                  </span>
+                  <span className="mds-name mt-0.5 block text-[11px] text-fg-subtle sm:hidden">
+                    {player.teamName}
+                  </span>
+                </td>
+                <td className="hidden sm:table-cell">
+                  <span className="mds-name text-[13px] text-fg-muted">
+                    {player.teamName}
+                  </span>
+                </td>
+                <td className="hidden text-center sm:table-cell">
+                  {/* Text, not a flag sprite: the flags are fetched from a third-party CDN and a
+                      LAN venue is often offline. */}
+                  <span className="mds-numeric text-[12px] text-fg-muted">
+                    {player.countryCode?.toUpperCase() || "—"}
+                  </span>
+                </td>
+                <td className="text-right">
+                  <span className="mds-numeric text-[13px] font-semibold text-brand">
+                    {player.seating || "—"}
+                  </span>
+                </td>
+              </tr>
+            ))}
+            {sortedPlayers.length === 0 && (
+              <tr>
+                <td colSpan={4} className="text-sm text-fg-muted">
+                  No players on any roster yet.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

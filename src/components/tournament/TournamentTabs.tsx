@@ -9,25 +9,42 @@ interface TournamentTabsProps {
   tournamentCategory: string;
 }
 
+/**
+ * The one set of tournament tabs on desktop. This used to be a 288px "TOURNAMENT MENU" rail
+ * stacked under the app's own persistent header — two navigations on one page. It is now a
+ * single strip under the hero; on phones the bottom tab bar in TournamentView takes over.
+ */
 export function TournamentTabs({ activeTab, setActiveTab, tournamentCategory }: TournamentTabsProps) {
   const tabs = getTournamentTabItems(tournamentCategory);
 
   return (
-    <nav className="flex flex-col gap-2 p-6 lg:p-10 border-b border-[var(--mds-border)] md:border-none md:p-8">
-      <div className="mds-uppercase-label px-4 mb-4 text-[11px] font-black opacity-30 tracking-[0.2em]">Tournament Menu</div>
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => setActiveTab(tab.id)}
-          className={`mds-nav-link w-full text-left font-black uppercase tracking-widest text-[12px] group ${activeTab === tab.id ? "active shadow-lg shadow-[var(--mds-action-soft)] border border-[var(--mds-action)]/20" : "border border-transparent"}`}
-        >
-          <tab.icon size={16} className={`group-hover:scale-110 transition-transform ${activeTab === tab.id ? "text-[var(--mds-action)]" : "text-[var(--mds-text-subtle)]"}`} />
-          <span>{tab.label}</span>
-          {activeTab === tab.id && (
-            <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--mds-action)] shadow-[0_0_8px_var(--mds-action)]" />
-          )}
-        </button>
-      ))}
+    <nav
+      aria-label="Tournament sections"
+      className="hidden shrink-0 border-b border-line bg-card lg:block"
+    >
+      <div className="mx-auto flex max-w-content items-stretch gap-1 px-10" role="tablist">
+        {tabs.map((tab) => {
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              data-testid={`tournament-tab-${tab.id}`}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-[13px] font-semibold transition-colors ${
+                active
+                  ? "border-brand text-brand"
+                  : "border-transparent text-fg-muted hover:text-fg"
+              }`}
+            >
+              <tab.icon size={15} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
     </nav>
   );
 }
