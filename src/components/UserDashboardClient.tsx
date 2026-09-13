@@ -2,7 +2,7 @@
 
 import { useSession, signIn } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
-import { ShieldCheck, Loader2, Zap, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Zap, AlertTriangle } from 'lucide-react';
 import { MockPersonaButtons } from '@/components/MockPersonaButtons';
 import { PlayerHome } from '@/components/player/PlayerHome';
 import { Button } from '@/components/ui';
@@ -19,15 +19,6 @@ export default function UserDashboardClient() {
     enabled: status === 'authenticated',
   });
 
-  if (status === 'loading' || (status === 'authenticated' && isLoading)) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-page">
-        <Loader2 className="animate-spin text-brand" size={36} />
-        <span className="mds-uppercase-label text-fg-subtle">Loading your dashboard…</span>
-      </div>
-    );
-  }
-
   if (status === 'unauthenticated') {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-page p-8 text-center">
@@ -37,7 +28,7 @@ export default function UserDashboardClient() {
         <div className="max-w-md space-y-3">
           <h1 className="font-brand text-3xl font-bold tracking-tight text-fg">Sign in to see your matches</h1>
           <p className="text-fg-muted">
-            Connect with Steam to view your team, seat assignment, and one-click join links.
+            Connect with Steam to see your next match, your seat and your place in the queue.
           </p>
         </div>
         <Button onClick={() => signIn('steam')}>
@@ -56,7 +47,7 @@ export default function UserDashboardClient() {
           <AlertTriangle size={32} className="text-danger" />
         </div>
         <div className="max-w-md space-y-2">
-          <h1 className="font-brand text-2xl font-bold tracking-tight">Couldn&apos;t load your dashboard</h1>
+          <h1 className="font-brand text-2xl font-bold tracking-tight">Couldn&apos;t load your desk</h1>
           <p className="text-fg-muted">{error instanceof Error ? error.message : 'Please try again in a moment.'}</p>
         </div>
         <Button variant="secondary" onClick={() => void refetch()}>Retry</Button>
@@ -64,5 +55,8 @@ export default function UserDashboardClient() {
     );
   }
 
-  return <PlayerHome user={session?.user} profile={profile} />;
+  // No full-screen spinner: the desk renders its own shell and skeletons, so the page never goes
+  // blank between "signed in" and "here is your match".
+  const loading = status === 'loading' || (status === 'authenticated' && isLoading);
+  return <PlayerHome user={session?.user} profile={profile} loading={loading} />;
 }

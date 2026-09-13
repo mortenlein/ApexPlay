@@ -95,5 +95,6 @@ test('signing in as a persona from the login screen really does sign you in', as
   await expect(page).toHaveURL(/\/dashboard$/);
   const session = await (await page.request.get('/api/auth/session')).json();
   expect(session.user).toMatchObject({ name: 'Leo', role: 'player' });
-  await expect(page.getByRole('heading', { name: /Welcome back, Leo/i })).toBeVisible();
+  // The desk names the player it belongs to (the old "Welcome back, <name>" banner is gone).
+  await expect(page.getByRole('heading', { name: 'Leo', exact: true })).toBeVisible();
 });

@@ -181,7 +181,7 @@ test('winning moves the queue on to the next round against a yet-unknown opponen
   await expect(card).toContainText('TBD');
 });
 
-test('losing empties the desk: no queue card, and the hero says no match is assigned', async ({ page }) => {
+test('losing empties the desk: no queue card, and the desk says you are knocked out', async ({ page }) => {
   const { admin, tournamentId, matches } = await eightTeamBracket('Queue Eliminated Cup');
   const mine = matches.filter((m) => m.round === 1)[0];
   await leoTakesTeam(mine.homeTeamId!);
@@ -195,9 +195,11 @@ test('losing empties the desk: no queue card, and the hero says no match is assi
   await loginAs(page, 'leo');
   await page.goto('/dashboard');
 
-  // MyQueue only renders SCHEDULED entries, so the whole section goes away rather than
-  // showing a stale position — and the hero falls back to its empty state.
-  await expect(page.getByText('No match assigned yet')).toBeVisible();
+  // MyQueue only renders SCHEDULED entries, so the whole queue section goes away rather than
+  // showing a stale position — and the desk says what actually happened instead of promising a
+  // match that is never coming.
+  await expect(page.getByRole('heading', { name: 'Knocked out', exact: true })).toBeVisible();
+  await expect(page.getByText('Your team is out of Queue Eliminated Cup')).toBeVisible();
   await expect(queueSection(page)).toBeHidden();
   // The tournament stays on the desk — being knocked out is not being un-registered.
   await expect(page.getByRole('heading', { name: 'Queue Eliminated Cup' })).toBeVisible();

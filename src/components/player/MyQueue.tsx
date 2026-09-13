@@ -2,10 +2,12 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { Radio, Swords, Clock, Hourglass, Flag, AlertTriangle, RefreshCw } from 'lucide-react';
-import { Button, Card, StatusBadge } from '@/components/ui';
+import { Radio, Flag, Hourglass, AlertTriangle, RefreshCw, Zap, ArrowRight, Trophy, Clock } from 'lucide-react';
+import { Button, Card, StatusBadge, EmptyState } from '@/components/ui';
 import { isCalled, isLive } from '@/lib/match-status';
+import { buildSteamConnectUrl } from '@/lib/match-links';
 import { clientApi } from '@/lib/client-api';
+import { SeatEditor } from '@/components/player/SeatEditor';
 
 interface NextMatch {
   id: string;
@@ -18,7 +20,7 @@ interface NextMatch {
   hasOpponent: boolean;
 }
 
-interface QueueEntry {
+export interface QueueEntry {
   tournamentId: string;
   tournamentName: string;
   game: string;
@@ -27,6 +29,16 @@ interface QueueEntry {
   matchesAhead: number | null;
   totalPending: number;
   nextMatch: NextMatch | null;
+}
+
+/** One shared cache entry for GET /api/me/queue — the desk polls it, other readers ride along. */
+export function useMyQueue({ poll = false, enabled = true }: { poll?: boolean; enabled?: boolean } = {}) {
+  return useQuery<{ queue: QueueEntry[] }>({
+    queryKey: ['me-queue'],
+    queryFn: () => clientApi.getQueue(),
+    enabled,
+    ...(poll ? { refetchInterval: 15000 } : {}),
+  });
 }
 
 function stageLabel(bracketType: string, round: number) {
@@ -42,143 +54,331 @@ function stageLabel(bracketType: string, round: number) {
   }
 }
 
+type Tone = 'live' | 'called' | 'next' | 'waiting';
+
+function toneOf(entry: QueueEntry): Tone {
+  const status = (entry.nextMatch?.status || '').toUpperCase();
+  if (isLive(status)) return 'live';
+  if (isCalled(status)) return 'called';
+  return entry.matchesAhead === 0 ? 'next' : 'waiting';
+}
+
 /**
- * What the player should actually do, in priority order: a live or called match always wins
- * over the queue position — "3 matches ahead" is wrong and alarming once you've been called.
+ * The one line the player came to read. A called or live match always outranks the queue
+ * position — "3 matches ahead" is wrong and alarming once a marshal has called you.
  */
-function QueuePosition({ entry }: { entry: QueueEntry }) {
-  const m = entry.nextMatch!;
-  const status = (m.status || '').toUpperCase();
-  if (isLive(status)) {
-    return (
-      <div className="flex items-center gap-2 text-danger font-bold">
-        <Radio size={16} className="animate-pulse" />
-        Live now — get to your station
-      </div>
-    );
+function headlineOf(entry: QueueEntry, tone: Tone) {
+  if (tone === 'live') {
+    return {
+      icon: <Radio size={20} className="animate-pulse" />,
+      lead: 'Live now',
+      rest: 'get to your station',
+    };
   }
-  if (isCalled(status)) {
-    return (
-      <div className="flex items-center gap-2 text-success font-bold">
-        <Flag size={16} />
-        You&apos;re up — go to your station
-      </div>
-    );
+  if (tone === 'called') {
+    return { icon: <Flag size={20} />, lead: "You're up", rest: 'go to your station' };
   }
-  if (entry.matchesAhead === 0) {
-    return (
-      <div className="flex items-center gap-2 text-success font-bold">
-        <Flag size={16} />
-        You&apos;re up next
-      </div>
-    );
+  if (tone === 'next') {
+    return { icon: <Flag size={20} />, lead: "You're up next", rest: null };
   }
   const n = entry.matchesAhead ?? 0;
+  return {
+    icon: <Hourglass size={18} />,
+    lead: `${n} ${n === 1 ? 'match' : 'matches'} ahead of you`,
+    rest: null,
+  };
+}
+
+// Called and live are solid fills on purpose: this is the frame a player has to read from
+// across a loud hall, on a phone, without looking for it.
+const STRIP: Record<Tone, string> = {
+  live: 'bg-danger text-white',
+  called: 'bg-success text-page',
+  next: 'bg-brand-soft text-brand border-b border-line',
+  waiting: 'bg-white/[0.03] text-fg-muted border-b border-line',
+};
+
+const FRAME: Record<Tone, string> = {
+  live: 'border-danger',
+  called: 'border-success',
+  next: 'border-brand',
+  waiting: '',
+};
+
+/** A labelled fact block — the seat, the match, what is left to play. Replaces the stat tiles. */
+function Fact({
+  label,
+  accent,
+  className = '',
+  children,
+}: {
+  label: string;
+  /** Ties the block to the status strip above it — the seat matters most when you are called. */
+  accent?: 'success' | 'danger';
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const border =
+    accent === 'success' ? 'border-success' : accent === 'danger' ? 'border-danger' : 'border-line';
   return (
-    <div className="flex items-center gap-2 text-fg-muted font-semibold">
-      <Hourglass size={16} className="text-warning" />
-      {n} {n === 1 ? 'match' : 'matches'} ahead of you
+    <div className={`rounded border bg-field px-4 py-3 ${border} ${className}`}>
+      <p className="mds-uppercase-label text-fg-subtle">{label}</p>
+      <div className="mt-1.5">{children}</div>
     </div>
   );
 }
 
-function QueueHeading() {
+/**
+ * The call board: who you play, when, where you sit, and how far down the line you are — on one
+ * card, at a size that reads from across a LAN hall.
+ */
+function CallCard({
+  entry,
+  seating,
+  connectUrl,
+  onSeatSaved,
+}: {
+  entry: QueueEntry;
+  seating?: string | null;
+  connectUrl: string | null;
+  onSeatSaved?: () => void;
+}) {
+  const m = entry.nextMatch!;
+  const tone = toneOf(entry);
+  const { icon, lead, rest } = headlineOf(entry, tone);
+  const onNow = tone === 'live' || tone === 'called';
+
   return (
-    <div className="flex items-center gap-2">
-      <Swords size={16} className="text-brand" />
-      <h2 className="text-sm font-brand font-bold uppercase tracking-wide">Your queue</h2>
+    <Card className={`overflow-hidden !p-0 ${FRAME[tone]}`}>
+      {/* The shout. Status is the loudest thing on the desk — nothing else competes. */}
+      {/* role=status: the queue polls, so this line changes under the player's eyes — a screen
+          reader should announce "you're up" the moment a marshal calls the match. */}
+      <div role="status" className={`flex items-start gap-3 px-4 py-3 sm:px-5 ${STRIP[tone]}`}>
+        <span className="mt-0.5 shrink-0">{icon}</span>
+        <p
+          className={`font-brand font-bold leading-tight [text-wrap:balance] ${onNow ? 'text-2xl sm:text-3xl' : 'text-base sm:text-lg'}`}
+        >
+          {lead}
+          {rest ? <span className="font-normal opacity-80"> — {rest}</span> : null}
+        </p>
+      </div>
+
+      <div className="space-y-4 p-4 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          {/* A tournament name is content: the organiser's own casing, and it may wrap. */}
+          <p className="mds-name text-sm text-fg-muted">{entry.tournamentName}</p>
+          <StatusBadge status={m.status} />
+        </div>
+
+        <h2 className="mds-name-lg text-xl sm:text-2xl">
+          {entry.teamName} <span className="font-normal text-fg-subtle">vs</span>{' '}
+          {m.hasOpponent ? m.opponent : 'TBD'}
+        </h2>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Fact
+            label="Your seat"
+            accent={tone === 'live' ? 'danger' : tone === 'called' ? 'success' : undefined}
+            className={onNow ? 'sm:col-span-2' : ''}
+          >
+            <SeatEditor
+              size="lg"
+              tournamentId={entry.tournamentId}
+              seating={seating}
+              onSaved={() => onSeatSaved?.()}
+            />
+          </Fact>
+          <Fact label="Your match">
+            <p className="mds-numeric text-sm font-bold">
+              {stageLabel(m.bracketType, m.round)} · BO{m.bestOf}
+            </p>
+          </Fact>
+          {!onNow && entry.totalPending > 0 && (
+            <Fact label="Still to play">
+              <p className="mds-numeric text-sm font-bold">
+                {entry.totalPending} {entry.totalPending === 1 ? 'match' : 'matches'}
+              </p>
+            </Fact>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Only ever shown when the match really carries server details (nothing writes them
+              today) — a dead "one-click join" is worse than no button at all. */}
+          {connectUrl && (
+            <a href={connectUrl} data-testid={`join-match-${m.id}`}>
+              <Button>
+                <Zap size={15} />
+                One-click join
+              </Button>
+            </a>
+          )}
+          <Link href={`/tournaments/${entry.tournamentId}`}>
+            <Button variant="secondary">
+              View bracket
+              <ArrowRight size={15} />
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+/**
+ * No match to play: knocked out, or the bracket hasn't been drawn yet. A zero state, not a card —
+ * the desk must never dress "nothing to do" up as a fixture, or promise a match that isn't coming.
+ */
+function Standby({ entries }: { entries: QueueEntry[] }) {
+  const out = entries.filter((e) => e.state === 'OUT');
+  const waiting = entries.filter((e) => e.state !== 'OUT');
+  const knockedOut = waiting.length === 0 && out.length > 0;
+  const one = knockedOut ? (out.length === 1 ? out[0] : null) : waiting.length === 1 ? waiting[0] : null;
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-dashed border-line bg-white/[0.02] px-5 py-6">
+      <div className="space-y-1">
+        <h2 className="font-brand text-lg font-bold">
+          {knockedOut ? 'Knocked out' : 'Waiting for the bracket'}
+        </h2>
+        <p className="max-w-xl text-sm text-fg-muted">
+          {knockedOut ? (
+            <>
+              Your team is out of{' '}
+              {one ? <span className="mds-name">{one.tournamentName}</span> : 'the bracket'}. The rest of it is
+              still being played.
+            </>
+          ) : (
+            <>
+              {one ? (
+                <>
+                  <span className="mds-name">{one.tournamentName}</span> hasn&apos;t been drawn yet.
+                </>
+              ) : (
+                'None of your tournaments has been drawn yet.'
+              )}{' '}
+              Your match, your seat and your place in line show up here the moment it is.
+            </>
+          )}
+        </p>
+      </div>
+      <Link href={one ? `/tournaments/${one.tournamentId}` : '/tournaments'}>
+        <Button variant="secondary">
+          {!knockedOut && <Clock size={15} />}
+          {knockedOut ? 'View bracket' : 'Open tournament'}
+          {knockedOut && <ArrowRight size={15} />}
+        </Button>
+      </Link>
     </div>
   );
 }
 
-export function MyQueue() {
-  const { data, isLoading, error, refetch, isFetching } = useQuery<{ queue: QueueEntry[] }>({
-    queryKey: ['me-queue'],
-    queryFn: () => clientApi.getQueue(),
-    refetchInterval: 15000,
-  });
+function CardSkeleton() {
+  return (
+    <Card className="space-y-3" aria-busy="true">
+      <div className="h-3 w-1/3 animate-pulse rounded-sm bg-white/5" />
+      <div className="h-6 w-2/3 animate-pulse rounded-sm bg-white/5" />
+      <div className="h-3 w-1/2 animate-pulse rounded-sm bg-white/5" />
+    </Card>
+  );
+}
+
+/**
+ * Everything the desk knows about "am I playing, and when?".
+ *
+ * `fallback` is built from the profile payload the page already holds, so the answer is painted
+ * on the first frame and the /api/me/queue round-trip only adds the queue position to it — the
+ * player never watches a skeleton where the answer was already on screen.
+ */
+export function MyQueue({
+  fallback = [],
+  seats = {},
+  servers = {},
+  profileLoading = false,
+  enabled = true,
+  registered = false,
+  onSeatSaved,
+}: {
+  fallback?: QueueEntry[];
+  seats?: Record<string, string | null | undefined>;
+  servers?: Record<string, { ip?: string | null; port?: string | null; password?: string | null }>;
+  profileLoading?: boolean;
+  enabled?: boolean;
+  /** Whether the player is registered anywhere — the desk shows one zero state, not two. */
+  registered?: boolean;
+  onSeatSaved?: () => void;
+}) {
+  const { data, isLoading, error, refetch, isFetching } = useMyQueue({ poll: true, enabled });
+
+  const entries = data?.queue ?? fallback;
+  const scheduled = entries
+    .filter((q) => q.state === 'SCHEDULED' && q.nextMatch)
+    .sort((a, b) => {
+      const rank = (e: QueueEntry) => ({ live: 0, called: 1, next: 2, waiting: 3 })[toneOf(e)];
+      return rank(a) - rank(b) || (a.matchesAhead ?? 99) - (b.matchesAhead ?? 99);
+    });
+
+  if ((!enabled || isLoading || profileLoading) && entries.length === 0) {
+    return (
+      <section className="space-y-3" aria-busy="true">
+        <p className="mds-uppercase-label text-fg-subtle">Your queue</p>
+        <CardSkeleton />
+      </section>
+    );
+  }
 
   // A silently missing queue reads as "you have no matches", which is the one thing it must
-  // never imply. Say it failed and offer a retry instead.
-  if (error) {
-    return (
-      <section className="space-y-4">
-        <QueueHeading />
-        <Card className="flex flex-wrap items-center justify-between gap-3 border-danger/30">
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={16} className="text-danger" />
-            <p className="text-sm font-semibold">Couldn&apos;t load your queue</p>
-          </div>
-          <Button variant="secondary" size="sm" onClick={() => void refetch()} disabled={isFetching}>
-            <RefreshCw size={14} className={isFetching ? 'animate-spin' : undefined} />
-            Retry
-          </Button>
-        </Card>
-      </section>
-    );
-  }
+  // never imply. Say it failed and offer a retry — above whatever the profile already knew.
+  const errorBanner = error ? (
+    <Card className="flex flex-wrap items-center justify-between gap-3 border-danger">
+      <div className="flex items-center gap-2">
+        <AlertTriangle size={16} className="text-danger" />
+        <p className="text-sm font-semibold">Couldn&apos;t refresh your queue position</p>
+      </div>
+      <Button variant="secondary" size="sm" onClick={() => void refetch()} disabled={isFetching}>
+        <RefreshCw size={14} className={isFetching ? 'animate-spin' : undefined} />
+        Retry
+      </Button>
+    </Card>
+  ) : null;
 
-  if (isLoading) {
-    return (
-      <section className="space-y-4">
-        <QueueHeading />
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Card className="space-y-3" aria-busy="true">
-            <p className="text-xs text-fg-subtle">Loading…</p>
-            <div className="h-3 w-1/3 animate-pulse rounded-sm bg-white/5" />
-            <div className="h-5 w-2/3 animate-pulse rounded-sm bg-white/5" />
-            <div className="h-3 w-1/2 animate-pulse rounded-sm bg-white/5" />
-          </Card>
-        </div>
-      </section>
-    );
-  }
-
-  const scheduled = (data?.queue ?? []).filter((q) => q.state === 'SCHEDULED');
   if (scheduled.length === 0) {
-    return null; // The dashboard's own sections cover the empty case.
+    return (
+      <section className="space-y-3" aria-label="Match status">
+        {errorBanner}
+        {entries.length > 0 && <Standby entries={entries} />}
+        {entries.length === 0 && !registered && (
+          <EmptyState
+            icon={<Trophy size={26} />}
+            title="You're not in a tournament yet"
+            description="Sign up for one and your match, your seat and your place in line live here."
+            action={
+              <Link href="/tournaments">
+                <Button>Browse tournaments</Button>
+              </Link>
+            }
+          />
+        )}
+      </section>
+    );
   }
 
   return (
-    <section className="space-y-4">
-      <QueueHeading />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {scheduled.map((entry) => {
-          const m = entry.nextMatch!;
-          return (
-            <Card key={entry.tournamentId} className="flex flex-col gap-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="mds-uppercase-label text-fg-subtle">{entry.tournamentName}</p>
-                  <p className="mt-1 text-[11px] font-semibold text-brand">
-                    {stageLabel(m.bracketType, m.round)} · BO{m.bestOf}
-                  </p>
-                </div>
-                <StatusBadge status={m.status} />
-              </div>
-
-              <div className="flex items-baseline gap-2">
-                <span className="text-fg-subtle text-sm">{entry.teamName}</span>
-                <span className="text-fg-subtle text-xs">vs</span>
-                <span className="text-lg font-brand font-bold">
-                  {m.hasOpponent ? m.opponent : 'TBD'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between border-t border-line pt-3">
-                <QueuePosition entry={entry} />
-                <Link
-                  href={`/tournaments/${entry.tournamentId}`}
-                  className="text-xs font-semibold text-brand hover:underline flex items-center gap-1"
-                >
-                  <Clock size={13} />
-                  View bracket
-                </Link>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+    <section className="space-y-3">
+      <p className="mds-uppercase-label text-fg-subtle">Your queue</p>
+      {errorBanner}
+      {scheduled.map((entry) => {
+        const server = servers[entry.nextMatch!.id];
+        return (
+          <CallCard
+            key={entry.tournamentId}
+            entry={entry}
+            seating={seats[entry.tournamentId]}
+            connectUrl={server ? buildSteamConnectUrl(server.ip, server.port, server.password) : null}
+            onSeatSaved={onSeatSaved}
+          />
+        );
+      })}
     </section>
   );
 }

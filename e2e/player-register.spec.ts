@@ -55,7 +55,7 @@ test('creating a team in the browser shows the roster, the seat and a copyable i
   // The invite link is the join credential and the only place it surfaces to a player.
   const inviteCode = await inviteCodeOf('leo', tournament.id);
   await expect(page.getByText(`/tournaments/${tournament.id}/register?invite=${inviteCode}`)).toBeVisible();
-  await expect(page.getByText('1 slots remaining in the roster.')).toBeVisible();
+  await expect(page.getByText('1 slot left in the roster.')).toBeVisible();
 
   await page.getByRole('button', { name: /Copy Invite Link/i }).click();
   await expect(page.getByText('Invite link copied')).toBeVisible();
@@ -118,7 +118,9 @@ test('a full team tells the third player so, instead of swallowing the refusal',
   await page.goto(`/tournaments/${tournament.id}/register?invite=${created.inviteCode}`);
   await page.getByRole('button', { name: /Join Roster/i }).click();
 
-  await expect(page.getByText(/full/i)).toBeVisible();
+  // Scoped to the form's own alert: the page names the tournament ("Full Team Cup") in its
+  // header now, so a bare text match would pass on the heading without the refusal being drawn.
+  await expect(page.getByTestId('register-error')).toContainText(/full/i);
 });
 
 test('leaving a team from the UI needs a confirmation and then really removes the player', async ({ page }) => {
