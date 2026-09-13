@@ -1,6 +1,7 @@
 # ApexPlay — production deploy on `ash` behind the cloudflared `homeassistant` tunnel.
 # Loopback-only bind (127.0.0.1:8089 → container :4001); the tunnel ingress maps
-# apexplay.mortenlab.xyz → http://127.0.0.1:8089. ApexPlay is multi-user (players log in
+# turnering.mortenlab.xyz → http://127.0.0.1:8089 (the old apexplay host 308-redirects to it).
+# The app is multi-user (players log in
 # via Steam), so it is PUBLIC with its own auth — NOT behind Cloudflare Access.
 #
 #   cp .env.example .env   # then set STEAM_API_KEY + ADMIN_STEAMIDS (others pre-generated)
@@ -21,5 +22,5 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: file:/app/data/prod.db
-      NEXTAUTH_URL: https://apexplay.mortenlab.xyz
+      NEXTAUTH_URL: https://turnering.mortenlab.xyz
     restart: unless-stopped
