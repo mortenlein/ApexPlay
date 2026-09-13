@@ -105,6 +105,9 @@ model User {
   emailVerified DateTime?
   image         String?
   steamId       String?   @unique
+  // UI language. Needed server-side (not just as a cookie) so a push notification can be
+  // written in the recipient's own language — see src/lib/notify.ts.
+  locale        String?
   accounts      Account[]
   sessions      Session[]
   players       Player[]

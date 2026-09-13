@@ -7,6 +7,8 @@ import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { Command, LogOut, Menu, X } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
+import LocaleToggle from '@/components/LocaleToggle';
+import { useTranslations } from 'next-intl';
 import { openCommandPalette } from '@/components/CommandPalette';
 
 export interface NavLink {
@@ -20,6 +22,8 @@ export interface NavLink {
  * signed-in user's role, so it's identical on every surface — only the active item changes.
  */
 export function TopNav() {
+  const t = useTranslations('nav');
+  const tc = useTranslations('common');
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const signedIn = status === 'authenticated';
@@ -32,11 +36,11 @@ export function TopNav() {
     setMenuOpen(false);
   }, [pathname]);
 
-  const links: NavLink[] = [{ href: '/tournaments', label: 'Tournaments' }];
-  if (signedIn) links.push({ href: '/dashboard', label: 'My desk' });
-  if (role === 'admin') links.push({ href: '/admin', label: 'Admin' });
-  if (role === 'admin' || role === 'marshal') links.push({ href: '/marshal/dashboard', label: 'Marshal' });
-  if (signedIn) links.push({ href: '/profile', label: 'Profile' });
+  const links: NavLink[] = [{ href: '/tournaments', label: t('tournaments') }];
+  if (signedIn) links.push({ href: '/dashboard', label: t('myDesk') });
+  if (role === 'admin') links.push({ href: '/admin', label: t('admin') });
+  if (role === 'admin' || role === 'marshal') links.push({ href: '/marshal/dashboard', label: t('marshal') });
+  if (signedIn) links.push({ href: '/profile', label: t('profile') });
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
@@ -98,7 +102,7 @@ export function TopNav() {
                 className="hidden items-center gap-1.5 rounded-sm px-1 text-meta font-semibold text-fg-muted transition-colors hover:text-fg lg:flex"
               >
                 <LogOut size={14} aria-hidden />
-                Sign out
+                {tc('signOut')}
               </button>
             </>
           ) : (
@@ -106,7 +110,7 @@ export function TopNav() {
               href="/login"
               className="hidden rounded-sm px-1 text-meta font-semibold text-fg-muted transition-colors hover:text-fg sm:block"
             >
-              Sign in
+              {tc('signIn')}
             </Link>
           )}
           {/* The palette is the fast path (⌘K / "/"), but it needs a visible door too —
@@ -121,6 +125,7 @@ export function TopNav() {
           >
             <Command size={17} aria-hidden />
           </button>
+          <LocaleToggle />
           <ThemeToggle />
           <button
             type="button"
@@ -166,7 +171,7 @@ export function TopNav() {
                 className="mds-tap mt-1 flex items-center gap-2 rounded-sm px-3 py-3 text-left text-body font-semibold text-fg-muted transition-colors hover:bg-tint hover:text-fg"
               >
                 <LogOut size={15} aria-hidden />
-                Sign out
+                {tc('signOut')}
               </button>
             ) : (
               <Link
@@ -174,7 +179,7 @@ export function TopNav() {
                 onClick={() => setMenuOpen(false)}
                 className="mds-tap flex items-center rounded-sm px-3 py-3 text-body font-semibold text-fg-muted transition-colors hover:bg-tint hover:text-fg"
               >
-                Sign in
+                {tc('signIn')}
               </Link>
             )}
           </div>

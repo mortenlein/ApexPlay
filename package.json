@@ -14,7 +14,8 @@
     "test:bracket": "ts-node --transpile-only --compiler-options '{\"module\":\"CommonJS\",\"moduleResolution\":\"node\"}' scripts/test-bracket-utils.ts",
     "test:cs2-webhook": "node scripts/test-cs2-webhook.js",
     "postinstall": "prisma generate",
-    "bot": "ts-node -r dotenv/config scripts/discord-bot.ts"
+    "bot": "ts-node -r dotenv/config scripts/discord-bot.ts",
+    "i18n:check": "node scripts/check-i18n.js"
   },
   "dependencies": {
     "@discordjs/rest": "^2.6.3",
@@ -30,6 +31,7 @@
     "next": "^15.5.25",
     "next-auth": "^4.24.15",
     "next-auth-steam": "^0.4.0",
+    "next-intl": "^4.14.4",
     "next-themes": "^0.4.6",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

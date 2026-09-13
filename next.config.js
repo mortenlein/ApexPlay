@@ -1,3 +1,8 @@
+const createNextIntlPlugin = require('next-intl/plugin');
+
+// Locale comes from a cookie, not the URL — see src/i18n/config.ts for why.
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: true,
@@ -23,4 +28,4 @@ const nextConfig = {
     },
 };
 
-module.exports = nextConfig;
+module.exports = withNextIntl(nextConfig);

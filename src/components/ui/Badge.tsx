@@ -1,5 +1,6 @@
 import React from "react";
-import { matchStatusLabel } from "@/lib/match-status";
+import { useTranslations } from "next-intl";
+import { matchStatusKey } from "@/lib/match-status";
 
 type Tone = "neutral" | "live" | "ready" | "pending" | "done" | "danger" | "info";
 
@@ -56,12 +57,10 @@ const STATUS_TONE: Record<string, Tone> = {
  * `matchStatusLabel` in src/lib/match-status.ts, so the badge and the public board cannot drift
  * into calling the same state two different things.
  */
-const STAGE_LABEL: Record<string, string> = {
-  DRAFT: "Draft",
-  REGISTRATION: "Registration",
-  COMPLETE: "Complete",
-  CANCELLED: "Cancelled",
-  FORFEIT: "Forfeit",
+const STAGE_KEY: Record<string, string> = {
+  DRAFT: "draft",
+  REGISTRATION: "registration",
+  COMPLETE: "complete",
 };
 
 /**
@@ -76,11 +75,17 @@ function humanize(key: string) {
 
 /** Renders a match/tournament status string with a consistent tone + label. */
 export function StatusBadge({ status }: { status?: string | null }) {
+  const tStatus = useTranslations("status");
+  const tStage = useTranslations("stage");
   const key = (status || "PENDING").toUpperCase();
   const tone = STATUS_TONE[key] ?? "neutral";
   // Stage words first (DRAFT/REGISTRATION/COMPLETE are tournament states, not match states),
   // then the canonical match vocabulary, then the never-leak-an-enum fallback.
-  const label = STAGE_LABEL[key] ?? (key in STATUS_TONE ? matchStatusLabel(key) : humanize(key));
+  const label = STAGE_KEY[key]
+    ? tStage(STAGE_KEY[key])
+    : key in STATUS_TONE
+      ? tStatus(matchStatusKey(key))
+      : humanize(key);
   return <Badge tone={tone}>{label}</Badge>;
 }
 

@@ -20,6 +20,10 @@ process.env.NEXTAUTH_URL = `http://127.0.0.1:${E2E_PORT}`;
 // SteamProvider throws "clientSecret is empty" on construction without this, which 500s
 // EVERY /api/auth/* request (providers, session, signin) and breaks all auth in tests.
 process.env.STEAM_API_KEY = 'e2e-placeholder';
+// The suite asserts English copy. The app defaults to Norwegian (it is a Norwegian club), so
+// pin the harness rather than translating 201 assertions; the Norwegian rendering has its own
+// spec. `getRequestLocale` reads this cookie first, before Accept-Language.
+process.env.E2E_LOCALE = 'en';
 // Inbound CS2 webhook bearer key — explicit so tests never depend on (or leak) the real .env.
 process.env.CS2_WEBHOOK_KEY = 'e2e-cs2-webhook-key';
 // Web push has to be *configured* for the player-notification specs to mean anything:
@@ -47,6 +51,22 @@ export default defineConfig({
   expect: { timeout: 20000 },
   use: {
     baseURL: `http://127.0.0.1:${E2E_PORT}`,
+    // Every context starts in English (see the note by E2E_LOCALE above).
+    storageState: {
+      cookies: [
+        {
+          name: 'apexplay.locale',
+          value: 'en',
+          domain: '127.0.0.1',
+          path: '/',
+          expires: -1,
+          httpOnly: false,
+          secure: false,
+          sameSite: 'Lax' as const,
+        },
+      ],
+      origins: [],
+    },
     trace: 'on-first-retry',
   },
   webServer: {

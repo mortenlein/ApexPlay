@@ -1,0 +1,52 @@
+{
+  "common": {
+    "save": "Lagre",
+    "cancel": "Avbryt",
+    "delete": "Slett",
+    "edit": "Rediger",
+    "close": "Lukk",
+    "copy": "Kopier",
+    "copied": "Kopiert",
+    "retry": "Prøv igjen",
+    "refresh": "Oppdater",
+    "loading": "Laster…",
+    "signIn": "Logg inn",
+    "signOut": "Logg ut",
+    "signInWithSteam": "Logg inn med Steam",
+    "back": "Tilbake",
+    "next": "Neste",
+    "done": "Ferdig",
+    "tbd": "Ikke klart",
+    "seat": "Plass",
+    "team": "Lag",
+    "teams": "Lag",
+    "player": "Spiller",
+    "players": "Spillere",
+    "match": "Kamp",
+    "matches": "Kamper",
+    "round": "Runde",
+    "tournament": "Turnering",
+    "tournaments": "Turneringer"
+  },
+  "status": {
+    "scheduled": "Satt opp",
+    "called": "Kalt opp",
+    "live": "Live",
+    "done": "Ferdig",
+    "forfeit": "Walkover"
+  },
+  "stage": {
+    "draft": "Utkast",
+    "registration": "Påmelding",
+    "live": "Live",
+    "complete": "Ferdig"
+  },
+  "nav": {
+    "tournaments": "Turneringer",
+    "myDesk": "Min side",
+    "admin": "Arrangør",
+    "marshal": "Crew",
+    "profile": "Profil",
+    "language": "Språk"
+  }
+}

@@ -3,6 +3,9 @@ import { Inter, JetBrains_Mono, Martian_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import NavigationWrapper from "@/components/NavigationWrapper";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
+import { HTML_LANG, type Locale } from "@/i18n/config";
 
 /**
  * Three faces, one job each (design.md §3):
@@ -49,23 +52,29 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Locale comes from the cookie / Accept-Language, never the URL (src/i18n/config.ts).
+  const locale = (await getLocale()) as Locale;
+  const messages = await getMessages();
+
   return (
     <html
-      lang="en"
+      lang={HTML_LANG[locale] ?? "en"}
       className={`${inter.variable} ${jetMono.variable} ${martianMono.variable}`}
       suppressHydrationWarning
     >
       <body className="antialiased text-fg" suppressHydrationWarning>
-        <Providers>
-          <NavigationWrapper>
-            {children}
-          </NavigationWrapper>
-        </Providers>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <Providers>
+            <NavigationWrapper>
+              {children}
+            </NavigationWrapper>
+          </Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

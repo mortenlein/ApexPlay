@@ -72,9 +72,28 @@ export function byPlayOrder(
  * This is also the seam i18n plugs into: one function to swap for a message lookup, rather than
  * two hand-rolled tables.
  */
+export type MatchStatusKey = 'scheduled' | 'called' | 'live' | 'done';
+
+/** The i18n key for a state. UI should translate this; see matchStatusLabel for the rest. */
+export function matchStatusKey(status: string | null | undefined): MatchStatusKey {
+  if (isLive(status)) return 'live';
+  if (isDone(status)) return 'done';
+  if (isCalled(status)) return 'called';
+  return 'scheduled';
+}
+
+const EN_STATUS: Record<MatchStatusKey, string> = {
+  scheduled: 'Scheduled',
+  called: 'Called',
+  live: 'Live',
+  done: 'Done',
+};
+
+/**
+ * English label, for contexts with no translator: server logs, audit summaries, and anywhere a
+ * non-React caller needs a word. Rendered UI goes through `matchStatusKey` + `t('status.*')`
+ * so a Norwegian player reads "Kalt opp".
+ */
 export function matchStatusLabel(status: string | null | undefined): string {
-  if (isLive(status)) return 'Live';
-  if (isDone(status)) return 'Done';
-  if (isCalled(status)) return 'Called';
-  return 'Scheduled';
+  return EN_STATUS[matchStatusKey(status)];
 }
