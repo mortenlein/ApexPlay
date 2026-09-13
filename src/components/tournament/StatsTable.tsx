@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 
 interface StatsTableProps {
   players: any[];
@@ -8,6 +9,8 @@ interface StatsTableProps {
 }
 
 export function StatsTable({ players, onViewPlayer }: StatsTableProps) {
+  const t = useTranslations("tournament");
+  const tCommon = useTranslations("common");
   const sortedPlayers = [...players].sort((a: any, b: any) => {
     const teamCompare = String(a.teamName || "").localeCompare(String(b.teamName || ""));
     if (teamCompare !== 0) {
@@ -20,10 +23,8 @@ export function StatsTable({ players, onViewPlayer }: StatsTableProps) {
   return (
     <div className="mds-card overflow-hidden p-0 animate-in fade-in duration-500">
       <header className="border-b border-line px-5 py-4">
-        <h2 className="m-0 text-lg font-bold tracking-tight">Player Directory</h2>
-        <p className="m-0 mt-0.5 text-xs text-fg-muted">
-          Who is playing, for which team, and where they sit.
-        </p>
+        <h2 className="m-0 text-lg font-bold tracking-tight">{t("player.directory")}</h2>
+        <p className="m-0 mt-0.5 text-xs text-fg-muted">{t("player.directoryHint")}</p>
       </header>
 
       <div className="custom-scrollbar overflow-x-auto">
@@ -32,10 +33,10 @@ export function StatsTable({ players, onViewPlayer }: StatsTableProps) {
         <table className="mds-table w-full">
           <thead>
             <tr>
-              <th>Player</th>
-              <th className="hidden sm:table-cell">Team</th>
-              <th className="hidden text-center sm:table-cell">Country</th>
-              <th className="text-right">Seat</th>
+              <th>{tCommon("player")}</th>
+              <th className="hidden sm:table-cell">{tCommon("team")}</th>
+              <th className="hidden text-center sm:table-cell">{t("player.country")}</th>
+              <th className="text-right">{tCommon("seat")}</th>
             </tr>
           </thead>
           <tbody>
@@ -76,7 +77,7 @@ export function StatsTable({ players, onViewPlayer }: StatsTableProps) {
             {sortedPlayers.length === 0 && (
               <tr>
                 <td colSpan={4} className="text-sm text-fg-muted">
-                  No players on any roster yet.
+                  {t("player.none")}
                 </td>
               </tr>
             )}

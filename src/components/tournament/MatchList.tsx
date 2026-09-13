@@ -4,8 +4,9 @@ import React from "react";
 import Image from "next/image";
 import { Trophy, Layout } from "lucide-react";
 import Link from "next/link";
-import { byPlayOrder, isLive } from "@/lib/match-status";
-import { matchRef, matchStatusLabel, matchStatusTone, slotLabel, stageName } from "./match-labels";
+import { useTranslations } from "next-intl";
+import { byPlayOrder, isLive, matchStatusKey } from "@/lib/match-status";
+import { matchRef, matchStatusTone, slotLabel, stageName } from "./match-labels";
 
 interface MatchListProps {
   matches: any[];
@@ -41,6 +42,9 @@ function TeamRow({ team, name, score, won, dim }: { team: any; name: string; sco
 }
 
 export function MatchList({ matches, tournamentId }: MatchListProps) {
+  const t = useTranslations("tournament");
+  const tCommon = useTranslations("common");
+  const tStatus = useTranslations("status");
   // Grouped by stage in play order — in a double-elimination bracket "round 1" is two different
   // stages (winners and losers), so grouping by the round number mixed them into one heading.
   const groups: { label: string; matches: any[] }[] = [];
@@ -48,7 +52,7 @@ export function MatchList({ matches, tournamentId }: MatchListProps) {
     .slice()
     .sort(byPlayOrder)
     .forEach((match: any) => {
-      const label = stageName(match, matches);
+      const label = stageName(match, matches, t);
       const group = groups.find((g) => g.label === label);
       if (group) {
         group.matches.push(match);
@@ -88,7 +92,7 @@ export function MatchList({ matches, tournamentId }: MatchListProps) {
                     <div className="flex items-center justify-between gap-2">
                       {/* The same short reference other views point at ("Winner of QF3"). */}
                       <span className="mds-uppercase-label text-[10px]">
-                        {matchRef(match, matches)}
+                        {matchRef(match, matches, t)}
                         {match.bestOf > 1 ? ` · BO${match.bestOf}` : ""}
                       </span>
                       <span
@@ -97,21 +101,21 @@ export function MatchList({ matches, tournamentId }: MatchListProps) {
                           live ? "animate-pulse" : ""
                         }`}
                       >
-                        {matchStatusLabel(match.status)}
+                        {tStatus(matchStatusKey(match.status))}
                       </span>
                     </div>
 
                     <div className="space-y-2">
                       <TeamRow
                         team={match.homeTeam}
-                        name={slotLabel(match, "HOME", matches)}
+                        name={slotLabel(match, "HOME", matches, t, tCommon)}
                         score={match.homeScore}
                         won={homeWon}
                         dim={awayWon}
                       />
                       <TeamRow
                         team={match.awayTeam}
-                        name={slotLabel(match, "AWAY", matches)}
+                        name={slotLabel(match, "AWAY", matches, t, tCommon)}
                         score={match.awayScore}
                         won={awayWon}
                         dim={homeWon}
@@ -124,7 +128,7 @@ export function MatchList({ matches, tournamentId }: MatchListProps) {
                         className="mds-btn-secondary h-9 w-full text-xs"
                       >
                         <Layout size={14} />
-                        Open bracket view
+                        {t("bracket.open")}
                       </Link>
                     )}
                   </div>
@@ -136,9 +140,7 @@ export function MatchList({ matches, tournamentId }: MatchListProps) {
       })}
 
       {matches.length === 0 && (
-        <p className="text-sm text-fg-muted">
-          No matches yet — the bracket has not been generated.
-        </p>
+        <p className="text-sm text-fg-muted">{t("match.none")}</p>
       )}
     </div>
   );

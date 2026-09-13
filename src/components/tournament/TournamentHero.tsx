@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { Share2, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { formatName } from "./match-labels";
 
 interface TournamentHeroProps {
@@ -28,8 +29,9 @@ export function TournamentHero({
   gameMeta,
   onShare,
 }: TournamentHeroProps) {
+  const t = useTranslations("tournament");
   const canRegister = Boolean(tournament?.steamSignupEnabled) && !Boolean(tournament?.rosterLocked);
-  const format = formatName(tournament?.format || tournament?.type);
+  const format = formatName(tournament?.format || tournament?.type, t);
 
   return (
     <header className="relative w-full shrink-0 overflow-hidden border-b border-line bg-card">
@@ -73,9 +75,9 @@ export function TournamentHero({
                 </>
               ) : null}
               <span aria-hidden>·</span>
-              <span className="mds-numeric">{teamsCount} teams</span>
+              <span className="mds-numeric">{t("hero.teams", { count: teamsCount })}</span>
               <span aria-hidden>·</span>
-              <span className="mds-numeric">{matchesCount} matches</span>
+              <span className="mds-numeric">{t("hero.matches", { count: matchesCount })}</span>
             </p>
           </div>
         </div>
@@ -84,16 +86,16 @@ export function TournamentHero({
           {liveMatchesCount > 0 && (
             <span className="mds-uppercase-label flex items-center gap-2 rounded-full border border-danger px-3 py-1 text-[10px] text-danger">
               <span className="h-1.5 w-1.5 rounded-full bg-danger animate-pulse" />
-              Live now
+              {t("hero.liveNow")}
             </span>
           )}
           <button onClick={onShare} className="mds-btn-secondary h-9 px-4 text-xs">
             <Share2 size={14} />
-            Share
+            {t("hero.share")}
           </button>
           {canRegister && (
             <Link href={`/tournaments/${tournament.id}/register`} className="mds-btn-primary h-9 px-4 text-xs">
-              Register team
+              {t("hero.registerTeam")}
               <ArrowRight size={14} />
             </Link>
           )}

@@ -4,6 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import { Trophy, Layout } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 interface LiveMatchCardProps {
   match: any;
@@ -13,6 +14,8 @@ interface LiveMatchCardProps {
 }
 
 function TeamRow({ team, score, leading }: { team: any; score: number; leading: boolean }) {
+  const tCommon = useTranslations('common');
+
   return (
     <div className="flex items-center gap-3">
       <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded border border-line bg-field">
@@ -23,7 +26,7 @@ function TeamRow({ team, score, leading }: { team: any; score: number; leading: 
         )}
       </div>
       <span className="mds-name min-w-0 flex-1 text-sm text-fg">
-        {team?.name || 'TBD'}
+        {team?.name || tCommon('tbd')}
       </span>
       <span
         className={`mds-numeric text-2xl font-bold ${
@@ -42,6 +45,8 @@ function TeamRow({ team, score, leading }: { team: any; score: number; leading: 
  * of the score, which on a phone left about 40px for each name.
  */
 const LiveMatchCard: React.FC<LiveMatchCardProps> = ({ match, tournamentId, stageName }) => {
+  const t = useTranslations('tournament');
+  const tStatus = useTranslations('status');
   const meta = [stageName, match.bestOf ? `BO${match.bestOf}` : null].filter(Boolean).join(' · ');
 
   return (
@@ -50,7 +55,7 @@ const LiveMatchCard: React.FC<LiveMatchCardProps> = ({ match, tournamentId, stag
         <span className="mds-uppercase-label text-[10px]">{meta}</span>
         <span className="mds-uppercase-label flex items-center gap-2 rounded-full border border-danger px-2.5 py-0.5 text-[10px] text-danger">
           <span className="h-1.5 w-1.5 rounded-full bg-danger animate-pulse" />
-          Live
+          {tStatus('live')}
         </span>
       </div>
 
@@ -66,7 +71,7 @@ const LiveMatchCard: React.FC<LiveMatchCardProps> = ({ match, tournamentId, stag
         className="mds-btn-secondary h-9 w-full text-xs"
       >
         <Layout size={14} />
-        Open bracket view
+        {t('bracket.open')}
       </Link>
     </div>
   );

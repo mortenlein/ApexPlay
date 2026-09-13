@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState, use } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { clientApi } from '@/lib/client-api';
 
 /**
@@ -32,6 +33,7 @@ function chunk<T>(items: T[], size: number): T[][] {
 
 export default function RosterOverlay(props: { params: Promise<{ id: string }> }) {
     const params = use(props.params);
+    const t = useTranslations('tournament');
     const searchParams = useSearchParams();
     const chromaKey = searchParams.get('chroma') || 'transparent';
     const pinnedPage = Number.parseInt(searchParams.get('page') || '', 10);
@@ -169,7 +171,7 @@ export default function RosterOverlay(props: { params: Promise<{ id: string }> }
                                     className="text-gray-500 font-bold uppercase tracking-[0.3em]"
                                     style={{ fontSize: `calc(${playerSize} * 0.7)` }}
                                 >
-                                    Seed #{team.seed || '?'}
+                                    {team.seed ? t('roster.seed', { seed: team.seed }) : t('roster.seedUnknown')}
                                 </span>
                                 <h2
                                     className="font-black text-white uppercase tracking-tighter truncate m-0"
@@ -215,7 +217,7 @@ export default function RosterOverlay(props: { params: Promise<{ id: string }> }
                                     className="text-center text-gray-600 font-black uppercase tracking-widest py-4 opacity-50"
                                     style={{ fontSize: `calc(${playerSize} * 0.8)` }}
                                 >
-                                    No Players Enrolled
+                                    {t('roster.noPlayers')}
                                 </div>
                             )}
                         </div>

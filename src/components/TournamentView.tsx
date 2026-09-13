@@ -6,10 +6,11 @@ import { Trophy, Users, X, Gamepad2, MoreHorizontal, Command } from "lucide-reac
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useMatchStream } from "@/hooks/useMatchStream";
 import PublicBracket from "@/components/PublicBracket";
 import { getGameMetadata } from "@/lib/games";
-import { byPlayOrder, isDone, isLive } from "@/lib/match-status";
+import { byPlayOrder, isDone, isLive, matchStatusKey } from "@/lib/match-status";
 import { clientApi, ApiError } from "@/lib/client-api";
 import { useToast } from "@/components/ToastProvider";
 
@@ -21,12 +22,7 @@ import { MatchList } from "./tournament/MatchList";
 import { TeamRegistry } from "./tournament/TeamRegistry";
 import { StatsTable } from "./tournament/StatsTable";
 import { getTournamentTabItems } from "./tournament/tournament-tabs-config";
-import {
-  currentStageProgress,
-  matchStatusLabel,
-  slotLabel,
-  stageName,
-} from "./tournament/match-labels";
+import { currentStageProgress, slotLabel, stageName } from "./tournament/match-labels";
 import { openCommandPalette } from "./CommandPalette";
 import { usePerformanceBudget } from "@/hooks/usePerformanceBudget";
 
@@ -86,6 +82,9 @@ function useModalA11y(
 
 export default function TournamentView({ id }: TournamentViewProps) {
   usePerformanceBudget("TournamentView", 240);
+  const t = useTranslations("tournament");
+  const tCommon = useTranslations("common");
+  const tStatus = useTranslations("status");
   const queryClient = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
@@ -141,7 +140,7 @@ export default function TournamentView({ id }: TournamentViewProps) {
     .filter((m: any) => !isDone(m.status) && !isLive(m.status))
     .sort(byPlayOrder)
     .slice(0, 5);
-  const progress = currentStageProgress(matches);
+  const progress = currentStageProgress(matches, t);
   const gameMeta = getGameMetadata(tournament?.game || "CS2");
   const tabItems = getTournamentTabItems(tournament?.category || "BRACKET");
   const primaryMobileTabs = tabItems.slice(0, 4);
@@ -173,12 +172,10 @@ export default function TournamentView({ id }: TournamentViewProps) {
     return (
       <div className="min-h-screen bg-page p-8 text-fg">
         <div className="mx-auto mt-20 max-w-xl rounded-lg border border-line bg-card p-8 text-center">
-          <h1 className="m-0 text-2xl font-bold tracking-tight">Tournament Not Found</h1>
-          <p className="mt-3 text-sm text-fg-muted">
-            This tournament could not be loaded. It may have been removed.
-          </p>
+          <h1 className="m-0 text-2xl font-bold tracking-tight">{t("notFound.title")}</h1>
+          <p className="mt-3 text-sm text-fg-muted">{t("notFound.body")}</p>
           <Link href="/tournaments" className="mds-btn-primary mt-6 h-10 px-6 text-sm">
-            Back to Tournaments
+            {t("notFound.back")}
           </Link>
         </div>
       </div>
@@ -195,7 +192,7 @@ export default function TournamentView({ id }: TournamentViewProps) {
         gameMeta={gameMeta}
         onShare={() => {
           navigator.clipboard.writeText(window.location.href);
-          toast.success("Link copied", "The tournament page link is on your clipboard.");
+          toast.success(t("share.copiedTitle"), t("share.copiedBody"));
         }}
       />
 
@@ -232,34 +229,32 @@ export default function TournamentView({ id }: TournamentViewProps) {
                     onMatchClick={(matchId: string) => setSelectedMatch(matches.find((m: any) => m.id === matchId))}
                   />
                 </div>
-                <p className="m-0 mt-2 text-xs text-fg-subtle lg:hidden">
-                  Drag to pan, pinch to zoom. Tap a match for the detail.
-                </p>
+                <p className="m-0 mt-2 text-xs text-fg-subtle lg:hidden">{t("bracket.panHint")}</p>
               </div>
             )}
 
             {activeTab === "leaderboard" && (
               <div className="space-y-4">
-                <h2 className="m-0 text-xl font-bold tracking-tight">Leaderboard</h2>
+                <h2 className="m-0 text-xl font-bold tracking-tight">{t("leaderboard.title")}</h2>
                 {scoreboard.length === 0 ? (
                   <div className="mds-card border-dashed text-center">
-                    <p className="text-sm text-fg-muted">No leaderboard data yet.</p>
+                    <p className="text-sm text-fg-muted">{t("leaderboard.empty")}</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto rounded-lg border border-line">
                     <table className="mds-table min-w-full">
                       <thead>
                         <tr>
-                          <th>Team</th>
-                          <th>Points</th>
-                          <th>Kills</th>
-                          <th>Placement</th>
+                          <th>{tCommon("team")}</th>
+                          <th>{t("leaderboard.points")}</th>
+                          <th>{t("leaderboard.kills")}</th>
+                          <th>{t("leaderboard.placement")}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {scoreboard.map((entry: any, index: number) => (
                           <tr key={entry.id || `${entry.teamId}-${index}`}>
-                            <td><span className="mds-name">{entry.team?.name || "Unknown Team"}</span></td>
+                            <td><span className="mds-name">{entry.team?.name || t("leaderboard.unknownTeam")}</span></td>
                             <td className="mds-numeric">{entry.points ?? 0}</td>
                             <td className="mds-numeric">{entry.kills ?? 0}</td>
                             <td className="mds-numeric">{entry.placement ?? "-"}</td>
@@ -309,11 +304,14 @@ export default function TournamentView({ id }: TournamentViewProps) {
 
             {progress ? (
               <section>
-                <h2 className="mds-uppercase-label m-0">Stage</h2>
+                <h2 className="mds-uppercase-label m-0">{t("rail.stage")}</h2>
                 <p className="mds-name m-0 mt-2 text-sm text-fg">{progress.label}</p>
                 <p className="m-0 mt-0.5 text-xs text-fg-subtle">
-                  <span className="mds-numeric">{progress.played}</span> of{" "}
-                  <span className="mds-numeric">{progress.total}</span> played
+                  {t.rich("rail.playedOf", {
+                    played: progress.played,
+                    total: progress.total,
+                    n: (chunks) => <span className="mds-numeric">{chunks}</span>,
+                  })}
                 </p>
               </section>
             ) : null}
@@ -324,7 +322,7 @@ export default function TournamentView({ id }: TournamentViewProps) {
                   <span className="h-1.5 w-1.5 rounded-full bg-danger animate-pulse" />
                 )}
                 <h2 className={`mds-uppercase-label m-0 ${liveMatches.length > 0 ? "text-danger" : ""}`}>
-                  Live scores
+                  {t("rail.liveScores")}
                 </h2>
               </div>
 
@@ -337,15 +335,15 @@ export default function TournamentView({ id }: TournamentViewProps) {
                     >
                       <div className="mb-2 flex items-center justify-between gap-2">
                         {/* The stage, not "R1 | BADE" — that was a UUID fragment. */}
-                        <span className="mds-uppercase-label text-[10px]">{stageName(match, matches)}</span>
+                        <span className="mds-uppercase-label text-[10px]">{stageName(match, matches, t)}</span>
                         <span className="mds-uppercase-label text-[10px] text-danger">
-                          {matchStatusLabel(match.status)}
+                          {tStatus(matchStatusKey(match.status))}
                         </span>
                       </div>
                       <div className="space-y-1.5">
                         <div className="flex items-start justify-between gap-2">
                           <span className="mds-name mds-clamp-2 min-w-0 flex-1 text-[13px]">
-                            {slotLabel(match, "HOME", matches)}
+                            {slotLabel(match, "HOME", matches, t, tCommon)}
                           </span>
                           <span className="mds-numeric text-base font-bold text-fg">
                             {match.homeScore}
@@ -353,7 +351,7 @@ export default function TournamentView({ id }: TournamentViewProps) {
                         </div>
                         <div className="flex items-start justify-between gap-2">
                           <span className="mds-name mds-clamp-2 min-w-0 flex-1 text-[13px] text-fg-muted">
-                            {slotLabel(match, "AWAY", matches)}
+                            {slotLabel(match, "AWAY", matches, t, tCommon)}
                           </span>
                           <span className="mds-numeric text-base font-bold text-fg-muted">
                             {match.awayScore}
@@ -363,24 +361,24 @@ export default function TournamentView({ id }: TournamentViewProps) {
                     </div>
                   ))
                 ) : (
-                  <p className="m-0 text-xs text-fg-subtle">Nothing is being played right now.</p>
+                  <p className="m-0 text-xs text-fg-subtle">{t("rail.nothingLive")}</p>
                 )}
               </div>
             </section>
 
             {upcoming.length > 0 && (
               <section>
-                <h2 className="mds-uppercase-label m-0">Up next</h2>
+                <h2 className="mds-uppercase-label m-0">{t("upNext")}</h2>
                 <div className="mt-3 space-y-2">
                   {upcoming.map((match: any) => (
                     <div
                       key={match.id}
                       className="rounded border border-line bg-field p-3"
                     >
-                      <span className="mds-uppercase-label text-[10px]">{stageName(match, matches)}</span>
+                      <span className="mds-uppercase-label text-[10px]">{stageName(match, matches, t)}</span>
                       <div className="mt-1.5 space-y-0.5 text-[13px]">
-                        <p className="mds-name m-0">{slotLabel(match, "HOME", matches)}</p>
-                        <p className="mds-name m-0 text-fg-muted">{slotLabel(match, "AWAY", matches)}</p>
+                        <p className="mds-name m-0">{slotLabel(match, "HOME", matches, t, tCommon)}</p>
+                        <p className="mds-name m-0 text-fg-muted">{slotLabel(match, "AWAY", matches, t, tCommon)}</p>
                       </div>
                     </div>
                   ))}
@@ -405,7 +403,7 @@ export default function TournamentView({ id }: TournamentViewProps) {
                 className={`flex h-12 flex-col items-center justify-center rounded-lg text-[10px] font-semibold ${active ? "bg-brand-soft text-brand" : "text-fg-muted"}`}
               >
                 <Icon size={16} />
-                <span className="mt-1">{tab.label}</span>
+                <span className="mt-1">{t(tab.labelKey)}</span>
               </button>
             );
           })}
@@ -416,7 +414,7 @@ export default function TournamentView({ id }: TournamentViewProps) {
             className="flex h-12 flex-col items-center justify-center rounded-lg text-[10px] font-semibold text-fg-muted"
           >
             <MoreHorizontal size={16} />
-            <span className="mt-1">More</span>
+            <span className="mt-1">{t("tabs.more")}</span>
           </button>
         </div>
       </div>
@@ -424,7 +422,7 @@ export default function TournamentView({ id }: TournamentViewProps) {
       {showMobileTabSheet ? (
         <div className="fixed inset-0 z-[220] bg-black/50 p-4 backdrop-blur-sm lg:hidden" onClick={() => setShowMobileTabSheet(false)}>
           <div data-testid="tournament-mobile-more-sheet" className="mx-auto mt-[20vh] w-full max-w-md rounded-xl border border-line bg-card p-3" onClick={(event) => event.stopPropagation()}>
-            <p className="mds-uppercase-label px-3 pb-2 pt-1 text-[10px]">Tournament sections</p>
+            <p className="mds-uppercase-label px-3 pb-2 pt-1 text-[10px]">{t("tabs.sections")}</p>
             <div className="space-y-1">
               {overflowMobileTabs.map((tab) => {
                 const Icon = tab.icon;
@@ -441,7 +439,7 @@ export default function TournamentView({ id }: TournamentViewProps) {
                     className={`mds-nav-link w-full text-left ${active ? "active" : ""}`}
                   >
                     <Icon size={16} className={active ? "text-brand" : "text-fg-subtle"} />
-                    <span>{tab.label}</span>
+                    <span>{t(tab.labelKey)}</span>
                   </button>
                 );
               })}
@@ -455,7 +453,7 @@ export default function TournamentView({ id }: TournamentViewProps) {
                 className="mds-nav-link w-full text-left"
               >
                 <Command size={16} className="text-fg-subtle" />
-                <span>Command Palette</span>
+                <span>{t("tabs.commandPalette")}</span>
               </button>
             </div>
           </div>
@@ -494,6 +492,9 @@ export default function TournamentView({ id }: TournamentViewProps) {
 
 // Sub-modals for details
 function TeamDetailsModal({ team, onClose, matches, modalRef }: any) {
+    const t = useTranslations("tournament");
+    const tCommon = useTranslations("common");
+    const tStatus = useTranslations("status");
     const history = matches
       .filter((m: any) => m.homeTeamId === team.id || m.awayTeamId === team.id)
       .sort(byPlayOrder);
@@ -501,7 +502,7 @@ function TeamDetailsModal({ team, onClose, matches, modalRef }: any) {
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 lg:p-10 animate-in fade-in duration-300">
           <div className="absolute inset-0 bg-[var(--mds-overlay)] backdrop-blur-sm" onClick={onClose} />
-          <div ref={modalRef} role="dialog" aria-modal="true" aria-label="Team details" className="mds-card relative z-10 flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden p-0 shadow-2xl scale-in-center">
+          <div ref={modalRef} role="dialog" aria-modal="true" aria-label={t("team.detailsAria")} className="mds-card relative z-10 flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden p-0 shadow-2xl scale-in-center">
             <header className="flex items-start justify-between gap-4 border-b border-line p-5 lg:p-6">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded border border-line bg-field">
@@ -514,14 +515,19 @@ function TeamDetailsModal({ team, onClose, matches, modalRef }: any) {
                 <div className="min-w-0">
                   <h2 className="mds-name-lg m-0 text-2xl leading-tight">{team.name}</h2>
                   <p className="m-0 mt-1 text-xs text-fg-muted">
-                    <span className="mds-numeric">{team.players?.length || 0}</span> players
-                    {team.seed ? <> · seed <span className="mds-numeric">{team.seed}</span></> : null}
+                    <span className="mds-numeric">{t("team.players", { count: team.players?.length || 0 })}</span>
+                    {team.seed ? (
+                      <>
+                        {" · "}
+                        <span className="mds-numeric">{t("team.seedInline", { seed: team.seed })}</span>
+                      </>
+                    ) : null}
                   </p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                aria-label="Close"
+                aria-label={tCommon("close")}
                 className="mds-btn-secondary h-9 w-9 shrink-0 p-0"
               >
                 <X size={18} />
@@ -530,7 +536,7 @@ function TeamDetailsModal({ team, onClose, matches, modalRef }: any) {
 
             <div className="custom-scrollbar grid flex-1 grid-cols-1 gap-8 overflow-y-auto p-5 lg:grid-cols-2 lg:p-6">
                <section className="space-y-3">
-                 <h3 className="mds-uppercase-label m-0 border-b border-line pb-2">Roster</h3>
+                 <h3 className="mds-uppercase-label m-0 border-b border-line pb-2">{t("team.roster")}</h3>
                  <ul className="m-0 list-none space-y-1.5 p-0">
                    {team.players?.map((p: any, idx: number) => (
                      <li key={p.id || idx} className="flex items-center gap-3 rounded-sm border border-line bg-field px-3 py-2">
@@ -553,13 +559,13 @@ function TeamDetailsModal({ team, onClose, matches, modalRef }: any) {
                      </li>
                    ))}
                    {!team.players?.length && (
-                     <li className="text-[13px] text-fg-muted">No players registered yet.</li>
+                     <li className="text-[13px] text-fg-muted">{t("team.noPlayers")}</li>
                    )}
                  </ul>
                </section>
 
                <section className="space-y-3">
-                 <h3 className="mds-uppercase-label m-0 border-b border-line pb-2">Matches</h3>
+                 <h3 className="mds-uppercase-label m-0 border-b border-line pb-2">{tCommon("matches")}</h3>
                  <ul className="m-0 list-none space-y-1.5 p-0">
                    {history.map((m: any) => {
                        const isHome = m.homeTeamId === team.id;
@@ -569,8 +575,10 @@ function TeamDetailsModal({ team, onClose, matches, modalRef }: any) {
                        return (
                          <li key={m.id} className="flex items-center justify-between gap-3 rounded-sm border border-line bg-field px-3 py-2">
                            <div className="min-w-0">
-                              <span className="mds-uppercase-label text-[10px]">{stageName(m, matches)}</span>
-                              <p className="mds-name m-0 text-[13px]">vs {opponent || 'TBD'}</p>
+                              <span className="mds-uppercase-label text-[10px]">{stageName(m, matches, t)}</span>
+                              <p className="mds-name m-0 text-[13px]">
+                                {t("team.versus", { opponent: opponent || tCommon("tbd") })}
+                              </p>
                            </div>
                            <div className="shrink-0 text-right">
                               <span className="mds-numeric block text-sm font-bold">
@@ -581,14 +589,16 @@ function TeamDetailsModal({ team, onClose, matches, modalRef }: any) {
                                   ? 'text-fg-subtle'
                                   : won ? 'text-success' : 'text-danger'
                               }`}>
-                                 {isDone(m.status) ? (won ? 'Win' : 'Loss') : matchStatusLabel(m.status)}
+                                 {isDone(m.status)
+                                   ? won ? t("team.win") : t("team.loss")
+                                   : tStatus(matchStatusKey(m.status))}
                               </span>
                            </div>
                          </li>
                        );
                      })}
                    {history.length === 0 && (
-                     <li className="text-[13px] text-fg-muted">No matches drawn yet.</li>
+                     <li className="text-[13px] text-fg-muted">{t("team.noMatches")}</li>
                    )}
                  </ul>
                </section>
@@ -599,35 +609,38 @@ function TeamDetailsModal({ team, onClose, matches, modalRef }: any) {
 }
 
 function PlayerDetailsModal({ player, onClose, modalRef }: any) {
+    const t = useTranslations("tournament");
+    const tCommon = useTranslations("common");
+
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 lg:p-10 animate-in fade-in duration-300">
           <div className="absolute inset-0 bg-[var(--mds-overlay)] backdrop-blur-sm" onClick={onClose} />
-          <div ref={modalRef} role="dialog" aria-modal="true" aria-label="Player details" className="mds-card relative z-10 flex w-full max-w-lg flex-col overflow-hidden p-0 shadow-2xl scale-in-center">
+          <div ref={modalRef} role="dialog" aria-modal="true" aria-label={t("player.detailsAria")} className="mds-card relative z-10 flex w-full max-w-lg flex-col overflow-hidden p-0 shadow-2xl scale-in-center">
             <header className="flex items-start justify-between gap-4 border-b border-line p-5">
                <div className="min-w-0">
                  <h2 className="mds-name-lg m-0 text-2xl leading-tight">{player.nickname || player.name}</h2>
                  <p className="mds-name m-0 mt-1 text-xs text-fg-muted">{player.teamName}</p>
                </div>
-               <button onClick={onClose} aria-label="Close" className="mds-btn-secondary h-9 w-9 shrink-0 p-0">
+               <button onClick={onClose} aria-label={tCommon("close")} className="mds-btn-secondary h-9 w-9 shrink-0 p-0">
                  <X size={18} />
                </button>
             </header>
 
             <div className="grid grid-cols-3 gap-3 p-5">
                <div className="rounded-sm border border-line bg-field p-3">
-                  <span className="mds-uppercase-label text-[10px]">Seat</span>
+                  <span className="mds-uppercase-label text-[10px]">{tCommon("seat")}</span>
                   <span className="mds-numeric mt-1 block text-lg font-bold text-brand">
                     {player.seating || '—'}
                   </span>
                </div>
                <div className="rounded-sm border border-line bg-field p-3">
-                  <span className="mds-uppercase-label text-[10px]">Country</span>
+                  <span className="mds-uppercase-label text-[10px]">{t("player.country")}</span>
                   <span className="mds-numeric mt-1 block text-lg font-bold">
                     {player.countryCode?.toUpperCase() || '—'}
                   </span>
                </div>
                <div className="rounded-sm border border-line bg-field p-3">
-                  <span className="mds-uppercase-label text-[10px]">Name</span>
+                  <span className="mds-uppercase-label text-[10px]">{t("player.name")}</span>
                   <span className="mds-name mt-1 block text-[13px]">{player.name}</span>
                </div>
             </div>
@@ -637,12 +650,15 @@ function PlayerDetailsModal({ player, onClose, modalRef }: any) {
 }
 
 function MatchAnalysisModal({ match, matches, onClose, modalRef }: any) {
-    const stage = stageName(match, matches);
+    const t = useTranslations("tournament");
+    const tCommon = useTranslations("common");
+    const tStatus = useTranslations("status");
+    const stage = stageName(match, matches, t);
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 lg:p-10 animate-in fade-in duration-300">
           <div className="absolute inset-0 bg-[var(--mds-overlay)] backdrop-blur-md" onClick={onClose} />
-          <div ref={modalRef} role="dialog" aria-modal="true" aria-label="Match details" className="mds-card relative z-10 flex w-full max-w-2xl flex-col overflow-hidden p-0 shadow-2xl scale-in-center">
+          <div ref={modalRef} role="dialog" aria-modal="true" aria-label={t("match.detailsAria")} className="mds-card relative z-10 flex w-full max-w-2xl flex-col overflow-hidden p-0 shadow-2xl scale-in-center">
              <header className="flex items-center justify-between gap-4 border-b border-line p-5">
                 <div className="flex min-w-0 items-center gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-brand-soft text-brand">
@@ -651,11 +667,11 @@ function MatchAnalysisModal({ match, matches, onClose, modalRef }: any) {
                     <div className="min-w-0">
                         <h2 className="m-0 text-lg font-bold tracking-tight">{stage}</h2>
                         <p className="mds-uppercase-label m-0 mt-0.5 text-[10px]">
-                          {matchStatusLabel(match.status)}{match.bestOf > 1 ? ` · BO${match.bestOf}` : ''}
+                          {tStatus(matchStatusKey(match.status))}{match.bestOf > 1 ? ` · BO${match.bestOf}` : ''}
                         </p>
                     </div>
                 </div>
-                <button onClick={onClose} aria-label="Close" className="mds-btn-secondary h-9 w-9 shrink-0 p-0">
+                <button onClick={onClose} aria-label={tCommon("close")} className="mds-btn-secondary h-9 w-9 shrink-0 p-0">
                     <X size={18} />
                 </button>
              </header>
@@ -675,7 +691,7 @@ function MatchAnalysisModal({ match, matches, onClose, modalRef }: any) {
                           <Trophy size={16} className="absolute inset-0 m-auto text-fg-subtle" />
                         )}
                       </div>
-                      <span className="mds-name min-w-0 flex-1 text-sm">{team?.name || 'TBD'}</span>
+                      <span className="mds-name min-w-0 flex-1 text-sm">{team?.name || tCommon('tbd')}</span>
                       <span className={`mds-numeric text-2xl font-bold ${won ? 'text-brand' : 'text-fg-subtle'}`}>
                         {score}
                       </span>
@@ -683,9 +699,7 @@ function MatchAnalysisModal({ match, matches, onClose, modalRef }: any) {
                   );
                 })}
 
-                <p className="m-0 text-xs text-fg-subtle">
-                  Round-by-round statistics are not recorded for this match.
-                </p>
+                <p className="m-0 text-xs text-fg-subtle">{t("match.noStats")}</p>
              </div>
           </div>
         </div>

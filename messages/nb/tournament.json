@@ -1,1 +1,141 @@
-{}
+{
+  "bracketStage": {
+    "grandFinal": "Finale",
+    "bracketReset": "Omkamp",
+    "semiFinals": "Semifinale",
+    "quarterFinals": "Kvartfinale",
+    "roundOf16": "Åttendedelsfinale",
+    "round": "Runde {n}",
+    "thirdPlace": "Bronsefinale",
+    "thirdPlaceShort": "Bronsefinale",
+    "winnersFinal": "Vinnerfinale",
+    "winnersRound": "Vinnerrunde {n}",
+    "winnersRoundShort": "VB-runde {n}",
+    "losersFinal": "Taperfinale",
+    "losersRound": "Taperrunde {n}",
+    "losersRoundShort": "TB-runde {n}"
+  },
+  "abbr": {
+    "grandFinal": "FIN",
+    "bracketReset": "FIN2",
+    "semiFinals": "SF",
+    "quarterFinals": "KF",
+    "roundOf16": "8DF",
+    "round": "R{n}",
+    "thirdPlace": "bronse",
+    "winnersFinal": "VF",
+    "winnersRound": "VB{n}",
+    "losersFinal": "TF",
+    "losersRound": "TB{n}"
+  },
+  "slot": {
+    "winnerOf": "Vinner av {ref}",
+    "loserOf": "Taper av {ref}"
+  },
+  "format": {
+    "singleElimination": "Enkel utslagning",
+    "doubleElimination": "Dobbel utslagning"
+  },
+  "tabs": {
+    "overview": "Oversikt",
+    "bracket": "Kampoppsett",
+    "leaderboard": "Tabell",
+    "teams": "Lag",
+    "players": "Spillere",
+    "matches": "Kamper",
+    "more": "Mer",
+    "sections": "Deler av turneringen",
+    "commandPalette": "Kommandopalett"
+  },
+  "hero": {
+    "teams": "{count} lag",
+    "matches": "{count, plural, one {# kamp} other {# kamper}}",
+    "liveNow": "Live nå",
+    "share": "Del",
+    "registerTeam": "Meld på lag"
+  },
+  "share": {
+    "copiedTitle": "Lenke kopiert",
+    "copiedBody": "Lenken til turneringssiden ligger på utklippstavla."
+  },
+  "notFound": {
+    "title": "Fant ikke turneringen",
+    "body": "Denne turneringen kunne ikke lastes. Den kan ha blitt slettet.",
+    "back": "Tilbake til turneringer"
+  },
+  "bracket": {
+    "panHint": "Dra for å flytte, knip for å zoome. Trykk på en kamp for detaljer.",
+    "open": "Åpne kampoppsettet"
+  },
+  "leaderboard": {
+    "title": "Tabell",
+    "empty": "Ingen tabell ennå.",
+    "points": "Poeng",
+    "kills": "Kills",
+    "placement": "Plassering",
+    "unknownTeam": "Ukjent lag"
+  },
+  "rail": {
+    "stage": "Runde",
+    "playedOf": "<n>{played}</n> av <n>{total}</n> spilt",
+    "liveScores": "Live-stillinger",
+    "nothingLive": "Ingenting spilles akkurat nå."
+  },
+  "upNext": "Neste kamper",
+  "overview": {
+    "field": "Deltakerne",
+    "allMatches": "Alle kamper",
+    "viewAllTeams": "Se alle lag",
+    "champion": "Vinner",
+    "noTeams": "Ingen lag har meldt seg på ennå.",
+    "won": "Ferdig — {team} vant turneringen",
+    "progress": "{stage} · {played} av {total} spilt",
+    "notGenerated": "Kampoppsettet er ikke laget ennå.",
+    "allPlayed": "Alle kampene er spilt."
+  },
+  "team": {
+    "detailsAria": "Lagdetaljer",
+    "players": "{count, plural, one {# spiller} other {# spillere}}",
+    "seedInline": "seeding {seed}",
+    "roster": "Lagoppstilling",
+    "noPlayers": "Ingen spillere påmeldt ennå.",
+    "noMatches": "Ingen kamper er trukket ennå.",
+    "versus": "mot {opponent}",
+    "win": "Seier",
+    "loss": "Tap"
+  },
+  "player": {
+    "detailsAria": "Spillerdetaljer",
+    "country": "Land",
+    "name": "Navn",
+    "directory": "Spilleroversikt",
+    "directoryHint": "Hvem som spiller, for hvilket lag, og hvor de sitter.",
+    "none": "Ingen spillere på noen lag ennå."
+  },
+  "match": {
+    "detailsAria": "Kampdetaljer",
+    "noStats": "Det er ikke lagret statistikk per runde for denne kampen.",
+    "none": "Ingen kamper ennå — kampoppsettet er ikke laget."
+  },
+  "registry": {
+    "counts": "<n>{teams}</n> påmeldt · <n>{players}</n> spillere",
+    "searchPlaceholder": "Søk etter lag …",
+    "seed": "Seeding <n>{seed}</n>",
+    "seedEmpty": "Seeding —",
+    "playerBadge": "{count, plural, one {# SPILLER} other {# SPILLERE}}",
+    "details": "Detaljer",
+    "noMatch": "Ingen treff på «{search}»."
+  },
+  "overlay": {
+    "loading": "Laster kampoppsett …",
+    "noData": "Ingen kampdata for denne turneringen",
+    "bestOf": "BEST AV {count}",
+    "grandFinals": "Finale",
+    "thirdPlace": "Bronsefinale"
+  },
+  "roster": {
+    "seed": "Seeding #{seed}",
+    "seedUnknown": "Seeding #?",
+    "noPlayers": "Ingen spillere påmeldt"
+  }
+}

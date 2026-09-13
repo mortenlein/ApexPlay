@@ -1,1 +1,141 @@
-{}
+{
+  "bracketStage": {
+    "grandFinal": "Grand Final",
+    "bracketReset": "Bracket Reset",
+    "semiFinals": "Semi-Finals",
+    "quarterFinals": "Quarter-Finals",
+    "roundOf16": "Round of 16",
+    "round": "Round {n}",
+    "thirdPlace": "3rd Place Match",
+    "thirdPlaceShort": "3rd Place",
+    "winnersFinal": "Winners Final",
+    "winnersRound": "Winners Round {n}",
+    "winnersRoundShort": "WB Round {n}",
+    "losersFinal": "Losers Final",
+    "losersRound": "Losers Round {n}",
+    "losersRoundShort": "LB Round {n}"
+  },
+  "abbr": {
+    "grandFinal": "GF",
+    "bracketReset": "GF2",
+    "semiFinals": "SF",
+    "quarterFinals": "QF",
+    "roundOf16": "R16",
+    "round": "R{n}",
+    "thirdPlace": "3rd place",
+    "winnersFinal": "WF",
+    "winnersRound": "WB{n}",
+    "losersFinal": "LF",
+    "losersRound": "LB{n}"
+  },
+  "slot": {
+    "winnerOf": "Winner of {ref}",
+    "loserOf": "Loser of {ref}"
+  },
+  "format": {
+    "singleElimination": "Single Elimination",
+    "doubleElimination": "Double Elimination"
+  },
+  "tabs": {
+    "overview": "Overview",
+    "bracket": "Bracket",
+    "leaderboard": "Leaderboard",
+    "teams": "Teams",
+    "players": "Players",
+    "matches": "Matches",
+    "more": "More",
+    "sections": "Tournament sections",
+    "commandPalette": "Command Palette"
+  },
+  "hero": {
+    "teams": "{count} teams",
+    "matches": "{count} matches",
+    "liveNow": "Live now",
+    "share": "Share",
+    "registerTeam": "Register team"
+  },
+  "share": {
+    "copiedTitle": "Link copied",
+    "copiedBody": "The tournament page link is on your clipboard."
+  },
+  "notFound": {
+    "title": "Tournament Not Found",
+    "body": "This tournament could not be loaded. It may have been removed.",
+    "back": "Back to Tournaments"
+  },
+  "bracket": {
+    "panHint": "Drag to pan, pinch to zoom. Tap a match for the detail.",
+    "open": "Open bracket view"
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "empty": "No leaderboard data yet.",
+    "points": "Points",
+    "kills": "Kills",
+    "placement": "Placement",
+    "unknownTeam": "Unknown Team"
+  },
+  "rail": {
+    "stage": "Stage",
+    "playedOf": "<n>{played}</n> of <n>{total}</n> played",
+    "liveScores": "Live scores",
+    "nothingLive": "Nothing is being played right now."
+  },
+  "upNext": "Up next",
+  "overview": {
+    "field": "The field",
+    "allMatches": "All matches",
+    "viewAllTeams": "View all teams",
+    "champion": "Champion",
+    "noTeams": "No teams have registered yet.",
+    "won": "Complete — {team} won the {stage}",
+    "progress": "{stage} · {played} of {total} played",
+    "notGenerated": "The bracket has not been generated yet.",
+    "allPlayed": "Every match has been played."
+  },
+  "team": {
+    "detailsAria": "Team details",
+    "players": "{count} players",
+    "seedInline": "seed {seed}",
+    "roster": "Roster",
+    "noPlayers": "No players registered yet.",
+    "noMatches": "No matches drawn yet.",
+    "versus": "vs {opponent}",
+    "win": "Win",
+    "loss": "Loss"
+  },
+  "player": {
+    "detailsAria": "Player details",
+    "country": "Country",
+    "name": "Name",
+    "directory": "Player Directory",
+    "directoryHint": "Who is playing, for which team, and where they sit.",
+    "none": "No players on any roster yet."
+  },
+  "match": {
+    "detailsAria": "Match details",
+    "noStats": "Round-by-round statistics are not recorded for this match.",
+    "none": "No matches yet — the bracket has not been generated."
+  },
+  "registry": {
+    "counts": "<n>{teams}</n> registered · <n>{players}</n> players",
+    "searchPlaceholder": "Search teams...",
+    "seed": "Seed <n>{seed}</n>",
+    "seedEmpty": "Seed —",
+    "playerBadge": "{count} PLAYERS",
+    "details": "Details",
+    "noMatch": "No teams match “{search}”."
+  },
+  "overlay": {
+    "loading": "Loading Bracket...",
+    "noData": "No match data available for this tournament",
+    "bestOf": "BEST OF {count}",
+    "grandFinals": "Grand Finals",
+    "thirdPlace": "Third Place Match"
+  },
+  "roster": {
+    "seed": "Seed #{seed}",
+    "seedUnknown": "Seed #?",
+    "noPlayers": "No Players Enrolled"
+  }
+}

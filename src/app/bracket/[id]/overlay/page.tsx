@@ -2,11 +2,12 @@
 
 import React, { useMemo, useEffect, useState, useCallback, use } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import ReactFlow, { Background, Edge, Node, Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useMatchStream } from '@/hooks/useMatchStream';
 import { clientApi } from '@/lib/client-api';
-import { isCalled, isDone, isLive, matchStatusLabel } from '@/lib/match-status';
+import { isCalled, isDone, isLive, matchStatusKey } from '@/lib/match-status';
 
 /**
  * The one place the overlay prints a match's state, so it is derived from the canonical
@@ -15,11 +16,13 @@ import { isCalled, isDone, isLive, matchStatusLabel } from '@/lib/match-status';
  */
 /**
  * Broadcast status line. The WORDS come from the canonical vocabulary
- * (matchStatusLabel) so the stream can never disagree with the admin screen; the SHOUTING is
- * CSS, which is also why tests read "Live" here and viewers see "LIVE".
+ * (`matchStatusKey` + the shared `status` namespace) so the stream can never disagree with the
+ * admin screen — and a Norwegian caster's overlay reads "KALT OPP", not a second set of words.
+ * The SHOUTING is CSS, which is also why tests read "Live" here and viewers see "LIVE".
  */
 const StreamState = ({ status }: { status?: string | null }) => {
-    const label = matchStatusLabel(status);
+    const tStatus = useTranslations('status');
+    const label = tStatus(matchStatusKey(status));
     if (isLive(status)) {
         return (
             <span className="text-red-500 flex items-center gap-2 uppercase">
@@ -34,6 +37,8 @@ const StreamState = ({ status }: { status?: string | null }) => {
 
 // A custom high-contrast node for the overlay
 const StreamMatchNode = ({ data }: any) => {
+    const t = useTranslations('tournament');
+    const tCommon = useTranslations('common');
     const isRightSide = data.isRightSide;
     const isCenter = data.isCenter;
     const isThirdPlace = data.isThirdPlace;
@@ -79,7 +84,7 @@ const StreamMatchNode = ({ data }: any) => {
                 {/* Home Team */}
                 <div className="flex justify-between items-center bg-black/50 p-3 rounded-xl border border-gray-800">
                     <div className="flex flex-col truncate pr-2">
-                        <span className="truncate text-xl font-black uppercase tracking-wider text-white">{data.homeTeam?.name || 'TBD'}</span>
+                        <span className="truncate text-xl font-black uppercase tracking-wider text-white">{data.homeTeam?.name || tCommon('tbd')}</span>
                         {data.homeTeam?.players?.length > 0 && (
                             <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest truncate mt-0.5">
                                 {data.homeTeam.players.map((p: any) => p.seating ? `${p.seating}:${p.name}` : p.name).join(' • ')}
@@ -102,7 +107,7 @@ const StreamMatchNode = ({ data }: any) => {
                 {/* Away Team */}
                 <div className="flex justify-between items-center bg-black/50 p-3 rounded-xl border border-gray-800">
                     <div className="flex flex-col truncate pr-2">
-                        <span className="truncate text-xl font-black uppercase tracking-wider text-white">{data.awayTeam?.name || 'TBD'}</span>
+                        <span className="truncate text-xl font-black uppercase tracking-wider text-white">{data.awayTeam?.name || tCommon('tbd')}</span>
                         {data.awayTeam?.players?.length > 0 && (
                             <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest truncate mt-0.5">
                                 {data.awayTeam.players.map((p: any) => p.seating ? `${p.seating}:${p.name}` : p.name).join(' • ')}
@@ -126,7 +131,7 @@ const StreamMatchNode = ({ data }: any) => {
             {/* The state line is unconditional: a BO1 quarter-final needs LIVE/FINAL on stream
                 just as much as the grand final does. */}
             <div className="mt-4 pt-3 border-t border-gray-800 flex justify-between items-center text-[10px] text-gray-600 font-bold uppercase tracking-widest">
-                <span>{`BEST OF ${data.bestOf > 1 ? data.bestOf : 1}`}</span>
+                <span>{t('overlay.bestOf', { count: data.bestOf > 1 ? data.bestOf : 1 })}</span>
                 <StreamState status={data.status} />
             </div>
         </div>
@@ -135,6 +140,7 @@ const StreamMatchNode = ({ data }: any) => {
 
 export default function StreamOverlay(props: { params: Promise<{ id: string }> }) {
     const params = use(props.params);
+    const t = useTranslations('tournament');
     const searchParams = useSearchParams();
     const compact = searchParams.get('compact') === 'true';
     const chromaKey = searchParams.get('chroma') || 'transparent';
@@ -159,14 +165,14 @@ export default function StreamOverlay(props: { params: Promise<{ id: string }> }
         const totalRounds = winnerMatches.length > 0 ? Math.max(...winnerMatches.map(m => m.round)) : 1;
 
         const getStageName = (round: number, bracketType: string): string => {
-            if (bracketType === 'THIRD_PLACE') return 'Third Place Match';
+            if (bracketType === 'THIRD_PLACE') return t('overlay.thirdPlace');
             const matchesInThisRound = matches.filter(m => m.round === round && m.bracketType === 'WINNERS').length;
             const stepsFromFinal = totalRounds - round;
 
-            if (stepsFromFinal === 0 && matchesInThisRound === 1) return 'Grand Finals';
-            if (stepsFromFinal === 1 && matchesInThisRound <= 2) return 'Semi-Finals';
-            if (stepsFromFinal === 2 && matchesInThisRound <= 4) return 'Quarter-Finals';
-            return `Round ${round}`;
+            if (stepsFromFinal === 0 && matchesInThisRound === 1) return t('overlay.grandFinals');
+            if (stepsFromFinal === 1 && matchesInThisRound <= 2) return t('bracketStage.semiFinals');
+            if (stepsFromFinal === 2 && matchesInThisRound <= 4) return t('bracketStage.quarterFinals');
+            return t('bracketStage.round', { n: round });
         };
 
         const newNodes: Node[] = matches.map((match: any) => {
@@ -269,7 +275,7 @@ export default function StreamOverlay(props: { params: Promise<{ id: string }> }
 
         setNodes(newNodes);
         setEdges(newEdges);
-    }, []);
+    }, [t]);
 
     // Initial fetch
     useEffect(() => {
@@ -302,14 +308,14 @@ export default function StreamOverlay(props: { params: Promise<{ id: string }> }
         <div className="w-screen h-screen bg-[#0a0a0a] flex items-center justify-center">
             <div className="flex flex-col items-center gap-6">
                 <div className="w-20 h-20 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-                <span className="text-gray-500 font-black uppercase tracking-[0.3em] text-xs animate-pulse">Loading Bracket...</span>
+                <span className="text-gray-500 font-black uppercase tracking-[0.3em] text-xs animate-pulse">{t('overlay.loading')}</span>
             </div>
         </div>
     );
 
     if (matchesData.length === 0) return (
         <div className="w-screen h-screen bg-[#0a0a0a] flex items-center justify-center">
-            <div className="text-gray-700 font-bold uppercase tracking-widest text-sm">No match data available for this tournament</div>
+            <div className="text-gray-700 font-bold uppercase tracking-widest text-sm">{t('overlay.noData')}</div>
         </div>
     );
 

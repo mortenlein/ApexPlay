@@ -5,8 +5,9 @@ import Image from 'next/image';
 import ReactFlow, { Background, Edge, Node, Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Trophy } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { isDone, isLive } from '@/lib/match-status';
-import { isDoubleElimination, slotLabel, stageName } from './tournament/match-labels';
+import { isDoubleElimination, slotLabel, stageName, type Translator } from './tournament/match-labels';
 
 const COL_W = 320;
 const UNIT_Y = 176;
@@ -37,6 +38,7 @@ function scoreTone(decided: boolean, score: number, other: number) {
 }
 
 const PublicMatchNode = ({ data }: any) => {
+    const tStatus = useTranslations('status');
     const live = isLive(data.status);
 
     return (
@@ -55,7 +57,7 @@ const PublicMatchNode = ({ data }: any) => {
                 {live ? (
                     <span className="mds-uppercase-label flex items-center gap-1.5 text-[10px] text-danger">
                         <span className="h-1.5 w-1.5 rounded-full bg-danger animate-pulse" />
-                        Live
+                        {tStatus('live')}
                     </span>
                 ) : null}
             </div>
@@ -85,7 +87,12 @@ const PublicMatchNode = ({ data }: any) => {
  * mirrored, with the final blown up 1.8x in the middle — which fitView then shrank until no team
  * name on the canvas was readable.)
  */
-function buildLayout(matches: any[], onMatchClick?: (id: string) => void) {
+function buildLayout(
+    matches: any[],
+    t: Translator,
+    tCommon: Translator,
+    onMatchClick?: (id: string) => void
+) {
     const de = isDoubleElimination(matches);
     const wb = matches.filter((m) => (m.bracketType || 'WINNERS').toUpperCase() === 'WINNERS');
     const lb = matches.filter((m) => m.bracketType === 'LOSERS');
@@ -108,16 +115,16 @@ function buildLayout(matches: any[], onMatchClick?: (id: string) => void) {
         data: {
             id: m.id,
             homeTeam: m.homeTeam,
-            homeLabel: slotLabel(m, 'HOME', matches),
+            homeLabel: slotLabel(m, 'HOME', matches, t, tCommon),
             homeScore: m.homeScore,
             awayTeam: m.awayTeam,
-            awayLabel: slotLabel(m, 'AWAY', matches),
+            awayLabel: slotLabel(m, 'AWAY', matches, t, tCommon),
             awayScore: m.awayScore,
             status: m.status,
             decided: isDone(m.status),
             isRightSide: false,
             isFinal,
-            stageName: stageName(m, matches, { short: true }),
+            stageName: stageName(m, matches, t, { short: true }),
             onMatchClick,
         },
     });
@@ -180,13 +187,15 @@ function buildLayout(matches: any[], onMatchClick?: (id: string) => void) {
 }
 
 export default function PublicBracket({ matches, onMatchClick }: { tournamentId: string, matches: any[], onMatchClick?: (id: string) => void }) {
+    const t = useTranslations('tournament');
+    const tCommon = useTranslations('common');
     // Memoized so React Flow doesn't warn about a new nodeTypes object on every render.
     const nodeTypes = useMemo(() => ({ publicMatch: PublicMatchNode }), []);
 
     const { nodes, edges } = useMemo(() => {
         if (!Array.isArray(matches) || matches.length === 0) return { nodes: [], edges: [] };
-        return buildLayout(matches, onMatchClick);
-    }, [matches, onMatchClick]);
+        return buildLayout(matches, t, tCommon, onMatchClick);
+    }, [matches, t, tCommon, onMatchClick]);
 
     return (
         <div className="h-full w-full bg-page">

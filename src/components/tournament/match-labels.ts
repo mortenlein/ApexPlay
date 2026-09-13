@@ -3,11 +3,21 @@
  *
  * Both used to be spelled out ad hoc in every public component ("R1 | BADE", a raw
  * `SINGLE_ELIMINATION`, `WAITING_FOR_PLAYERS`), so the same match read differently on the
- * bracket, the match board and the live rail. One module, reusing the maps that already exist:
- * `STAGE_LABELS`/`FORMAT_OPTIONS` in `@/lib/games` and the status sets in `@/lib/match-status`.
+ * bracket, the match board and the live rail. One module, one vocabulary.
+ *
+ * i18n: every function here is pure and takes the translator it should speak through, so the
+ * bracket canvas (a plain layout function, not a component) and the React tree share one set of
+ * words. Callers pass `useTranslations('tournament')`; `slotLabel` also takes the `common`
+ * translator because "TBD" is a shared word, not a bracket word.
+ *
+ * The stage decision itself lives in `stageDescriptor` and is language-free: it yields message
+ * keys, which is why `matchRef` can abbreviate "Kvartfinale" to "KF" without doing string
+ * surgery on a translated label (the old code did `label.replace("Round ", "R")`).
  */
-import { FORMAT_OPTIONS, STAGE_LABELS } from "@/lib/games";
 import { isCalled, isDone, isLive } from "@/lib/match-status";
+
+/** A namespace-bound `t`, as returned by `useTranslations(ns)` / `getTranslations(ns)`. */
+export type Translator = (key: string, values?: Record<string, string | number>) => string;
 
 export interface StageMatch {
   id?: string;
@@ -33,56 +43,90 @@ export function isDoubleElimination(matches: StageMatch[]): boolean {
 }
 
 /**
- * What this match is called: "Grand Final", "Semi-Finals", "Quarter-Finals", "Round of 16"
- * (`STAGE_LABELS` — the same names the organizer picks best-of stages from), or the
- * winners/losers wording in a double-elimination bracket. `short` is for the bracket canvas,
- * where a node badge has room for "WB Round 1" and not much more.
+ * Which stage a match belongs to, as message keys rather than words: `long` for a heading,
+ * `short` for a bracket node badge ("WB Round 1" and not much more), `abbr` for a cross
+ * reference ("QF2"). `values` carries the round number where the name needs one.
  */
-export function stageName(
-  match: StageMatch,
-  matches: StageMatch[],
-  { short = false }: { short?: boolean } = {}
-): string {
+interface StageDescriptor {
+  long: string;
+  short: string;
+  abbr: string;
+  values?: { n: number };
+}
+
+/** How far this round is from the final, in the same order as the organizer's stage picker. */
+const SINGLE_ELIM_STAGES: Record<number, string> = {
+  1: "grandFinal",
+  2: "semiFinals",
+  3: "quarterFinals",
+  4: "roundOf16",
+};
+
+function stageDescriptor(match: StageMatch, matches: StageMatch[]): StageDescriptor {
   const type = typeOf(match);
 
-  if (type === "THIRD_PLACE") return short ? "3rd Place" : "3rd Place Match";
-  if (type === "GRAND_FINAL") return match.matchOrder === 1 ? "Bracket Reset" : "Grand Final";
+  if (type === "THIRD_PLACE") {
+    return { long: "thirdPlace", short: "thirdPlaceShort", abbr: "thirdPlace" };
+  }
+  if (type === "GRAND_FINAL") {
+    const key = match.matchOrder === 1 ? "bracketReset" : "grandFinal";
+    return { long: key, short: key, abbr: key };
+  }
 
   if (type === "LOSERS") {
-    const lbFinal = maxRound(matches, "LOSERS");
-    if (match.round === lbFinal) return "Losers Final";
-    return short ? `LB Round ${match.round}` : `Losers Round ${match.round}`;
+    if (match.round === maxRound(matches, "LOSERS")) {
+      return { long: "losersFinal", short: "losersFinal", abbr: "losersFinal" };
+    }
+    return {
+      long: "losersRound",
+      short: "losersRoundShort",
+      abbr: "losersRound",
+      values: { n: match.round },
+    };
   }
 
   const wbRounds = maxRound(matches, "WINNERS");
   if (isDoubleElimination(matches)) {
-    if (match.round === wbRounds) return "Winners Final";
-    return short ? `WB Round ${match.round}` : `Winners Round ${match.round}`;
+    if (match.round === wbRounds) {
+      return { long: "winnersFinal", short: "winnersFinal", abbr: "winnersFinal" };
+    }
+    return {
+      long: "winnersRound",
+      short: "winnersRoundShort",
+      abbr: "winnersRound",
+      values: { n: match.round },
+    };
   }
 
   // Single elimination: name the round by how far it is from the final.
-  return STAGE_LABELS[wbRounds - match.round + 1] ?? `Round ${match.round}`;
+  const key = SINGLE_ELIM_STAGES[wbRounds - match.round + 1];
+  if (key) return { long: key, short: key, abbr: key };
+  return { long: "round", short: "round", abbr: "round", values: { n: match.round } };
 }
 
-const ABBREVIATIONS: Record<string, string> = {
-  "Grand Final": "GF",
-  "Bracket Reset": "GF2",
-  "Semi-Finals": "SF",
-  "Quarter-Finals": "QF",
-  "Round of 16": "R16",
-  "3rd Place Match": "3rd place",
-  "Winners Final": "WF",
-  "Losers Final": "LF",
-};
+/**
+ * What this match is called: "Grand Final", "Semi-Finals", "Quarter-Finals", "Round of 16", or
+ * the winners/losers wording in a double-elimination bracket. `short` is for the bracket canvas.
+ */
+export function stageName(
+  match: StageMatch,
+  matches: StageMatch[],
+  t: Translator,
+  { short = false }: { short?: boolean } = {}
+): string {
+  const stage = stageDescriptor(match, matches);
+  return t(`bracketStage.${short ? stage.short : stage.long}`, stage.values);
+}
 
 /** How one match is referred to from somewhere else: "QF2", "WB2". */
-export function matchRef(match: StageMatch, matches: StageMatch[]): string {
-  const label = stageName(match, matches);
-  const base =
-    ABBREVIATIONS[label] ??
-    label.replace("Winners Round ", "WB").replace("Losers Round ", "LB").replace("Round ", "R");
+export function matchRef(match: StageMatch, matches: StageMatch[], t: Translator): string {
+  const stage = stageDescriptor(match, matches);
+  const base = t(`abbr.${stage.abbr}`, stage.values);
   const peers = matches
-    .filter((m) => stageName(m, matches) === label)
+    .filter((m) => {
+      const other = stageDescriptor(m, matches);
+      return other.long === stage.long && other.values?.n === stage.values?.n;
+    })
     .sort((a, b) => (a.matchOrder ?? 0) - (b.matchOrder ?? 0));
   if (peers.length < 2) return base;
   const index = peers.findIndex((m) => (m.id ? m.id === match.id : m === match));
@@ -94,10 +138,17 @@ export function matchRef(match: StageMatch, matches: StageMatch[]): string {
  * useful, and it is what the bracket actually says — the feeder match points here.
  * (The old code printed "INITIALIZING…", which describes nothing that is happening.)
  */
-export function slotLabel(match: StageMatch, side: "HOME" | "AWAY", matches: StageMatch[]): string {
+export function slotLabel(
+  match: StageMatch,
+  side: "HOME" | "AWAY",
+  matches: StageMatch[],
+  t: Translator,
+  tCommon: Translator
+): string {
   const team = side === "HOME" ? match.homeTeam : match.awayTeam;
   if (team?.name) return team.name;
-  if (!match.id) return "TBD";
+  const tbd = tCommon("tbd");
+  if (!match.id) return tbd;
 
   const winnerFeeders = matches.filter((m) => m.nextMatchId === match.id);
   const loserFeeders = matches.filter((m) => m.loserNextMatchId === match.id);
@@ -107,29 +158,24 @@ export function slotLabel(match: StageMatch, side: "HOME" | "AWAY", matches: Sta
     // the feeder for a given side is known exactly.
     const bySide = (m: StageMatch) => ((m.matchOrder ?? 0) % 2 === 0 ? "HOME" : "AWAY") === side;
     const winner = winnerFeeders.find(bySide);
-    if (winner) return `Winner of ${matchRef(winner, matches)}`;
+    if (winner) return t("slot.winnerOf", { ref: matchRef(winner, matches, t) });
     const loser = loserFeeders.find(bySide);
-    if (loser) return `Loser of ${matchRef(loser, matches)}`;
-    return "TBD";
+    if (loser) return t("slot.loserOf", { ref: matchRef(loser, matches, t) });
+    return tbd;
   }
 
   // Double elimination routes with explicit slots that the public payload does not carry, so
   // only name the feeder when there is exactly one candidate — a guess would be a lie.
   const emptySlots = (match.homeTeam?.name ? 0 : 1) + (match.awayTeam?.name ? 0 : 1);
   const feeders = [
-    ...winnerFeeders.map((m) => ({ m, kind: "Winner" })),
-    ...loserFeeders.map((m) => ({ m, kind: "Loser" })),
+    ...winnerFeeders.map((m) => ({ m, key: "slot.winnerOf" })),
+    ...loserFeeders.map((m) => ({ m, key: "slot.loserOf" })),
   ];
   if (emptySlots === 1 && feeders.length === 1) {
-    return `${feeders[0].kind} of ${matchRef(feeders[0].m, matches)}`;
+    return t(feeders[0].key, { ref: matchRef(feeders[0].m, matches, t) });
   }
-  return "TBD";
+  return tbd;
 }
-
-/** Uppercase is fine here: a status is a label, not something a human typed. */
-// Re-exported from the canonical vocabulary: one label per state, app-wide. The broadcast
-// surfaces uppercase it in CSS rather than owning a second set of words.
-export { matchStatusLabel } from "@/lib/match-status";
 
 /** Token classes for a status chip — live shouts, everything else stays calm. */
 export function matchStatusTone(status: string | null | undefined): string {
@@ -140,9 +186,14 @@ export function matchStatusTone(status: string | null | undefined): string {
 }
 
 /** "SINGLE_ELIMINATION" is a database value, not a sentence. */
-export function formatName(format: string | null | undefined): string {
-  const key = (format || "").toUpperCase();
-  return FORMAT_OPTIONS.find((option) => option.id === key)?.name ?? "";
+const FORMAT_KEYS: Record<string, string> = {
+  SINGLE_ELIMINATION: "format.singleElimination",
+  DOUBLE_ELIMINATION: "format.doubleElimination",
+};
+
+export function formatName(format: string | null | undefined, t: Translator): string {
+  const key = FORMAT_KEYS[(format || "").toUpperCase()];
+  return key ? t(key) : "";
 }
 
 /**
@@ -151,7 +202,8 @@ export function formatName(format: string | null | undefined): string {
  * Returns null when there is no bracket yet or everything has been played.
  */
 export function currentStageProgress(
-  matches: (StageMatch & { status?: string | null })[]
+  matches: (StageMatch & { status?: string | null })[],
+  t: Translator
 ): { label: string; played: number; total: number } | null {
   if (!matches.length) return null;
 
@@ -161,11 +213,14 @@ export function currentStageProgress(
   const stage = unplayed
     .slice()
     .sort((a, b) => a.round - b.round || (a.matchOrder ?? 0) - (b.matchOrder ?? 0))[0];
-  const label = stageName(stage, matches);
-  const siblings = matches.filter((m) => stageName(m, matches) === label);
+  const descriptor = stageDescriptor(stage, matches);
+  const siblings = matches.filter((m) => {
+    const other = stageDescriptor(m, matches);
+    return other.long === descriptor.long && other.values?.n === descriptor.values?.n;
+  });
 
   return {
-    label,
+    label: stageName(stage, matches, t),
     played: siblings.filter((m) => isDone(m.status)).length,
     total: siblings.length,
   };

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { getTournamentTabItems } from "./tournament-tabs-config";
 
 interface TournamentTabsProps {
@@ -15,11 +16,12 @@ interface TournamentTabsProps {
  * single strip under the hero; on phones the bottom tab bar in TournamentView takes over.
  */
 export function TournamentTabs({ activeTab, setActiveTab, tournamentCategory }: TournamentTabsProps) {
+  const t = useTranslations("tournament");
   const tabs = getTournamentTabItems(tournamentCategory);
 
   return (
     <nav
-      aria-label="Tournament sections"
+      aria-label={t("tabs.sections")}
       className="hidden shrink-0 border-b border-line bg-card lg:block"
     >
       <div className="mx-auto flex max-w-content items-stretch gap-1 px-10" role="tablist">
@@ -40,7 +42,7 @@ export function TournamentTabs({ activeTab, setActiveTab, tournamentCategory }: 
               }`}
             >
               <tab.icon size={15} />
-              <span>{tab.label}</span>
+              <span>{t(tab.labelKey)}</span>
             </button>
           );
         })}

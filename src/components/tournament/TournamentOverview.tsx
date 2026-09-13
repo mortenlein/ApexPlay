@@ -3,6 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { Users, ArrowRight, Trophy } from "lucide-react";
+import { useTranslations } from "next-intl";
 import LiveMatchCard from "@/components/LiveMatchCard";
 import { isDone, isLive, byPlayOrder } from "@/lib/match-status";
 import { currentStageProgress, slotLabel, stageName } from "./match-labels";
@@ -24,7 +25,9 @@ export function TournamentOverview({
   onViewTeam,
   onSetTab,
 }: TournamentOverviewProps) {
-  const progress = currentStageProgress(matches);
+  const t = useTranslations("tournament");
+  const tCommon = useTranslations("common");
+  const progress = currentStageProgress(matches, t);
   const upNext = matches
     .filter((m: any) => !isDone(m.status) && !isLive(m.status))
     .sort(byPlayOrder)
@@ -42,12 +45,16 @@ export function TournamentOverview({
       : null;
 
   const stageLine = champion
-    ? `Complete — ${champion.name} won the ${stageName(decider, matches)}`
+    ? t("overview.won", { team: champion.name, stage: stageName(decider, matches, t) })
     : progress
-      ? `${progress.label} · ${progress.played} of ${progress.total} played`
+      ? t("overview.progress", {
+          stage: progress.label,
+          played: progress.played,
+          total: progress.total,
+        })
       : matches.length === 0
-        ? "The bracket has not been generated yet."
-        : "Every match has been played.";
+        ? t("overview.notGenerated")
+        : t("overview.allPlayed");
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
@@ -56,7 +63,7 @@ export function TournamentOverview({
         <section className="space-y-4">
           <div className="flex items-center gap-3">
             <span className="h-1.5 w-1.5 rounded-full bg-danger animate-pulse" />
-            <h2 className="mds-uppercase-label m-0 text-danger">Live now</h2>
+            <h2 className="mds-uppercase-label m-0 text-danger">{t("hero.liveNow")}</h2>
             <div className="h-px flex-1 bg-gradient-to-r from-danger to-transparent" />
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -65,7 +72,7 @@ export function TournamentOverview({
                 key={match.id}
                 match={match}
                 tournamentId={tournament.id}
-                stageName={stageName(match, matches)}
+                stageName={stageName(match, matches, t)}
               />
             ))}
           </div>
@@ -75,13 +82,13 @@ export function TournamentOverview({
       {upNext.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-center gap-3">
-            <h2 className="mds-uppercase-label m-0">Up next</h2>
+            <h2 className="mds-uppercase-label m-0">{t("upNext")}</h2>
             <div className="h-px flex-1 bg-line" />
             <button
               onClick={() => onSetTab("matches")}
               className="mds-uppercase-label text-[10px] text-brand hover:underline"
             >
-              All matches
+              {t("overview.allMatches")}
             </button>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -90,10 +97,10 @@ export function TournamentOverview({
                 key={match.id}
                 className="rounded border border-line bg-card p-4"
               >
-                <span className="mds-uppercase-label text-[10px]">{stageName(match, matches)}</span>
+                <span className="mds-uppercase-label text-[10px]">{stageName(match, matches, t)}</span>
                 <div className="mt-1.5 space-y-0.5 text-sm">
-                  <p className="mds-name m-0">{slotLabel(match, "HOME", matches)}</p>
-                  <p className="mds-name m-0 text-fg-muted">{slotLabel(match, "AWAY", matches)}</p>
+                  <p className="mds-name m-0">{slotLabel(match, "HOME", matches, t, tCommon)}</p>
+                  <p className="mds-name m-0 text-fg-muted">{slotLabel(match, "AWAY", matches, t, tCommon)}</p>
                 </div>
               </div>
             ))}
@@ -105,7 +112,7 @@ export function TournamentOverview({
         <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div className="min-w-0">
             {/* Named for what it holds. A card titled after the page it sits on says nothing. */}
-            <h2 className="m-0 text-xl font-bold tracking-tight">The field</h2>
+            <h2 className="m-0 text-xl font-bold tracking-tight">{t("overview.field")}</h2>
             {/* Where the bracket actually is, instead of a decorative "29%" progress bar. */}
             <p className="m-0 mt-1 text-sm text-fg-muted">{stageLine}</p>
           </div>
@@ -113,7 +120,7 @@ export function TournamentOverview({
             onClick={() => onSetTab("teams")}
             className="mds-btn-secondary h-9 shrink-0 px-4 text-xs"
           >
-            View all teams
+            {t("overview.viewAllTeams")}
             <ArrowRight size={14} />
           </button>
         </div>
@@ -122,7 +129,7 @@ export function TournamentOverview({
           <div className="mb-6 flex items-center gap-3 rounded border border-brand bg-brand-soft px-4 py-3">
             <Trophy size={18} className="shrink-0 text-brand" />
             <div className="min-w-0">
-              <span className="mds-uppercase-label text-[10px]">Champion</span>
+              <span className="mds-uppercase-label text-[10px]">{t("overview.champion")}</span>
               <p className="mds-name m-0 text-base text-fg">{champion.name}</p>
             </div>
           </div>
@@ -153,7 +160,7 @@ export function TournamentOverview({
             </button>
           ))}
           {teams.length === 0 ? (
-            <p className="text-sm text-fg-muted">No teams have registered yet.</p>
+            <p className="text-sm text-fg-muted">{t("overview.noTeams")}</p>
           ) : null}
         </div>
       </section>

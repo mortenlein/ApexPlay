@@ -4,20 +4,22 @@ import { Globe, Layout, Users, UserRound, Calendar } from "lucide-react";
 
 export interface TournamentTabItem {
   id: string;
-  label: string;
+  /** Key in the `tournament` namespace — the label is translated where it is rendered. */
+  labelKey: string;
   icon: any;
 }
 
 export function getTournamentTabItems(tournamentCategory: string): TournamentTabItem[] {
+  const battleRoyale = tournamentCategory === "BATTLE_ROYALE";
   return [
-    { id: "overview", icon: Globe, label: "Overview" },
+    { id: "overview", icon: Globe, labelKey: "tabs.overview" },
     {
-      id: tournamentCategory === "BATTLE_ROYALE" ? "leaderboard" : "bracket",
+      id: battleRoyale ? "leaderboard" : "bracket",
       icon: Layout,
-      label: tournamentCategory === "BATTLE_ROYALE" ? "Leaderboard" : "Bracket",
+      labelKey: battleRoyale ? "tabs.leaderboard" : "tabs.bracket",
     },
-    { id: "teams", icon: Users, label: "Teams" },
-    { id: "players", icon: UserRound, label: "Players" },
-    { id: "matches", icon: Calendar, label: "Matches" },
+    { id: "teams", icon: Users, labelKey: "tabs.teams" },
+    { id: "players", icon: UserRound, labelKey: "tabs.players" },
+    { id: "matches", icon: Calendar, labelKey: "tabs.matches" },
   ];
 }
