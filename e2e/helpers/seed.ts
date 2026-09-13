@@ -35,28 +35,28 @@ export async function seedLanScenario(): Promise<SeededScenario> {
   const [leo, sam, chloe, toby] = await Promise.all([
     prisma.user.create({
       data: {
-        email: 'mock+leo@apexplay.local',
+        email: 'mock+leo@summit.local',
         name: 'Leo',
         steamId: '76561198000000002',
       },
     }),
     prisma.user.create({
       data: {
-        email: 'mock+sam@apexplay.local',
+        email: 'mock+sam@summit.local',
         name: 'Sam',
         steamId: '76561198000000003',
       },
     }),
     prisma.user.create({
       data: {
-        email: 'mock+chloe@apexplay.local',
+        email: 'mock+chloe@summit.local',
         name: 'Chloe',
         steamId: '76561198000000004',
       },
     }),
     prisma.user.create({
       data: {
-        email: 'mock+toby@apexplay.local',
+        email: 'mock+toby@summit.local',
         name: 'Toby',
         steamId: '76561198000000005',
       },

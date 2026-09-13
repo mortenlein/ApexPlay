@@ -1,4 +1,4 @@
-# ApexPlay 🎯
+# Summit 🎯
 
 **LAN tournament control for CS2 (and other team esports).** Brackets, floor operations, live
 scores and an OBS overlay, run from one dark-mode control surface.
@@ -29,7 +29,7 @@ Design language: **[design.md](design.md)**.
 - 🖥️ **Marshal board** — `/marshal/dashboard`: matches needing players, sorted by urgency, with
   seats, check-in and the match-call feed. Live over SSE.
 - 📡 **EON live-score bridge** — per-tournament token; EON on the observer machine pushes CS2
-  scores in and ApexPlay keeps them (side swaps included). Legacy GSI sources can still POST to
+  scores in and Summit keeps them (side swaps included). Legacy GSI sources can still POST to
   `/api/webhooks/cs2`.
 - 📺 **OBS overlays** — bracket and roster browser sources with chroma/compact flags.
 - 🔒 **Public vs staff payloads** — invite codes, steamids, user ids, server credentials and the
@@ -76,13 +76,13 @@ rebuilds and stays readable on the host; Compose sets `DATABASE_URL` to `file:/a
 `docker compose down` stops it; `rm -rf data/prod.db* uploads` wipes it.
 
 Production on `ash` (loopback `127.0.0.1:8089` behind the Cloudflare tunnel at
-`apexplay.mortenlab.xyz`):
+`turnering.mortenlab.xyz`):
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-ApexPlay is **public with its own Steam auth** — deliberately not behind Cloudflare Access, unlike
+Summit is **public with its own Steam auth** — deliberately not behind Cloudflare Access, unlike
 the other apps in `~/apps`.
 
 ### Backups
@@ -92,17 +92,17 @@ the other apps in `~/apps`.
 ```
 
 * `data/backups/prod-<ts>.db` — consistent snapshot via SQLite `VACUUM INTO`, taken inside the
-  `apexplay` container through the app's own Prisma client (neither the host nor the alpine image
+  `summit` container through the app's own Prisma client (neither the host nor the alpine image
   ships the `sqlite3` binary). Read-only with respect to the live DB: writers are never blocked.
 * `data/backups/uploads-<ts>.tar.gz` — tar-gz of `./uploads`.
 * Every snapshot is verified with `PRAGMA integrity_check`; a failed check deletes it and exits
   non-zero. Files older than `BACKUP_KEEP_DAYS` (default 30) are pruned. Other overrides:
-  `BACKUP_DIR`, `APEXPLAY_CONTAINER`, `APEXPLAY_UPLOADS_DIR`, `APEXPLAY_DB_IN_CONTAINER`.
+  `BACKUP_DIR`, `SUMMIT_CONTAINER`, `SUMMIT_UPLOADS_DIR`, `SUMMIT_DB_IN_CONTAINER`.
 
 Intended cron line (**not installed automatically** — add it with `crontab -e`):
 
 ```cron
-20 3 * * * cd /home/mole/apps/ApexPlay && ./scripts/backup.sh >> data/backups/backup.log 2>&1
+20 3 * * * cd /home/mole/apps/Summit && ./scripts/backup.sh >> data/backups/backup.log 2>&1
 ```
 
 Restore steps are in the `RESTORE` block at the top of `scripts/backup.sh`, and in the

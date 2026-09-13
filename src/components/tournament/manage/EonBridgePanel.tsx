@@ -12,7 +12,7 @@ interface BridgeStatus {
 }
 
 /** Activate the EON live-score bridge for this tournament and show the operator the
- * endpoint + token to paste into EON's apexplay-bridge config on the observer machine. */
+ * endpoint + token to paste into EON's summit-bridge config on the observer machine. */
 export function EonBridgePanel({ tournamentId }: { tournamentId: string }) {
   const t = useTranslations('organizer.eon');
   const [status, setStatus] = useState<BridgeStatus | null>(null);

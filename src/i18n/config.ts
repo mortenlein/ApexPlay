@@ -13,7 +13,7 @@ export type Locale = (typeof LOCALES)[number];
 /** Norwegian first: this is a Norwegian youth club. English is served to everyone else. */
 export const DEFAULT_LOCALE: Locale = 'nb';
 
-export const LOCALE_COOKIE = 'apexplay.locale';
+export const LOCALE_COOKIE = 'summit.locale';
 /** A year: a player sets this once at their first LAN and should never think about it again. */
 export const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 

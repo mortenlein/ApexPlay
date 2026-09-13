@@ -26,7 +26,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 /**
- * Standard ApexPlay button. Wraps the .mds-btn-* utility classes for consistency.
+ * Standard Summit button. Wraps the .mds-btn-* utility classes for consistency.
  *
  * Label case is the caller's business, but the house rule still applies: a button that says
  * what it does ("Generate bracket") is a label and may be uppercase; a button carrying a name

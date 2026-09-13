@@ -1,8 +1,8 @@
 using CounterStrikeSharp.API.Core;
 
-namespace ApexPlayTelemetry;
+namespace SummitTelemetry;
 
-public sealed class ApexPlayTelemetryConfig : IBasePluginConfig
+public sealed class SummitTelemetryConfig : IBasePluginConfig
 {
     public int Version { get; set; } = 1;
     public string WebhookUrl { get; set; } = "https://your-domain.com/api/webhooks/cs2";

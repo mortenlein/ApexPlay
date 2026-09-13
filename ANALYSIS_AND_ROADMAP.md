@@ -1,4 +1,4 @@
-# ApexPlay — Status & remaining work (Sept 2026)
+# Summit — Status & remaining work (Sept 2026)
 
 Written for the revision pass ahead of the mid-October 2026 LAN. This replaces the June audit:
 the findings in it have either been fixed (see below) or are restated here as a live limitation.
@@ -14,7 +14,7 @@ the findings in it have either been fixed (see below) or are restated here as a 
 **Platform**
 - Next.js 15.5 / React 19, Prisma 6, dependencies refreshed off the stale (and vulnerable) set.
 - Production deploy is real: `docker-compose.prod.yml` on `ash`, loopback `127.0.0.1:8089` behind
-  the cloudflared tunnel at `apexplay.mortenlab.xyz`, Prisma CLI baked into the image so
+  the cloudflared tunnel at `turnering.mortenlab.xyz`, Prisma CLI baked into the image so
   `migrate deploy` at boot needs no network. `force-dynamic` on the DB/auth routes.
 - `scripts/backup.sh`: consistent `VACUUM INTO` snapshot taken inside the container, verified
   with `PRAGMA integrity_check`, uploads archived, old files pruned, restore steps in the header.

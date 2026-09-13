@@ -148,7 +148,7 @@
     "off": "Off",
     "endpoint": "Bridge endpoint",
     "token": "Bridge token",
-    "configHint": "Set these in EON's <code>apexplay-bridge</code> config on the observer machine, then enable it there.",
+    "configHint": "Set these in EON's <code>summit-bridge</code> config on the observer machine, then enable it there.",
     "rotate": "Rotate token",
     "disable": "Disable",
     "pitch": "Pull live CS2 scores straight from EON on the observer machine — no manual updates.",

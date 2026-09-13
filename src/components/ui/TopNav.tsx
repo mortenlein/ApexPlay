@@ -64,7 +64,7 @@ export function TopNav() {
       <div className="mds-container flex h-14 items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-6">
           <Link href="/" className="shrink-0 rounded-sm font-brand text-title font-bold tracking-tight">
-            Apex<span className="text-brand">Play</span>
+            Summit
           </Link>
           <nav aria-label={t('primary')} className="hidden items-center gap-1 md:flex">
             {links.map((l) => (

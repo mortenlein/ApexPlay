@@ -1,4 +1,4 @@
-# ApexPlay — production deploy on `ash` behind the cloudflared `homeassistant` tunnel.
+# Summit — production deploy on `ash` behind the cloudflared `homeassistant` tunnel.
 # Loopback-only bind (127.0.0.1:8089 → container :4001); the tunnel ingress maps
 # turnering.mortenlab.xyz → http://127.0.0.1:8089 (the old apexplay host 308-redirects to it).
 # The app is multi-user (players log in
@@ -7,9 +7,9 @@
 #   cp .env.example .env   # then set STEAM_API_KEY + ADMIN_STEAMIDS (others pre-generated)
 #   docker compose -f docker-compose.prod.yml up -d --build
 services:
-  apexplay:
+  summit:
     build: .
-    container_name: apexplay
+    container_name: summit
     # Run as the host `mole` uid (== the image's `node` user) so SQLite/uploads can write
     # the bind-mounted ./data and ./uploads (which the host owns as 1000:1000).
     user: "1000:1000"

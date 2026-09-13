@@ -1,6 +1,6 @@
-# ApexPlay Design System
+# Summit Design System
 
-ApexPlay is a CS2 / team-esport tournament control surface. The design language is a
+Summit is a CS2 / team-esport tournament control surface. The design language is a
 **dark-first "broadcast control room"**: high-contrast, data-dense, calm under load. It should
 feel like equipment you run a live event on — legible from across a LAN, unambiguous about
 what's LIVE right now, and never flashy for its own sake.
@@ -111,7 +111,7 @@ serif in production once already).
 |---|---|---|
 | **Inter** | `--sans`, `font-sans`, `--mds-font-body` | Prose, UI, labels, and **every name a human typed** |
 | **JetBrains Mono** | `--mono`, `font-mono`, `--mds-font-mono` | **Numerics only** — scores, seeds, seat labels, clocks, invite codes |
-| **Martian Mono** | `--display`, `font-brand` | The ApexPlay wordmark and page titles |
+| **Martian Mono** | `--display`, `font-brand` | The Summit wordmark and page titles |
 
 Inter was picked over the all-mono identity because the identity was costing width: a
 proportional face runs ~15% narrower at the same size, which is the difference between

@@ -1,8 +1,8 @@
-# ApexPlay — LAN day runbook
+# Summit — LAN day runbook
 
 For the organizer running the event. Not a developer document: every step is something you
-click or paste. Production URL: **https://apexplay.mortenlab.xyz** (Docker container `apexplay`
-on host `ash`, repo at `/home/mole/apps/ApexPlay`).
+click or paste. Production URL: **https://turnering.mortenlab.xyz** (Docker container `summit`
+on host `ash`, repo at `/home/mole/apps/Summit`).
 
 Three surfaces you will live in:
 
@@ -21,7 +21,7 @@ Everything requires a Steam sign-in. There is no admin password — admin is an 
 
 ### 1. Environment checklist
 
-`.env` lives at `/home/mole/apps/ApexPlay/.env` (chmod 600, never in git). Required:
+`.env` lives at `/home/mole/apps/Summit/.env` (chmod 600, never in git). Required:
 
 | Variable | Why it matters if wrong |
 |---|---|
@@ -39,19 +39,19 @@ Full list with comments: `.env.example`.
 ### 2. Deploy
 
 ```bash
-cd /home/mole/apps/ApexPlay
+cd /home/mole/apps/Summit
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 Verify:
 
 ```bash
-docker ps --filter name=apexplay          # should be "Up"
+docker ps --filter name=summit          # should be "Up"
 curl -sI http://127.0.0.1:8089/ | head -1 # 200 (loopback bind behind the tunnel)
-docker logs --tail 50 apexplay            # migrations applied, then "ready"
+docker logs --tail 50 summit            # migrations applied, then "ready"
 ```
 
-Then open https://apexplay.mortenlab.xyz in a browser and sign in with Steam.
+Then open https://turnering.mortenlab.xyz in a browser and sign in with Steam.
 
 Any change to `.env` needs `up -d` again (or `restart`) — the app reads env at boot.
 
@@ -68,7 +68,7 @@ The snapshot is taken with SQLite `VACUUM INTO` inside the container and verifie
 (add with `crontab -e` — it is not installed automatically):
 
 ```cron
-20 3 * * * cd /home/mole/apps/ApexPlay && ./scripts/backup.sh >> data/backups/backup.log 2>&1
+20 3 * * * cd /home/mole/apps/Summit && ./scripts/backup.sh >> data/backups/backup.log 2>&1
 ```
 
 Run it once by hand the morning of the LAN, and again right before you generate the bracket.
@@ -113,7 +113,7 @@ Tournament → **Settings**:
 ### 6. Share the link
 
 ```
-https://apexplay.mortenlab.xyz/tournaments/<tournamentId>/register
+https://turnering.mortenlab.xyz/tournaments/<tournamentId>/register
 ```
 
 (the `<tournamentId>` is in the URL of the manage page). There is no QR generator in the app —
@@ -276,38 +276,38 @@ marshal saved that same match while you had it open. Refresh and redo your edit.
 
 ## (e) Live scores from EON
 
-EON runs on the observer machine and pushes scores outward to ApexPlay (ApexPlay cannot reach
+EON runs on the observer machine and pushes scores outward to Summit (Summit cannot reach
 into the LAN).
 
-**In ApexPlay:** tournament → **Control** → **EON live scores** → **Enable bridge**. Copy the two
+**In Summit:** tournament → **Control** → **EON live scores** → **Enable bridge**. Copy the two
 values it shows:
 
-- Bridge endpoint — `https://apexplay.mortenlab.xyz/api/webhooks/eon`
+- Bridge endpoint — `https://turnering.mortenlab.xyz/api/webhooks/eon`
 - Bridge token — `eon_…` (per tournament; *Rotate token* / *Disable* are in the same card)
 
 **On the observer machine** (EON), either set environment variables (in EON's
 `ecosystem.config.cjs` `env_production`, or the shell):
 
 ```
-APEXPLAY_BRIDGE_ENABLED=1
-APEXPLAY_BRIDGE_URL=https://apexplay.mortenlab.xyz     # origin only, no path
-APEXPLAY_BRIDGE_TOKEN=eon_xxxxxxxxxxxx
+SUMMIT_BRIDGE_ENABLED=1
+SUMMIT_BRIDGE_URL=https://turnering.mortenlab.xyz     # origin only, no path
+SUMMIT_BRIDGE_TOKEN=eon_xxxxxxxxxxxx
 ```
 
-…or drop `apexplay-bridge.json` in EON's working directory (or point `APEXPLAY_BRIDGE_CONFIG` at
+…or drop `summit-bridge.json` in EON's working directory (or point `SUMMIT_BRIDGE_CONFIG` at
 a file):
 
 ```json
-{ "enabled": true, "url": "https://apexplay.mortenlab.xyz", "token": "eon_xxxxxxxxxxxx" }
+{ "enabled": true, "url": "https://turnering.mortenlab.xyz", "token": "eon_xxxxxxxxxxxx" }
 ```
 
 The config is re-read every ~5 seconds, so no EON restart is needed. Full reference:
-`/home/mole/apps/eon/docs/apexplay-bridge.md` (in the EON repo at `/home/mole/apps/eon`).
+`/home/mole/apps/eon/docs/summit-bridge.md` (in the EON repo at `/home/mole/apps/eon`).
 
 **What auto-updates**
 
 - The bridge identifies the match **by the steamids of the players on the server**, so every
-  player in that match needs a steamid on their ApexPlay player row. Steam sign-up fills this in;
+  player in that match needs a steamid on their Summit player row. Steam sign-up fills this in;
   manually added and CSV-imported players need `steamId` set or nothing will match.
 - Round score → the current map's row in the map scores. Headline score = rounds for BO1, series
   wins for BO3 / BO5.
@@ -317,7 +317,7 @@ The config is re-read every ~5 seconds, so no EON restart is needed. Full refere
 
 **What it does not do:** it never completes a match and never advances anyone. Staff still press
 *Final*. A wrong token or URL fails **silently** on the EON side (no error, no retry) — if scores
-aren't moving, check `docker logs apexplay` for 401s on `/api/webhooks/eon`.
+aren't moving, check `docker logs summit` for 401s on `/api/webhooks/eon`.
 
 ---
 
@@ -327,8 +327,8 @@ Public, no login, both poll every 10 seconds (the bracket overlay also rides the
 
 | Source | URL |
 |---|---|
-| Bracket | `https://apexplay.mortenlab.xyz/bracket/<tournamentId>/overlay` |
-| Rosters + seats | `https://apexplay.mortenlab.xyz/bracket/<tournamentId>/roster` |
+| Bracket | `https://turnering.mortenlab.xyz/bracket/<tournamentId>/overlay` |
+| Rosters + seats | `https://turnering.mortenlab.xyz/bracket/<tournamentId>/roster` |
 
 Query flags:
 
@@ -347,7 +347,7 @@ scene becomes active"**, and in **Custom CSS** add
 
 **A player can't log in.** Almost always `STEAM_API_KEY` — missing or invalid makes every
 `/api/auth/*` request fail, for everyone. Check it in `.env`, then
-`docker logs apexplay | grep -i steam`. Fix and `docker compose -f docker-compose.prod.yml up -d`.
+`docker logs summit | grep -i steam`. Fix and `docker compose -f docker-compose.prod.yml up -d`.
 
 **Someone signed in but has no admin/marshal powers.** Their steamid64 isn't in `ADMIN_STEAMIDS`
 or `MARSHAL_STEAMIDS`. Find it at https://steamid.io, add it, restart the container. (A signed-in
@@ -356,27 +356,27 @@ non-staff user who opens `/admin` is bounced to the home page — that's the sym
 **Push not arriving.** In order: are `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` set (if not, the
 *Enable alerts* button is hidden and nothing is sent)? Did the player press *Enable alerts* and
 allow notifications, on *that* device and browser? Push requires HTTPS — use
-`https://apexplay.mortenlab.xyz`, never the LAN IP or `127.0.0.1:8089`. On iOS the site must be
+`https://turnering.mortenlab.xyz`, never the LAN IP or `127.0.0.1:8089`. On iOS the site must be
 added to the Home Screen first. Only players with a Steam-linked account can receive push, so
 CSV-imported players never will. Dead subscriptions are pruned automatically.
 
 **Discord silent.** Set `DISCORD_WEBHOOK_URL` (or `DISCORD_BOT_TOKEN` + `DISCORD_CHANNEL_ID`) and
 restart the container. If `NEXT_PUBLIC_STRATEGY_3_MOCK=true` is set, delivery is intercepted on
 purpose and announcements only reach the in-app feed. Rejected posts are logged:
-`docker logs apexplay | grep -i discord`.
+`docker logs summit | grep -i discord`.
 
 **Restart the app.**
 
 ```bash
-cd /home/mole/apps/ApexPlay
-docker compose -f docker-compose.prod.yml restart apexplay    # plain restart
+cd /home/mole/apps/Summit
+docker compose -f docker-compose.prod.yml restart summit    # plain restart
 docker compose -f docker-compose.prod.yml up -d --build        # after a code or .env change
 ```
 
 **Restore from backup** (from the `RESTORE` block in `scripts/backup.sh`):
 
 ```bash
-cd /home/mole/apps/ApexPlay
+cd /home/mole/apps/Summit
 docker compose -f docker-compose.prod.yml down       # stop the app, release the DB
 cp data/prod.db data/prod.db.before-restore          # escape hatch
 cp data/backups/prod-<ts>.db data/prod.db            # drop the snapshot in place
@@ -388,7 +388,7 @@ tar xzf data/backups/uploads-<ts>.tar.gz -C uploads/ # only if you need the logo
 **Where the logs are.**
 
 ```bash
-docker logs -f apexplay                 # app: auth, webhooks, push, Discord, migrations
+docker logs -f summit                 # app: auth, webhooks, push, Discord, migrations
 tail -f data/backups/backup.log         # backup cron
 ```
 

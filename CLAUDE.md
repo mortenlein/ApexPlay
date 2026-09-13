@@ -1,8 +1,8 @@
-# ApexPlay — working notes
+# Summit — working notes
 
 CS2 LAN tournament platform. Next 15 (App Router) + Prisma 6/SQLite + next-auth Steam.
 The parent `~/apps/CLAUDE.md` house standards are inherited, with one deliberate exception:
-ApexPlay is **PUBLIC with its own Steam auth**, not behind Cloudflare Access (players log in).
+Summit is **PUBLIC with its own Steam auth**, not behind Cloudflare Access (players log in).
 
 ## Run & verify
 - `npm run dev` — dev server on **4001** (migrations run first). Also `npx tsc --noEmit`,
@@ -15,9 +15,9 @@ ApexPlay is **PUBLIC with its own Steam auth**, not behind Cloudflare Access (pl
 
 ## Branch & deploy
 - Work on a branch, never commit straight to `main`. Commit only when asked.
-- Deploy on `ash` from `/home/mole/apps/ApexPlay`:
+- Deploy on `ash` from `/home/mole/apps/Summit`:
   `docker compose -f docker-compose.prod.yml up -d --build` → loopback `127.0.0.1:8089` behind
-  the cloudflared tunnel at `apexplay.mortenlab.xyz`. Logs `docker logs -f apexplay`; backups
+  the cloudflared tunnel at `turnering.mortenlab.xyz`. Logs `docker logs -f summit`; backups
   `./scripts/backup.sh` (restore steps in its header).
 - Secrets only in the gitignored `.env` (chmod 600); `.env.example` documents every variable the
   code reads — keep it in sync.

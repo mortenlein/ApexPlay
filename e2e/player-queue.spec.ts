@@ -13,7 +13,7 @@ import { loginAs, mintSessionToken, personaUserId } from './helpers/auth';
 /**
  * The player desk and the queue: "am I playing, and when?".
  *
- * The number in "N matches ahead of you" is the only scheduling promise ApexPlay makes to a
+ * The number in "N matches ahead of you" is the only scheduling promise Summit makes to a
  * player, and GET /api/me/queue defines it narrowly (route doc comment): a match is ahead of
  * you only if it is not done, ordered before yours, and *playable* — both teams assigned — or
  * already called/live. A freshly generated bracket is mostly empty later-round slots, so the

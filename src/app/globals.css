@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* ============================================================
-   APEXPLAY DESIGN SYSTEM — DESIGN TOKENS
+   SUMMIT DESIGN SYSTEM — DESIGN TOKENS
    Clean, Authoritative, High-Contrast Esports Interface
    ============================================================ */
 
@@ -50,7 +50,7 @@
   --live-ink:  oklch(0.155 0.006 70);
   --live-glow: oklch(0.660 0.190 26 / 0.55);
 
-  /* signature accent — ApexPlay blue. One token: change hue 256 -> 58 for Subtick's orange. */
+  /* signature accent — Summit blue. One token: change hue 256 -> 58 for Subtick's orange. */
   --accent:       oklch(0.625 0.205 256);
   --accent-hover: oklch(0.560 0.190 256);
   --accent-ink:   oklch(0.985 0.004 256);

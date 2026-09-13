@@ -13,7 +13,7 @@ interface FirstRunCoachProps {
 
 export default function FirstRunCoach({ id, title, steps, cta }: FirstRunCoachProps) {
   const t = useTranslations("organizer.coach");
-  const key = `apexplay-onboarding-${id}`;
+  const key = `summit-onboarding-${id}`;
   const [visible, setVisible] = React.useState(false);
 
   React.useEffect(() => {

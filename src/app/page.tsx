@@ -221,7 +221,7 @@ export default async function Home() {
         eyebrow={t("eyebrow")}
         title={
           <>
-            Apex<span className="text-brand">Play</span>
+            Summit
           </>
         }
         subtitle={t("subtitle")}
@@ -389,7 +389,7 @@ export default async function Home() {
       <footer className="border-t border-line py-6">
         <div className="mds-container flex flex-wrap items-center justify-between gap-3">
           <span className="font-brand text-body font-bold">
-            Apex<span className="text-brand">Play</span>
+            Summit
           </span>
           <div className="flex items-center gap-4 text-meta font-semibold text-fg-muted">
             <Link href="/tournaments" className="rounded-sm transition-colors hover:text-fg">

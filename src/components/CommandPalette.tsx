@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { Command, Search, X } from "lucide-react";
 import { deriveNavContext, CommandAction } from "@/lib/navigation";
 
-const OPEN_EVENT = "apexplay:open-command-palette";
+const OPEN_EVENT = "summit:open-command-palette";
 
 function isTypingTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) {

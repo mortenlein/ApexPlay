@@ -20,7 +20,7 @@ import {
   seedPlayedBracket,
 } from './helpers/lan-seed';
 
-const OUT = process.env.SHOT_DIR || '/tmp/apexplay-nb-shots';
+const OUT = process.env.SHOT_DIR || '/tmp/summit-nb-shots';
 
 const DESKTOP = { width: 1512, height: 950 } as const;
 const PHONE = { width: 390, height: 844 } as const;
@@ -29,7 +29,7 @@ const PHONE = { width: 390, height: 844 } as const;
 const NB_STATE = {
   cookies: [
     {
-      name: 'apexplay.locale',
+      name: 'summit.locale',
       value: 'nb',
       domain: '127.0.0.1',
       path: '/',

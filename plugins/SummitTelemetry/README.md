@@ -1,4 +1,4 @@
-# ApexPlayTelemetry Plugin (Scaffold)
+# SummitTelemetry Plugin (Scaffold)
 
 This is a CounterStrikeSharp plugin scaffold for sending CS2 events to:
 
@@ -15,14 +15,14 @@ This is a CounterStrikeSharp plugin scaffold for sending CS2 events to:
 - Emits `team_change` events when a player switches between `T`, `CT`, `SPEC`, `UNKNOWN`
 - Emits `player_death` events for kill-feed style integrations
 - Adds `Authorization: Bearer <WebhookKey>`
-- Uses JSON payloads compatible with ApexPlay's CS2 webhook route
+- Uses JSON payloads compatible with Summit's CS2 webhook route
 - Supports deterministic match context via server console command:
-  - `apexplay_set_match "<matchId>" "<tournamentId>" "<homeTeamName>" "<awayTeamName>"`
-  - `apexplay_clear_match`
+  - `summit_set_match "<matchId>" "<tournamentId>" "<homeTeamName>" "<awayTeamName>"`
+  - `summit_clear_match`
 
 ## Config
 
-`ApexPlayTelemetryConfig.cs` defines:
+`SummitTelemetryConfig.cs` defines:
 
 - `WebhookUrl`
 - `WebhookKey`
@@ -45,17 +45,17 @@ dotnet restore
 dotnet build -c Release
 ```
 
-2. Upload `ApexPlayTelemetry.dll` to:
-   - `csgo/addons/counterstrikesharp/plugins/ApexPlayTelemetry/`
+2. Upload `SummitTelemetry.dll` to:
+   - `csgo/addons/counterstrikesharp/plugins/SummitTelemetry/`
 
 3. Create/update config file:
-   - `csgo/addons/counterstrikesharp/configs/plugins/ApexPlayTelemetry/ApexPlayTelemetry.json`
+   - `csgo/addons/counterstrikesharp/configs/plugins/SummitTelemetry/SummitTelemetry.json`
 
 Example config:
 
 ```json
 {
-  "WebhookUrl": "https://<your-apexplay-domain>/api/webhooks/cs2",
+  "WebhookUrl": "https://<your-summit-domain>/api/webhooks/cs2",
   "WebhookKey": "<your-CS2_WEBHOOK_KEY>",
   "HttpTimeoutMs": 3000,
   "MaxQueueSize": 500,
@@ -73,7 +73,7 @@ Example config:
 5. Bind current match context through RCON:
 
 ```txt
-apexplay_set_match "<matchId>" "<tournamentId>" "<homeTeamName>" "<awayTeamName>"
+summit_set_match "<matchId>" "<tournamentId>" "<homeTeamName>" "<awayTeamName>"
 ```
 
 6. Verify webhook receives:
@@ -91,11 +91,11 @@ apexplay_set_match "<matchId>" "<tournamentId>" "<homeTeamName>" "<awayTeamName>
 
 ## Deterministic match binding
 
-When `Load Match` is triggered in ApexPlay and `ENABLE_CS2_PLUGIN=true`,
+When `Load Match` is triggered in Summit and `ENABLE_CS2_PLUGIN=true`,
 the backend sends a console command to bind plugin context:
 
 ```txt
-apexplay_set_match "<matchId>" "<tournamentId>" "<homeTeamName>" "<awayTeamName>"
+summit_set_match "<matchId>" "<tournamentId>" "<homeTeamName>" "<awayTeamName>"
 ```
 
 This allows webhook events to include IDs directly and avoids ambiguous team-name matching.

@@ -18,7 +18,7 @@ const NICKS = ['s1mple', 'dev1ce', 'NiKo', 'ropz', 'ZywOo', 'flameZ', 'jL', 'b1t
 
 /** The locale cookie is what `getRequestLocale` reads first — this is the whole switch. */
 const NB_COOKIE = {
-  name: 'apexplay.locale',
+  name: 'summit.locale',
   value: 'nb',
   domain: '127.0.0.1',
   path: '/',

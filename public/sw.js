@@ -1,13 +1,13 @@
-// ApexPlay push service worker.
+// Summit push service worker.
 self.addEventListener("push", (event) => {
   let data = {};
   try {
     data = event.data ? event.data.json() : {};
   } catch (e) {
-    data = { title: "ApexPlay", body: event.data ? event.data.text() : "" };
+    data = { title: "Summit", body: event.data ? event.data.text() : "" };
   }
 
-  const title = data.title || "ApexPlay";
+  const title = data.title || "Summit";
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || "",

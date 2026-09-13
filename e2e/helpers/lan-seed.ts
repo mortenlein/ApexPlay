@@ -321,7 +321,7 @@ export interface BridgedMatchOptions {
 /**
  * A tournament with an enabled EON bridge and one live-able match whose two rosters carry
  * steamIds — the fixture the EON webhook is designed for: it identifies the match, and which
- * ApexPlay team is currently CT, purely from the steamids seen on the game server.
+ * Summit team is currently CT, purely from the steamids seen on the game server.
  */
 export async function createBridgedMatch(options: BridgedMatchOptions = {}) {
   const rosterSize = options.rosterSize ?? 2;

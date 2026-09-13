@@ -1,4 +1,4 @@
-# ApexPlay — single-container self-host deploy.
+# Summit — single-container self-host deploy.
 # Copy .env.example -> .env and fill in REAL values. Compose fails fast (`${VAR:?...}`)
 # if a required secret is unset, so nothing sensitive is ever baked into the image/repo.
 #
@@ -9,9 +9,9 @@
 # is granted organizer/admin access. Everyone else is a player.
 
 services:
-  apexplay:
+  summit:
     build: .
-    container_name: apexplay
+    container_name: summit
     ports:
       - "4001:4001"
     volumes:
@@ -35,5 +35,5 @@ services:
       # Web push (optional). Generate with: npx web-push generate-vapid-keys
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
-      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@apexplay.local}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@summit.local}
     restart: unless-stopped

@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 /**
- * ApexPlay design tokens.
+ * Summit design tokens.
  *
  * The single source of truth for actual values is the CSS custom properties in
  * src/app/globals.css (so light/dark theming lives in one place). Tailwind here just

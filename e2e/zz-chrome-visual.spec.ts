@@ -16,7 +16,7 @@ import {
   seedPlayedBracket,
 } from './helpers/lan-seed';
 
-const OUT = process.env.SHOT_DIR || '/tmp/apexplay-chrome-shots';
+const OUT = process.env.SHOT_DIR || '/tmp/summit-chrome-shots';
 
 const DESKTOP = { width: 1512, height: 950 } as const;
 const PHONE = { width: 390, height: 844 } as const;

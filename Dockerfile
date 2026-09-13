@@ -64,5 +64,5 @@ ENV HOSTNAME=0.0.0.0
 
 # Apply migrations with the baked-in CLI (no npx / no network at boot), then start the server.
 # An existing pre-migrations DB needs a one-time
-# `docker exec apexplay prisma migrate resolve --applied <baseline> --schema=/app/prisma/schema.prisma`.
+# `docker exec summit prisma migrate resolve --applied <baseline> --schema=/app/prisma/schema.prisma`.
 CMD ["sh", "-c", "DATABASE_URL=file:/app/data/prod.db prisma migrate deploy --schema=/app/prisma/schema.prisma && DATABASE_URL=file:/app/data/prod.db node server.js"]

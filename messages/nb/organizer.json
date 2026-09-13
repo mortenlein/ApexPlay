@@ -148,7 +148,7 @@
     "off": "Av",
     "endpoint": "Bridge-endepunkt",
     "token": "Bridge-token",
-    "configHint": "Legg dette inn i EONs <code>apexplay-bridge</code>-oppsett på observatørmaskinen, og skru det på der.",
+    "configHint": "Legg dette inn i EONs <code>summit-bridge</code>-oppsett på observatørmaskinen, og skru det på der.",
     "rotate": "Bytt token",
     "disable": "Skru av",
     "pitch": "Hent live CS2-resultater rett fra EON på observatørmaskinen — ingen manuell føring.",

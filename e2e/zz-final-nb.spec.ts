@@ -10,7 +10,7 @@ const NICKS = ['s1mple','dev1ce','NiKo','ropz','ZywOo','flameZ','jL','b1t','donk
 async function nb(browser: any, viewport: { width: number; height: number }) {
   const ctx = await browser.newContext({ viewport, deviceScaleFactor: 2, locale: 'nb-NO' });
   await ctx.clearCookies();
-  await ctx.addCookies([{ name: 'apexplay.locale', value: 'nb', domain: '127.0.0.1', path: '/' }]);
+  await ctx.addCookies([{ name: 'summit.locale', value: 'nb', domain: '127.0.0.1', path: '/' }]);
   return ctx;
 }
 

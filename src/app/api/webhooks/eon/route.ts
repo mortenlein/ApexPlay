@@ -7,8 +7,8 @@ import { eventBus } from '@/lib/eventBus';
  *
  * Inbound live scores from the EON bridge (running next to EON on the observer machine).
  * Auth: per-tournament bridge token (Authorization: Bearer <token> or x-eon-token).
- * The match is auto-identified by mapping the on-server steamids to ApexPlay Player.steamId,
- * which also tells us which ApexPlay team is currently CT vs T (so scores survive side swaps).
+ * The match is auto-identified by mapping the on-server steamids to Summit Player.steamId,
+ * which also tells us which Summit team is currently CT vs T (so scores survive side swaps).
  *
  * Body: { map?: {name, phase}, round?: {phase},
  *         ct: {score, series, steamids: []}, t: {score, series, steamids: []} }

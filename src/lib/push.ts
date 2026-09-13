@@ -14,7 +14,7 @@ function ensureConfigured(): boolean {
   if (configured) return true;
   if (!isPushConfigured()) return false;
   webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT || "mailto:admin@apexplay.local",
+    process.env.VAPID_SUBJECT || "mailto:admin@summit.local",
     process.env.VAPID_PUBLIC_KEY!,
     process.env.VAPID_PRIVATE_KEY!
   );

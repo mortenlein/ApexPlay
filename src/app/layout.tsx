@@ -14,7 +14,7 @@ import { HTML_LANG, type Locale } from "@/i18n/config";
  *                    "Kristiansand Kings" fits where monospace forced an ellipsis.
  *   JetBrains Mono — numerics only: scores, seeds, seat labels, clocks, invite codes.
  *                    Applied through `.mds-numeric`, not by hand.
- *   Martian Mono   — the ApexPlay wordmark and page titles. The tactical identity, kept
+ *   Martian Mono   — the Summit wordmark and page titles. The tactical identity, kept
  *                    where it is deliberate rather than everywhere.
  *
  * The variables are applied to <html>, never <body>: they are declared on `:root`, and a
@@ -41,7 +41,7 @@ const martianMono = Martian_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ApexPlay | Tournament Control",
+  title: "Summit | Tournament Control",
   description: "Tournament management for teams, brackets, match flow, and live overlays.",
 };
 

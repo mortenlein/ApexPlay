@@ -14,13 +14,13 @@ export type Persona = 'marcus' | 'leo' | 'sam' | 'chloe' | 'toby' | 'mia';
 
 export const PERSONAS: Record<Persona, { steamId: string; email: string; name: string }> = {
   // marcus' steamid is in ADMIN_STEAMIDS (playwright.config.ts) → admin.
-  marcus: { steamId: '76561198000000001', email: 'mock+marcus@apexplay.local', name: 'Marcus' },
-  leo: { steamId: '76561198000000002', email: 'mock+leo@apexplay.local', name: 'Leo' },
-  sam: { steamId: '76561198000000003', email: 'mock+sam@apexplay.local', name: 'Sam' },
-  chloe: { steamId: '76561198000000004', email: 'mock+chloe@apexplay.local', name: 'Chloe' },
-  toby: { steamId: '76561198000000005', email: 'mock+toby@apexplay.local', name: 'Toby' },
+  marcus: { steamId: '76561198000000001', email: 'mock+marcus@summit.local', name: 'Marcus' },
+  leo: { steamId: '76561198000000002', email: 'mock+leo@summit.local', name: 'Leo' },
+  sam: { steamId: '76561198000000003', email: 'mock+sam@summit.local', name: 'Sam' },
+  chloe: { steamId: '76561198000000004', email: 'mock+chloe@summit.local', name: 'Chloe' },
+  toby: { steamId: '76561198000000005', email: 'mock+toby@summit.local', name: 'Toby' },
   // mia's steamid is in MARSHAL_STEAMIDS (playwright.config.ts) → floor staff, not admin.
-  mia: { steamId: '76561198000000006', email: 'mock+mia@apexplay.local', name: 'Mia' },
+  mia: { steamId: '76561198000000006', email: 'mock+mia@summit.local', name: 'Mia' },
 };
 
 /** Must match the e2e server's NEXTAUTH_SECRET (playwright.config.ts). Hardcoded rather than

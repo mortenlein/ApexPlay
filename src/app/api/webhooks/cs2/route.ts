@@ -449,7 +449,7 @@ async function mirrorWebhook(payload: Cs2WebhookPayload) {
   try {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "X-ApexPlay-Source": "cs2-webhook",
+      "X-Summit-Source": "cs2-webhook",
     };
 
     const mirrorKey = process.env.CS2_WEBHOOK_MIRROR_KEY?.trim();

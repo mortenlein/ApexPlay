@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ApexPlay production backup — consistent SQLite snapshot + uploads archive.
+# Summit production backup — consistent SQLite snapshot + uploads archive.
 #
 # Neither the host nor the alpine runtime image ships the `sqlite3` binary, so the snapshot is
 # taken from INSIDE the running container using the app's own Prisma client:
@@ -7,10 +7,10 @@
 # and without modifying the source. Same trick for the integrity check, run against the snapshot.
 #
 # Usage:   ./scripts/backup.sh
-# Cron:    20 3 * * *  cd /home/mole/apps/ApexPlay && ./scripts/backup.sh >> data/backups/backup.log 2>&1
+# Cron:    20 3 * * *  cd /home/mole/apps/Summit && ./scripts/backup.sh >> data/backups/backup.log 2>&1
 #
-# Env overrides: BACKUP_DIR, BACKUP_KEEP_DAYS (default 30), APEXPLAY_CONTAINER,
-#                APEXPLAY_UPLOADS_DIR, APEXPLAY_DB_IN_CONTAINER.
+# Env overrides: BACKUP_DIR, BACKUP_KEEP_DAYS (default 30), SUMMIT_CONTAINER,
+#                SUMMIT_UPLOADS_DIR, SUMMIT_DB_IN_CONTAINER.
 #
 # A backup you haven't restored is not a backup — test-restore periodically.
 #
@@ -23,12 +23,12 @@
 #   uploads:  tar xzf data/backups/uploads-<ts>.tar.gz -C uploads/
 set -euo pipefail
 
-CONTAINER="${APEXPLAY_CONTAINER:-apexplay}"
+CONTAINER="${SUMMIT_CONTAINER:-summit}"
 KEEP_DAYS="${BACKUP_KEEP_DAYS:-30}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BACKUP_DIR="${BACKUP_DIR:-$ROOT/data/backups}"
-UPLOADS_DIR="${APEXPLAY_UPLOADS_DIR:-$ROOT/uploads}"
-DB_IN_CONTAINER="${APEXPLAY_DB_IN_CONTAINER:-/app/data/prod.db}"
+UPLOADS_DIR="${SUMMIT_UPLOADS_DIR:-$ROOT/uploads}"
+DB_IN_CONTAINER="${SUMMIT_DB_IN_CONTAINER:-/app/data/prod.db}"
 
 log() { echo "[backup $(date -Iseconds)] $*"; }
 

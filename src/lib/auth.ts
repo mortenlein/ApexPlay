@@ -34,27 +34,27 @@ export const getAuthOptions = (req: NextRequest | undefined): NextAuthOptions =>
                 { email: string; name: string; steamId: string; image?: string | null }
               > = {
                 marcus: {
-                  email: "mock+marcus@apexplay.local",
+                  email: "mock+marcus@summit.local",
                   name: "Marcus",
                   steamId: "76561198000000001",
                 },
                 leo: {
-                  email: "mock+leo@apexplay.local",
+                  email: "mock+leo@summit.local",
                   name: "Leo",
                   steamId: "76561198000000002",
                 },
                 sam: {
-                  email: "mock+sam@apexplay.local",
+                  email: "mock+sam@summit.local",
                   name: "Sam",
                   steamId: "76561198000000003",
                 },
                 chloe: {
-                  email: "mock+chloe@apexplay.local",
+                  email: "mock+chloe@summit.local",
                   name: "Chloe",
                   steamId: "76561198000000004",
                 },
                 toby: {
-                  email: "mock+toby@apexplay.local",
+                  email: "mock+toby@summit.local",
                   name: "Toby",
                   steamId: "76561198000000005",
                 },

@@ -133,7 +133,7 @@ async function capture(browser: Browser, key: keyof typeof SIZES, f: Awaited<Ret
   // The whole point of this file: `getRequestLocale` reads this cookie before Accept-Language,
   // so every page below renders the Norwegian strings rather than the harness's English.
   await ctx.addCookies([
-    { name: 'apexplay.locale', value: 'nb', domain: '127.0.0.1', path: '/' },
+    { name: 'summit.locale', value: 'nb', domain: '127.0.0.1', path: '/' },
   ]);
   const page = await ctx.newPage();
 

@@ -7,14 +7,14 @@ using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Timers;
 using Microsoft.Extensions.Logging;
 
-namespace ApexPlayTelemetry;
+namespace SummitTelemetry;
 
-public sealed class ApexPlayTelemetryPlugin : BasePlugin, IPluginConfig<ApexPlayTelemetryConfig>
+public sealed class SummitTelemetryPlugin : BasePlugin, IPluginConfig<SummitTelemetryConfig>
 {
-    public override string ModuleName => "ApexPlayTelemetry";
+    public override string ModuleName => "SummitTelemetry";
     public override string ModuleVersion => "0.1.0";
-    public override string ModuleAuthor => "ApexPlay";
-    public override string ModuleDescription => "Sends CS2 match telemetry to ApexPlay webhook endpoint.";
+    public override string ModuleAuthor => "Summit";
+    public override string ModuleDescription => "Sends CS2 match telemetry to Summit webhook endpoint.";
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -22,7 +22,7 @@ public sealed class ApexPlayTelemetryPlugin : BasePlugin, IPluginConfig<ApexPlay
     };
 
     private HttpClient _httpClient = new();
-    private ApexPlayTelemetryConfig _config = new();
+    private SummitTelemetryConfig _config = new();
     private CounterStrikeSharp.API.Modules.Timers.Timer? _heartbeatTimer;
     private CounterStrikeSharp.API.Modules.Timers.Timer? _deliveryTimer;
     private CounterStrikeSharp.API.Modules.Timers.Timer? _playerSnapshotTimer;
@@ -36,7 +36,7 @@ public sealed class ApexPlayTelemetryPlugin : BasePlugin, IPluginConfig<ApexPlay
     private readonly object _statsLock = new();
     private readonly Dictionary<string, string> _lastKnownPlayerTeams = new();
     private readonly Dictionary<string, PlayerLiveStats> _playerStats = new();
-    public ApexPlayTelemetryConfig Config { get; set; } = new();
+    public SummitTelemetryConfig Config { get; set; } = new();
 
     private sealed class QueuedEvent
     {
@@ -53,7 +53,7 @@ public sealed class ApexPlayTelemetryPlugin : BasePlugin, IPluginConfig<ApexPlay
         public int Assists { get; set; }
     }
 
-    public void OnConfigParsed(ApexPlayTelemetryConfig config)
+    public void OnConfigParsed(SummitTelemetryConfig config)
     {
         Config = config;
         _config = config;
@@ -70,7 +70,7 @@ public sealed class ApexPlayTelemetryPlugin : BasePlugin, IPluginConfig<ApexPlay
         StartHeartbeat();
         StartDeliveryLoop();
         StartPlayerSnapshots();
-        Logger.LogInformation("[ApexPlayTelemetry] Plugin loaded.");
+        Logger.LogInformation("[SummitTelemetry] Plugin loaded.");
     }
 
     public override void Unload(bool hotReload)
@@ -84,9 +84,9 @@ public sealed class ApexPlayTelemetryPlugin : BasePlugin, IPluginConfig<ApexPlay
 
     private void RegisterHandlers()
     {
-        AddCommand("apexplay_set_match", "Bind active ApexPlay match context: <matchId> <tournamentId> [homeTeam] [awayTeam]", HandleSetMatchCommand);
-        AddCommand("apexplay_clear_match", "Clear active ApexPlay match context", HandleClearMatchCommand);
-        AddCommand("apexplay_test_webhook", "Send a test webhook payload to ApexPlay", HandleTestWebhookCommand);
+        AddCommand("summit_set_match", "Bind active Summit match context: <matchId> <tournamentId> [homeTeam] [awayTeam]", HandleSetMatchCommand);
+        AddCommand("summit_clear_match", "Clear active Summit match context", HandleClearMatchCommand);
+        AddCommand("summit_test_webhook", "Send a test webhook payload to Summit", HandleTestWebhookCommand);
 
         // NOTE:
         // Event names and payload detail differ between CSSharp versions and installed plugins.
@@ -253,7 +253,7 @@ public sealed class ApexPlayTelemetryPlugin : BasePlugin, IPluginConfig<ApexPlay
     {
         if (info.ArgCount < 3)
         {
-            Logger.LogWarning("[ApexPlayTelemetry] apexplay_set_match requires at least 2 args: <matchId> <tournamentId>");
+            Logger.LogWarning("[SummitTelemetry] summit_set_match requires at least 2 args: <matchId> <tournamentId>");
             return;
         }
 
@@ -263,7 +263,7 @@ public sealed class ApexPlayTelemetryPlugin : BasePlugin, IPluginConfig<ApexPlay
         _activeAwayTeamName = info.ArgCount >= 5 ? info.GetArg(4) : null;
 
         Logger.LogInformation(
-            "[ApexPlayTelemetry] Bound match context matchId={MatchId}, tournamentId={TournamentId}, home={Home}, away={Away}",
+            "[SummitTelemetry] Bound match context matchId={MatchId}, tournamentId={TournamentId}, home={Home}, away={Away}",
             _activeMatchId,
             _activeTournamentId,
             _activeHomeTeamName ?? "n/a",
@@ -282,7 +282,7 @@ public sealed class ApexPlayTelemetryPlugin : BasePlugin, IPluginConfig<ApexPlay
             _playerStats.Clear();
             _lastKnownPlayerTeams.Clear();
         }
-        Logger.LogInformation("[ApexPlayTelemetry] Cleared active match context");
+        Logger.LogInformation("[SummitTelemetry] Cleared active match context");
     }
 
     private void HandleTestWebhookCommand(CCSPlayerController? caller, CommandInfo info)
@@ -299,7 +299,7 @@ public sealed class ApexPlayTelemetryPlugin : BasePlugin, IPluginConfig<ApexPlay
             caller = caller?.PlayerName
         });
 
-        Logger.LogInformation("[ApexPlayTelemetry] Manual webhook test event enqueued.");
+        Logger.LogInformation("[SummitTelemetry] Manual webhook test event enqueued.");
     }
 
     private void EmitPlayerSnapshot()
@@ -348,7 +348,7 @@ public sealed class ApexPlayTelemetryPlugin : BasePlugin, IPluginConfig<ApexPlay
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "[ApexPlayTelemetry] Failed to collect player snapshot");
+            Logger.LogWarning(ex, "[SummitTelemetry] Failed to collect player snapshot");
             return;
         }
 
@@ -495,7 +495,7 @@ public sealed class ApexPlayTelemetryPlugin : BasePlugin, IPluginConfig<ApexPlay
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "[ApexPlayTelemetry] Failed to enqueue webhook event");
+            Logger.LogWarning(ex, "[SummitTelemetry] Failed to enqueue webhook event");
         }
     }
 
@@ -537,7 +537,7 @@ public sealed class ApexPlayTelemetryPlugin : BasePlugin, IPluginConfig<ApexPlay
                 var nextAttempt = queued.Attempt + 1;
                 if (nextAttempt > Math.Max(1, _config.MaxRetryAttempts))
                 {
-                    Logger.LogWarning("[ApexPlayTelemetry] Dropping event after {Attempts} failed attempts", nextAttempt);
+                    Logger.LogWarning("[SummitTelemetry] Dropping event after {Attempts} failed attempts", nextAttempt);
                     continue;
                 }
 
@@ -590,12 +590,12 @@ public sealed class ApexPlayTelemetryPlugin : BasePlugin, IPluginConfig<ApexPlay
                 return true;
             }
 
-            Logger.LogWarning("[ApexPlayTelemetry] Webhook rejected with status code {StatusCode}", (int)res.StatusCode);
+            Logger.LogWarning("[SummitTelemetry] Webhook rejected with status code {StatusCode}", (int)res.StatusCode);
             return false;
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "[ApexPlayTelemetry] Failed to deliver webhook event");
+            Logger.LogWarning(ex, "[SummitTelemetry] Failed to deliver webhook event");
             return false;
         }
     }

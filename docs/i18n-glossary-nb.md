@@ -1,4 +1,4 @@
-# Norsk ordliste (bokmål) — ApexPlay
+# Norsk ordliste (bokmål) — Summit
 
 The terminology that every Norwegian string is built from. Get this right and the app reads
 native; get it wrong and 500 strings read like machine output.

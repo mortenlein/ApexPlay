@@ -38,6 +38,8 @@ const nextConfig = {
 nextConfig.redirects = async () => [
     {
         source: '/:path*',
+        // The one place the old name legitimately survives: it is a live hostname in the
+        // tunnel, and this rule is what keeps already-shared links and QR codes working.
         has: [{ type: 'host', value: 'apexplay.mortenlab.xyz' }],
         destination: 'https://turnering.mortenlab.xyz/:path*',
         permanent: true,

@@ -75,7 +75,7 @@ for (const key of Object.keys(SIZES) as SizeKey[]) {
       deviceScaleFactor: 1,
       storageState: {
         cookies: [
-          { name: 'apexplay.locale', value: 'nb', domain: '127.0.0.1', path: '/', expires: -1, httpOnly: false, secure: false, sameSite: 'Lax' as const },
+          { name: 'summit.locale', value: 'nb', domain: '127.0.0.1', path: '/', expires: -1, httpOnly: false, secure: false, sameSite: 'Lax' as const },
         ],
         origins: [],
       },

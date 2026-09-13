@@ -38,7 +38,7 @@ const MATCH_REFRESH_MS = 30000;
 /** The notification feed has no stream of its own, so it stays polled (slowly). */
 const NOTIFICATION_REFRESH_MS = 15000;
 /** localStorage key for the marshal's chosen tournament (survives reloads on the same phone). */
-const TOURNAMENT_STORAGE_KEY = "apexplay.marshal.tournament";
+const TOURNAMENT_STORAGE_KEY = "summit.marshal.tournament";
 
 /** Check-in state keyed by player id: an ISO timestamp when at seat, null when not. */
 type CheckinMap = Record<string, string | null>;

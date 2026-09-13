@@ -18,16 +18,16 @@ import {
  *
  * Two contracts are under test. The *token* is a webhook credential — admin-only to read, and
  * rotating or disabling it must lock the old one out immediately. The *frame* is identified
- * purely by steamid (`/home/mole/apps/eon/src/server/apexplay-bridge.js` sends each side's
+ * purely by steamid (`/home/mole/apps/eon/src/server/summit-bridge.js` sends each side's
  * steamids plus `score`/`matches_won_this_series`), which is what makes scores survive a side
- * swap: ApexPlay works out which of its teams is currently CT rather than trusting CT to be home.
+ * swap: Summit works out which of its teams is currently CT rather than trusting CT to be home.
  */
 test.describe.configure({ mode: 'serial' });
 test.afterEach(disposeApiContexts);
 
 type Side = { score?: number; series?: number; steamids?: string[] };
 
-/** A frame in exactly the shape the EON bridge posts (docs/apexplay-bridge.md). */
+/** A frame in exactly the shape the EON bridge posts (docs/summit-bridge.md). */
 function eonFrame(ct: Side, t: Side, overrides: { map?: any; round?: any } = {}) {
   return {
     map: overrides.map ?? { name: 'de_dust2', phase: 'live' },
