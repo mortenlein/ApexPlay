@@ -5,7 +5,7 @@ import { requireAdminApi, requireSignedInUser, getUserSession } from '@/lib/rout
 import { isStaffSteamId } from '@/lib/admin-config';
 import { buildTeamsCsv, parseCsvRows } from '@/lib/csv';
 import { buildActorLabel, recordAudit } from '@/lib/audit';
-import { lockedResponse } from '@/lib/mutation-guards';
+import { errorResponse, lockedResponse } from '@/lib/mutation-guards';
 
 // Reads the session to decide how much of the roster to expose; never prerender.
 export const dynamic = 'force-dynamic';
@@ -90,7 +90,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
 
     // The CSV export carries steamIds for every player — staff only.
     if (format === 'csv' && !isStaff) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return errorResponse('unauthorized', 401);
     }
 
     const teams = await findTeams(params.id);
@@ -137,16 +137,16 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         // Anonymous registration is gone: every non-admin write needs a signed-in user, whether or
         // not the tournament uses Steam signup.
         if (!isAdminRequest && !userSession) {
-            return NextResponse.json({ error: 'Sign in required to register a team' }, { status: 401 });
+            return errorResponse('signin_required_team', 401);
         }
 
         if (tournament.rosterLocked) {
-            return lockedResponse('Roster changes are locked. Unlock roster edits in tournament settings first.');
+            return lockedResponse('roster_locked');
         }
 
         if (body.mode === 'import') {
             if (!isAdminRequest) {
-                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+                return errorResponse('unauthorized', 401);
             }
 
             const rows = parseCsvRows(String(body.csv || ''));

@@ -30,9 +30,30 @@ const t = useTranslations('player');
 ```
 
 Namespaces follow surfaces: `common`, `status`, `stage`, `nav`, `landing`, `directory`,
-`tournament`, `player`, `register`, `marshal`, `organizer`, `errors`.
+`tournament`, `player`, `register`, `marshal`, `organizer`, `errors`, `notifications`.
 `common.*` is for genuinely shared words (Save, Cancel, Seat). If a string appears on one
 surface, it belongs to that surface's namespace, not `common`.
+
+## Copy with no request behind it
+
+Three things are written on the server long after (or far away from) the request that caused
+them, so `useTranslations()` has nothing to read a locale from. They go through
+`src/i18n/server.ts`, which states the locale instead of inferring it:
+
+- **Push notifications** — the request belongs to the marshal who pressed "call match", not to
+  the player being woken up. `notifyMatchReady` groups recipients by `User.locale` (written by
+  `POST /api/me/locale`) and composes **one payload per language**; `locale: null` means bokmål.
+  Namespace `notifications.push.*`.
+- **Discord** — one channel read by a whole room, so there is nobody to personalise for: one
+  configured language, `DISCORD_LOCALE` (default `nb`). Namespace `notifications.discord.*`.
+  The `NotificationLog` row behind the marshal board stays **English**: it is a staff record and
+  the duplicate-announcement key, like the audit log.
+- **API errors** — a refusal is read by a log and by a human, who want opposite things. The body
+  carries both: `error` is the canonical English sentence (unchanged, still what the e2e suite
+  asserts) and `code` is the key the client translates from the `errors` namespace via
+  `useApiErrorMessage()`. Codes and their English text live in `src/lib/api-errors.ts`; only
+  refusals a human has to act on get one. Do not translate a 500 whose only reader is a
+  developer.
 
 ## Rules
 

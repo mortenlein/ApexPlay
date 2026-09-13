@@ -24,7 +24,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         if (!tournament) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
         if (tournament.rosterLocked && tournament._count.matches > 0 && !body.overrideLock) {
-            return lockedResponse('Bracket changes are locked. Unlock roster edits in tournament settings before regenerating matches.');
+            return lockedResponse('bracket_locked');
         }
 
         const teams = tournament.teams;
@@ -153,8 +153,13 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         // 6. One summary announcement (per-match "ready" pings happen later when matches start).
         //    Announcing every first-round match here was 64+ sequential Discord calls at scale.
         await announceTournamentUpdate({
+            // title/description are the English staff record; the keys are what the Discord
+            // channel is posted in (one configured language — see src/i18n/server.ts).
             title: 'Bracket is live',
             description: `**${tournament.name}** — ${createdMatches.length} matches generated for ${teams.length} teams.`,
+            titleKey: 'bracketLiveTitle',
+            descriptionKey: 'bracketLiveDescription',
+            values: { tournament: tournament.name, matches: createdMatches.length, teams: teams.length },
             tournamentId,
             url: `${process.env.NEXTAUTH_URL}/tournaments/${tournamentId}`,
         });

@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
-import { NextResponse } from "next/server";
 import { getAuthOptions } from "@/lib/auth";
 import { isAdminSteamId, isStaffSteamId, getRoleForSteamId, type UserRole } from "@/lib/admin-config";
+import { errorResponse } from "@/lib/mutation-guards";
 
 export async function getUserSession() {
   return (await getServerSession(getAuthOptions(undefined))) as any;
@@ -42,7 +42,7 @@ export async function requireStaffApi() {
   if (await isStaffAuthenticated()) {
     return null;
   }
-  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  return errorResponse("unauthorized", 401);
 }
 
 export async function requireStaffPage(callbackUrl: string) {
@@ -77,7 +77,7 @@ export async function requireAdminApi() {
     return null;
   }
 
-  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  return errorResponse("unauthorized", 401);
 }
 
 export async function requireSignedInUser() {

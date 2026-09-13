@@ -6,6 +6,7 @@ import { Check, Loader2, Pencil, X } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { clientApi } from '@/lib/client-api';
 import { useToast } from '@/components/ToastProvider';
+import { useApiErrorMessage } from '@/i18n/error-message';
 
 /** Max length of Player.seating accepted by PATCH /api/me/player. */
 export const SEAT_MAX_LENGTH = 16;
@@ -34,6 +35,7 @@ export function SeatEditor({
     const t = useTranslations('player');
     const tCommon = useTranslations('common');
     const toast = useToast();
+    const apiErrorMessage = useApiErrorMessage();
     const [editing, setEditing] = useState(false);
     const [value, setValue] = useState(seating || '');
     const [saving, setSaving] = useState(false);
@@ -52,7 +54,7 @@ export function SeatEditor({
                 player?.seating ? t('seat.savedHint') : undefined
             );
         } catch (error: any) {
-            toast.error(t('seat.errorTitle'), error?.message || t('seat.errorHint'));
+            toast.error(t('seat.errorTitle'), apiErrorMessage(error, t('seat.errorHint')));
         } finally {
             setSaving(false);
         }

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireSignedInUser } from '@/lib/route-auth';
 import { buildActorLabel, recordAudit } from '@/lib/audit';
-import { lockedResponse } from '@/lib/mutation-guards';
+import { errorResponse, lockedResponse } from '@/lib/mutation-guards';
 
 // Session-gated + DB per request; never prerender at build time.
 export const dynamic = 'force-dynamic';
@@ -48,7 +48,7 @@ async function findOwnPlayer(userId: string, tournamentId: string) {
 export async function PATCH(request: Request) {
     const session = await requireSignedInUser();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return errorResponse('unauthorized', 401);
     }
 
     let body: any;
@@ -72,7 +72,7 @@ export async function PATCH(request: Request) {
 
     const player = await findOwnPlayer(session.user.id, tournamentId);
     if (!player) {
-        return NextResponse.json({ error: 'You are not registered for this tournament' }, { status: 404 });
+        return errorResponse('not_registered', 404);
     }
 
     const updated = await prisma.player.update({
@@ -124,7 +124,7 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
     const session = await requireSignedInUser();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return errorResponse('unauthorized', 401);
     }
 
     const tournamentId = (new URL(request.url).searchParams.get('tournamentId') || '').trim();
@@ -140,12 +140,12 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
     }
     if (tournament.rosterLocked) {
-        return lockedResponse('The bracket is live — ask an organizer to move you.');
+        return lockedResponse('player_move_locked');
     }
 
     const player = await findOwnPlayer(session.user.id, tournamentId);
     if (!player) {
-        return NextResponse.json({ error: 'You are not registered for this tournament' }, { status: 404 });
+        return errorResponse('not_registered', 404);
     }
 
     try {

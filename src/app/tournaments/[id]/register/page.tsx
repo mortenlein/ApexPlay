@@ -27,6 +27,7 @@ import { useToast } from '@/components/ToastProvider';
 import { RouteNotFoundState } from '@/components/RouteStates';
 import { SeatEditor, SEAT_MAX_LENGTH } from '@/components/player/SeatEditor';
 import { clientApi } from '@/lib/client-api';
+import { useApiErrorMessage } from '@/i18n/error-message';
 import { FORMAT_OPTIONS } from '@/lib/games';
 
 /** The shell every state of this page sits in: the tournament it is about, then one panel. */
@@ -92,6 +93,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
     const searchParams = useSearchParams();
     const inviteCode = searchParams.get('invite');
     const toast = useToast();
+    const apiErrorMessage = useApiErrorMessage();
 
     const [tournament, setTournament] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -194,7 +196,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
 
                 if (!res.ok) {
                     const data = await res.json();
-                    throw new Error(data.error || t('errorRegistration'));
+                    throw new Error(apiErrorMessage(data, t('errorRegistration')));
                 }
                 const newTeam = await res.json();
                 setUserTeam(newTeam);
@@ -215,7 +217,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
 
                 if (!res.ok) {
                     const data = await res.json();
-                    throw new Error(data.error || t('errorRegistration'));
+                    throw new Error(apiErrorMessage(data, t('errorRegistration')));
                 }
                 setSuccess(true);
             }
@@ -238,7 +240,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
 
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || t('errorJoin'));
+                throw new Error(apiErrorMessage(data, t('errorJoin')));
             }
             const joinedTeam = await res.json();
             setUserTeam(joinedTeam);
@@ -281,7 +283,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
             toast.success(t('leftTitle'), result.teamDeleted ? t('leftDeleted') : undefined);
             router.refresh();
         } catch (err: any) {
-            toast.error(t('leaveErrorTitle'), err?.message || t('leaveErrorHint'));
+            toast.error(t('leaveErrorTitle'), apiErrorMessage(err, t('leaveErrorHint')));
         } finally {
             setLeaving(false);
         }

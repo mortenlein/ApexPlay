@@ -34,6 +34,11 @@ process.env.CS2_WEBHOOK_KEY = 'e2e-cs2-webhook-key';
 process.env.VAPID_PUBLIC_KEY = 'BJEVgFRpP8GtXwHqfpwTfPVWJdA5MwqHPkhXgiXo7caRItlOoBBHAE3KZ0JBNCfEV2z-VFRagJ9zdZ8lhgAEaNw';
 process.env.VAPID_PRIVATE_KEY = 'x65aEqVjG5zvx9JMuhvrTMQmtGSs2NKwPicYayEAP0U';
 process.env.VAPID_SUBJECT = 'mailto:e2e@apexplay.local';
+// A push is encrypted with the subscriber's own keys, so a spec cannot read what was delivered.
+// src/lib/push.ts appends one JSON line per delivery attempt to this file when it is set (unset
+// everywhere else, including production) — that is how player-push.spec.ts can see that two
+// players on one match were written to in two different languages.
+process.env.PUSH_DELIVERY_LOG = path.resolve(process.cwd(), 'prisma', `e2e-${E2E_PORT}-push.log`);
 
 export default defineConfig({
   testDir: './e2e',
