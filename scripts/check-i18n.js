@@ -68,5 +68,57 @@ for (const locale of locales) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Phase 2: every key a component asks for must exist.
+//
+// A missing key does not throw — next-intl renders the key path, so the UI quietly shows
+// "bracketStage.semiFinals" to a spectator. That shipped once already (the OBS overlay kept
+// pointing at a namespace after its keys moved) and only one e2e assertion caught it.
+//
+// Heuristic, deliberately: map each `const X = useTranslations('ns')` to its namespace, then
+// check every literal `X('key')` in that file. Template literals and computed keys are skipped
+// rather than guessed at.
+// ---------------------------------------------------------------------------
+function walk(dir, out = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === 'node_modules' || entry.name === '.next') continue;
+      walk(full, out);
+    } else if (/\.(tsx?|jsx?)$/.test(entry.name)) {
+      out.push(full);
+    }
+  }
+  return out;
+}
+
+const baseKeys = new Set(keys[BASE]);
+const srcDir = path.join(__dirname, '..', 'src');
+const missingUses = [];
+
+for (const file of walk(srcDir)) {
+  const src = fs.readFileSync(file, 'utf8');
+  const binding = {};
+  for (const m of src.matchAll(/const\s+(\w+)\s*=\s*(?:await\s+)?(?:useTranslations|getTranslations)\(\s*['"`]([\w.]+)['"`]/g)) {
+    binding[m[1]] = m[2];
+  }
+  if (!Object.keys(binding).length) continue;
+
+  for (const m of src.matchAll(/\b(\w+)\(\s*['"]([\w.]+)['"]/g)) {
+    const ns = binding[m[1]];
+    if (!ns) continue;
+    const full = `${ns}.${m[2]}`;
+    if (!baseKeys.has(full)) {
+      const line = src.slice(0, m.index).split('\n').length;
+      missingUses.push(`${path.relative(path.join(__dirname, '..'), file)}:${line}  ${m[1]}('${m[2]}') -> ${full}`);
+    }
+  }
+}
+
+if (missingUses.length) {
+  failed = true;
+  console.error(`[i18n] ${missingUses.length} call(s) reference a key that does not exist:\n  ${missingUses.join('\n  ')}`);
+}
+
 if (failed) process.exit(1);
 console.log(`[i18n] ${locales.join(', ')} — ${keys[BASE].length} keys, all in sync.`);

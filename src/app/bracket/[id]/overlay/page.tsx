@@ -172,9 +172,9 @@ export default function StreamOverlay(props: { params: Promise<{ id: string }> }
             const stepsFromFinal = totalRounds - round;
 
             if (stepsFromFinal === 0 && matchesInThisRound === 1) return t('overlay.grandFinals');
-            if (stepsFromFinal === 1 && matchesInThisRound <= 2) return t('bracketStage.semiFinals');
-            if (stepsFromFinal === 2 && matchesInThisRound <= 4) return t('bracketStage.quarterFinals');
-            return t('bracketStage.round', { n: round });
+            if (stepsFromFinal === 1 && matchesInThisRound <= 2) return tStage('bracket.semiFinals');
+            if (stepsFromFinal === 2 && matchesInThisRound <= 4) return tStage('bracket.quarterFinals');
+            return tStage('bracket.round', { n: round });
         };
 
         const newNodes: Node[] = matches.map((match: any) => {

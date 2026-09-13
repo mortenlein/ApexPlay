@@ -18,7 +18,11 @@ Two languages: **nb** (bokmål, the default) and **en**. Terminology lives in
   simultaneous translator into a merge conflict in the same file; a namespace per surface means
   each owner touches only their own. **Both languages must always have identical keys** —
   `npm run i18n:check` fails otherwise, and also rejects empty strings, which are almost always
-  an unfinished translation rather than an intended blank.
+  an unfinished translation rather than an intended blank. It additionally verifies that **every
+  key a component asks for actually exists** — a missing key does not throw, next-intl just
+  renders the key path, so a spectator sees `bracketStage.semiFinals` on screen. That shipped
+  once, when the OBS overlay kept pointing at a namespace after its keys moved, and only a
+  single e2e assertion caught it.
 
 ## Writing strings
 
