@@ -4,12 +4,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { announceSignup } from '@/lib/discord';
 import { requireSignedInUser } from '@/lib/route-auth';
 import { recordAudit } from '@/lib/audit';
+import { codeForText } from '@/lib/api-errors';
+import { errorResponse } from '@/lib/mutation-guards';
 
 export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
     const session = await requireSignedInUser();
     if (!session || !session.user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return errorResponse('unauthorized', 401);
     }
 
     const { id: tournamentId } = params;
@@ -30,10 +32,10 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
     }
     if (!tournament.steamSignupEnabled) {
-        return NextResponse.json({ error: 'Steam signups are disabled for this tournament' }, { status: 403 });
+        return errorResponse('signups_disabled', 403);
     }
     if (tournament.rosterLocked) {
-        return NextResponse.json({ error: 'Registration is currently locked for this tournament' }, { status: 423 });
+        return errorResponse('registration_locked', 423);
     }
 
     const body = await request.json();
@@ -64,14 +66,14 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     }
 
     if (!user || !user.steamId) {
-        return NextResponse.json({ error: 'Steam sign-in required. Please continue with Steam and try again.' }, { status: 400 });
+        return errorResponse('steam_signin_required', 400);
     }
 
     try {
         if (action === 'CREATE_TEAM') {
             const trimmedTeamName = typeof teamName === "string" ? teamName.trim() : "";
             if (!trimmedTeamName) {
-                return NextResponse.json({ error: "Team name is required" }, { status: 400 });
+                return errorResponse('team_name_required', 400);
             }
 
             const team = await prisma.$transaction(async (tx) => {
@@ -179,7 +181,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
             });
 
             if (!team) {
-                return NextResponse.json({ error: 'Invalid invite code' }, { status: 404 });
+                return errorResponse('invalid_invite_code', 404);
             }
 
             await announceSignup({
@@ -201,7 +203,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
             return NextResponse.json(team);
         }
 
-        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+        return errorResponse('invalid_action', 400);
     } catch (error: any) {
         console.error('Signup error:', error);
         const message = error?.message || 'Signup failed';
@@ -210,6 +212,13 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
             message === 'Unauthorized' ? 401 :
             message.includes('already') || message.includes('full') || message.includes('not part') ? 400 :
             500;
+
+        // The refusals above are thrown from inside the transaction so that the team/player rows
+        // roll back with them — by the time they land here they are a string, not a code. The
+        // text is the lookup key; anything unrecognised (a real 500) stays an untranslated
+        // English message, which is the right outcome for something only a developer reads.
+        const code = codeForText(message);
+        if (code) return errorResponse(code, status);
 
         return NextResponse.json({ error: message }, { status });
     }

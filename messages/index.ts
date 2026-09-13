@@ -23,6 +23,9 @@ export const NAMESPACES = [
   'marshal',
   'organizer',
   'errors',
+  // Copy composed on the server with no request behind it: push notifications (written in the
+  // recipient's stored language) and Discord posts (one configured language). See src/i18n/server.ts.
+  'notifications',
 ] as const;
 
 export async function loadMessages(locale: Locale) {

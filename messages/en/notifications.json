@@ -1,0 +1,36 @@
+{
+  "push": {
+    "matchReady": {
+      "title": "Your match is ready",
+      "body": "{home} vs {away} — head to your station."
+    },
+    "matchLive": {
+      "title": "You’re live",
+      "body": "{home} vs {away} — get to your station."
+    }
+  },
+  "discord": {
+    "matchTitle": "Match ready for players",
+    "matchDescription": "**{home}** vs **{away}** · {tournament} · Round {round}",
+    "resultTitle": "Result posted",
+    "resultDescription": "**{home}** {homeScore}:{awayScore} **{away}** · {tournament} · Official result",
+    "signupTitle": "Player registered",
+    "signupDescription": "Signup confirmed for **{tournament}**",
+    "bracketLiveTitle": "Bracket is live",
+    "bracketLiveDescription": "**{tournament}** — {matches} matches generated for {teams} teams.",
+    "fieldHome": "Home",
+    "fieldAway": "Away",
+    "fieldStatus": "Status",
+    "fieldRoster": "{team} roster",
+    "fieldPlatform": "Platform",
+    "fieldMatch": "Match",
+    "fieldScore": "Score",
+    "fieldWinner": "Winner",
+    "fieldPlayer": "Player",
+    "fieldTeam": "Team",
+    "fieldCountry": "Country",
+    "footerLive": "ApexPlay live operations",
+    "footerSignup": "ApexPlay signup update",
+    "footer": "ApexPlay"
+  }
+}

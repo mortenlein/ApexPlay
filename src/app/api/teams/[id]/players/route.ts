@@ -45,7 +45,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         }
 
         if (team.tournament.rosterLocked) {
-            return lockedResponse('Roster changes are locked. Unlock roster edits in tournament settings first.');
+            return lockedResponse('roster_locked');
         }
 
         const name = cleanText(body.name);

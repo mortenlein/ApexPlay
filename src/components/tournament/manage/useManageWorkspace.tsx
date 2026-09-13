@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMatchStream } from '@/hooks/useMatchStream';
 import { ApiError, apiRequest, clientApi } from '@/lib/client-api';
 import { useToast } from '@/components/ToastProvider';
+import { useApiErrorMessage } from '@/i18n/error-message';
 
 const EMPTY_MATCH_FORM = { homeScore: 0, awayScore: 0, bestOf: 1, status: 'READY', mapScores: [] as any[] };
 
@@ -35,6 +36,7 @@ export function useManageWorkspace(tournamentId: string) {
     const queryClient = useQueryClient();
     const router = useRouter();
     const toast = useToast();
+    const apiErrorMessage = useApiErrorMessage();
     const [newTeam, setNewTeam] = useState({ name: '', logoUrl: '', seed: '', players: [] });
     const [generating, setGenerating] = useState(false);
     // Only the id is held: the modal reads the live row out of the teams query so a roster edit is
@@ -95,18 +97,20 @@ export function useManageWorkspace(tournamentId: string) {
         ]);
     };
 
+    // The server's `error` field stays English (it is what the log and the e2e suite read); the
+    // sentence the organizer sees is resolved from the refusal's `code`. See src/lib/api-errors.ts.
     const showMutationError = (error: unknown, fallback: string) => {
         if (error instanceof ApiError) {
             if (error.status === 409) {
-                toast.error('Refresh needed', error.message);
+                toast.error('Refresh needed', apiErrorMessage(error, fallback));
                 void invalidateWorkspace();
                 return;
             }
-            toast.error(fallback, error.message);
+            toast.error(fallback, apiErrorMessage(error, fallback));
             return;
         }
 
-        toast.error(fallback, error instanceof Error ? error.message : fallback);
+        toast.error(fallback, apiErrorMessage(error, fallback));
     };
 
     // Live SSE match updates

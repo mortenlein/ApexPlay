@@ -4,6 +4,7 @@ import { requireStaffApi } from '@/lib/route-auth';
 import { eventBus } from '@/lib/eventBus';
 import { buildActorLabel, recordAudit } from '@/lib/audit';
 import { notifyMatchReady } from '@/lib/notify';
+import { errorResponse } from '@/lib/mutation-guards';
 
 /**
  * POST /api/matches/{id}/load
@@ -33,7 +34,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
             return NextResponse.json({ error: 'Match not found' }, { status: 404 });
         }
         if (!match.homeTeam || !match.awayTeam) {
-            return NextResponse.json({ error: 'Both teams must be assigned before loading a match' }, { status: 400 });
+            return errorResponse('both_teams_required', 400);
         }
 
         // Calling a match resets both rosters' at-seat state: check-in is per call, not per player

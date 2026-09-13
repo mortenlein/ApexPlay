@@ -52,9 +52,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
 
         const identityChange = body.steamId !== undefined || body.isLeader !== undefined;
         if (player.tournament.rosterLocked && identityChange) {
-            return lockedResponse(
-                'Roster changes are locked. Seat, name, nickname and flag edits are still allowed; Steam ID and leader changes need roster edits unlocked.'
-            );
+            return lockedResponse('roster_locked_identity');
         }
 
         const name = cleanText(body.name);
@@ -127,7 +125,7 @@ export async function DELETE(_request: Request, props: { params: Promise<{ id: s
         }
 
         if (player.tournament.rosterLocked) {
-            return lockedResponse('Roster changes are locked. Unlock roster edits in tournament settings first.');
+            return lockedResponse('roster_locked');
         }
 
         await prisma.player.delete({ where: { id: params.id } });

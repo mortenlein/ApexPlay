@@ -36,7 +36,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
 
         const seedProvided = body.seed !== undefined;
         if (team.tournament.rosterLocked && seedProvided) {
-            return lockedResponse('Seeding is locked while the bracket is in play. Name and logo edits are still allowed.');
+            return lockedResponse('seeding_locked');
         }
 
         const expectedUpdatedAt = normalizeExpectedUpdatedAt(body.expectedUpdatedAt);
@@ -117,7 +117,7 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
         }
 
         if (team.tournament.rosterLocked && !force) {
-            return lockedResponse('Roster changes are locked. Unlock roster edits in tournament settings, or confirm a forced removal to pull the team out of its matches.');
+            return lockedResponse('roster_locked_force');
         }
 
         const matchesAffected = await prisma.$transaction(async (tx) => {

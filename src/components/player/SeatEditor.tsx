@@ -5,6 +5,7 @@ import { Check, Loader2, Pencil, X } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { clientApi } from '@/lib/client-api';
 import { useToast } from '@/components/ToastProvider';
+import { useApiErrorMessage } from '@/i18n/error-message';
 
 /** Max length of Player.seating accepted by PATCH /api/me/player. */
 export const SEAT_MAX_LENGTH = 16;
@@ -33,6 +34,7 @@ export function SeatEditor({
     className?: string;
 }) {
     const toast = useToast();
+    const apiErrorMessage = useApiErrorMessage();
     const [editing, setEditing] = useState(false);
     const [value, setValue] = useState(seating || '');
     const [saving, setSaving] = useState(false);
@@ -49,7 +51,7 @@ export function SeatEditor({
                 player?.seating ? 'Marshals can now find you on the floor.' : undefined
             );
         } catch (error: any) {
-            toast.error('Could not save your seat', error?.message || 'Please try again.');
+            toast.error('Could not save your seat', apiErrorMessage(error, 'Please try again.'));
         } finally {
             setSaving(false);
         }

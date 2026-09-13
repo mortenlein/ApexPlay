@@ -26,6 +26,7 @@ import { useToast } from '@/components/ToastProvider';
 import { RouteNotFoundState } from '@/components/RouteStates';
 import { SeatEditor, SEAT_HELPER_TEXT, SEAT_MAX_LENGTH } from '@/components/player/SeatEditor';
 import { clientApi } from '@/lib/client-api';
+import { useApiErrorMessage } from '@/i18n/error-message';
 import { FORMAT_OPTIONS } from '@/lib/games';
 
 /** Never render the stored enum: SINGLE_ELIMINATION is a database value, not a sentence. */
@@ -84,6 +85,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
     const searchParams = useSearchParams();
     const inviteCode = searchParams.get('invite');
     const toast = useToast();
+    const apiErrorMessage = useApiErrorMessage();
 
     const [tournament, setTournament] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -186,7 +188,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
 
                 if (!res.ok) {
                     const data = await res.json();
-                    throw new Error(data.error || 'Registration failed');
+                    throw new Error(apiErrorMessage(data, 'Registration failed'));
                 }
                 const newTeam = await res.json();
                 setUserTeam(newTeam);
@@ -207,7 +209,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
 
                 if (!res.ok) {
                     const data = await res.json();
-                    throw new Error(data.error || 'Registration failed');
+                    throw new Error(apiErrorMessage(data, 'Registration failed'));
                 }
                 setSuccess(true);
             }
@@ -230,7 +232,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
 
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || 'Joining team failed');
+                throw new Error(apiErrorMessage(data, 'Joining team failed'));
             }
             const joinedTeam = await res.json();
             setUserTeam(joinedTeam);
@@ -276,7 +278,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
             );
             router.refresh();
         } catch (err: any) {
-            toast.error('Could not leave the team', err?.message || 'Please try again.');
+            toast.error('Could not leave the team', apiErrorMessage(err, 'Please try again.'));
         } finally {
             setLeaving(false);
         }

@@ -1,6 +1,8 @@
+import fs from 'fs';
+import path from 'path';
 import { expect, test } from '@playwright/test';
 import { apiAnon, apiAs, disposeApiContexts, json } from './helpers/api';
-import { clearPushSubscriptions, createCallableMatch, readPushSubscriptions } from './helpers/lan-seed';
+import { clearPushSubscriptions, createCallableMatch, prisma, readPushSubscriptions } from './helpers/lan-seed';
 import { loginAs, mintSessionToken, personaUserId } from './helpers/auth';
 
 /**
@@ -14,6 +16,32 @@ import { loginAs, mintSessionToken, personaUserId } from './helpers/auth';
  * reliably propagated into Playwright worker processes (see helpers/auth.ts for the same note).
  */
 const VAPID_PUBLIC_KEY = 'BJEVgFRpP8GtXwHqfpwTfPVWJdA5MwqHPkhXgiXo7caRItlOoBBHAE3KZ0JBNCfEV2z-VFRagJ9zdZ8lhgAEaNw';
+
+/**
+ * Where src/lib/push.ts writes one JSON line per delivery attempt (PUSH_DELIVERY_LOG). Mirrors
+ * playwright.config.ts, for the same reason the VAPID key above does — the payload itself is
+ * encrypted with the subscriber's keys, so this file is the only way to read what was sent.
+ */
+const DELIVERY_LOG = path.resolve(process.cwd(), 'prisma', `e2e-${process.env.E2E_PORT || '4101'}-push.log`);
+
+interface DeliveryAttempt {
+  endpoint: string;
+  userId: string;
+  payload: { title: string; body: string; url?: string; tag?: string };
+}
+
+function truncateDeliveryLog() {
+  fs.writeFileSync(DELIVERY_LOG, '');
+}
+
+function deliveryAttempts(): DeliveryAttempt[] {
+  if (!fs.existsSync(DELIVERY_LOG)) return [];
+  return fs
+    .readFileSync(DELIVERY_LOG, 'utf8')
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line) as DeliveryAttempt);
+}
 
 /** A well-formed browser subscription — real P-256 material, an endpoint that goes nowhere. */
 function fakeSubscription(endpoint: string, auth = 'qjtHBn7VLXmUhG8TD9kV0g') {
@@ -155,4 +183,92 @@ test('the player desk offers to turn match alerts on', async ({ page }) => {
   // "hidden when unconfigured" branch keys off VAPID_PUBLIC_KEY being null, which is a
   // server-start env decision and so not togglable per test.)
   await expect(page.getByRole('button', { name: /Enable match alerts/i })).toBeVisible();
+});
+
+/**
+ * The one string in the app that most has to be in the player's own language: a lock-screen
+ * alert telling a 12-year-old to get to their station, written minutes after they last loaded a
+ * page. There is no request to read a locale off — the request belongs to the marshal who
+ * pressed "call match", and this suite pins *her* to English — so the language can only come
+ * from `User.locale`, stored when the player last used the switch.
+ *
+ * Two players on the same match, two languages, therefore two payloads: `notifyMatchReady` has
+ * to group its recipients and compose per group, not compose once for everybody.
+ */
+test('two players on one match are each written to in their own language', async () => {
+  await mintSessionToken('leo');
+  await mintSessionToken('sam');
+  const leoUserId = await personaUserId('leo');
+  const samUserId = await personaUserId('sam');
+  await prisma.user.update({ where: { id: leoUserId }, data: { locale: 'nb' } });
+  await prisma.user.update({ where: { id: samUserId }, data: { locale: 'en' } });
+  await clearPushSubscriptions(leoUserId);
+  await clearPushSubscriptions(samUserId);
+
+  const leo = await apiAs('leo');
+  const sam = await apiAs('sam');
+  const stamp = Date.now();
+  const leoEndpoint = `https://127.0.0.1:1/push/nb-${stamp}`;
+  const samEndpoint = `https://127.0.0.1:1/push/en-${stamp}`;
+  expect((await leo.post('/api/push/subscribe', { data: fakeSubscription(leoEndpoint) })).status()).toBe(200);
+  expect((await sam.post('/api/push/subscribe', { data: fakeSubscription(samEndpoint) })).status()).toBe(200);
+
+  // One match, one roster each, so both are recipients of the same call.
+  const { match } = await createCallableMatch({ homeUserId: leoUserId, awayUserId: samUserId });
+
+  truncateDeliveryLog();
+  const mia = await apiAs('mia');
+  expect((await mia.post(`/api/matches/${match.id}/load`)).status()).toBe(200);
+
+  await expect.poll(() => deliveryAttempts().length).toBe(2);
+  const attempts = deliveryAttempts();
+  const toLeo = attempts.find((a) => a.endpoint === leoEndpoint)!;
+  const toSam = attempts.find((a) => a.endpoint === samEndpoint)!;
+  expect(toLeo, 'the Norwegian player was written to').toBeTruthy();
+  expect(toSam, 'the English player was written to').toBeTruthy();
+
+  // Norwegian for Leo…
+  expect(toLeo.payload.title).toBe('Kampen din er klar');
+  expect(toLeo.payload.body).toBe('Home Crew vs Away Crew — gå til plassen din.');
+  // …English for Sam, out of the same call, in the same request.
+  expect(toSam.payload.title).toBe('Your match is ready');
+  expect(toSam.payload.body).toBe('Home Crew vs Away Crew — head to your station.');
+
+  // Both still point at the same match: only the wording is per-player.
+  expect(toLeo.payload.tag).toBe(`match-${match.id}`);
+  expect(toSam.payload.tag).toBe(toLeo.payload.tag);
+
+  await prisma.user.update({ where: { id: leoUserId }, data: { locale: null } });
+  await prisma.user.update({ where: { id: samUserId }, data: { locale: null } });
+});
+
+/**
+ * `locale: null` is the normal state, not a gap — most players never open the language switch.
+ * This is a Norwegian club, so silence means bokmål, whatever language the marshal's own session
+ * that triggered the call happens to be in.
+ */
+test('a player who never picked a language is written to in Norwegian', async () => {
+  await mintSessionToken('leo');
+  const leoUserId = await personaUserId('leo');
+  await prisma.user.update({ where: { id: leoUserId }, data: { locale: null } });
+  await clearPushSubscriptions(leoUserId);
+
+  const leo = await apiAs('leo');
+  const endpoint = `https://127.0.0.1:1/push/default-${Date.now()}`;
+  expect((await leo.post('/api/push/subscribe', { data: fakeSubscription(endpoint) })).status()).toBe(200);
+
+  const { match } = await createCallableMatch({ homeUserId: leoUserId });
+  truncateDeliveryLog();
+  const mia = await apiAs('mia');
+  expect((await mia.post(`/api/matches/${match.id}/load`)).status()).toBe(200);
+
+  await expect.poll(() => deliveryAttempts().length).toBe(1);
+  expect(deliveryAttempts()[0].payload.title).toBe('Kampen din er klar');
+
+  // Live is its own line: the match is not "ready" any more, it is running without them.
+  truncateDeliveryLog();
+  expect((await mia.post(`/api/matches/${match.id}`, { data: { status: 'LIVE' } })).status()).toBe(200);
+  await expect.poll(() => deliveryAttempts().length).toBe(1);
+  expect(deliveryAttempts()[0].payload.title).toBe('Live nå');
+  expect(deliveryAttempts()[0].payload.body).toBe('Home Crew vs Away Crew — kom deg til plassen din.');
 });

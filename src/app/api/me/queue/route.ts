@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireSignedInUser } from '@/lib/route-auth';
 import { isActive, isDone, byPlayOrder } from '@/lib/match-status';
+import { errorResponse } from '@/lib/mutation-guards';
 
 // Auth + DB per request; never prerender at build time.
 export const dynamic = 'force-dynamic';
@@ -25,7 +26,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const session = await requireSignedInUser();
   if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return errorResponse('unauthorized', 401);
   }
 
   const players = await prisma.player.findMany({

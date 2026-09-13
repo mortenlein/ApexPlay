@@ -3,6 +3,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { requireSignedInUser, isAdminAuthenticated } from '@/lib/route-auth';
+import { errorResponse } from '@/lib/mutation-guards';
 
 const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
 // Extension is derived from the (validated) MIME type, never from the user-supplied filename —
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
     const session = await requireSignedInUser();
 
     if (!isAdmin && !session?.user) {
-      return NextResponse.json({ error: 'Sign in required for uploads' }, { status: 401 });
+      return errorResponse('signin_required_upload', 401);
     }
 
     const formData = await request.formData();

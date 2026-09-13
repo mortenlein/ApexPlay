@@ -1,0 +1,36 @@
+{
+  "push": {
+    "matchReady": {
+      "title": "Kampen din er klar",
+      "body": "{home} vs {away} — gå til plassen din."
+    },
+    "matchLive": {
+      "title": "Live nå",
+      "body": "{home} vs {away} — kom deg til plassen din."
+    }
+  },
+  "discord": {
+    "matchTitle": "Kampen er klar for spillerne",
+    "matchDescription": "**{home}** vs **{away}** · {tournament} · Runde {round}",
+    "resultTitle": "Resultat lagt ut",
+    "resultDescription": "**{home}** {homeScore}:{awayScore} **{away}** · {tournament} · Offisielt resultat",
+    "signupTitle": "Spiller påmeldt",
+    "signupDescription": "Påmelding bekreftet for **{tournament}**",
+    "bracketLiveTitle": "Kampoppsettet er live",
+    "bracketLiveDescription": "**{tournament}** — {matches} kamper satt opp for {teams} lag.",
+    "fieldHome": "Hjemme",
+    "fieldAway": "Borte",
+    "fieldStatus": "Status",
+    "fieldRoster": "{team} – spillere",
+    "fieldPlatform": "Plattform",
+    "fieldMatch": "Kamp",
+    "fieldScore": "Stilling",
+    "fieldWinner": "Vinner",
+    "fieldPlayer": "Spiller",
+    "fieldTeam": "Lag",
+    "fieldCountry": "Land",
+    "footerLive": "ApexPlay liveoppdatering",
+    "footerSignup": "ApexPlay påmelding",
+    "footer": "ApexPlay"
+  }
+}

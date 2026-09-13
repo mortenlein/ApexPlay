@@ -5,9 +5,10 @@ import { requireStaffApi } from '@/lib/route-auth';
 import { eventBus } from '@/lib/eventBus';
 import { buildActorLabel, recordAudit } from '@/lib/audit';
 import { notifyMatchReady } from '@/lib/notify';
-import { conflictResponse, hasTimestampConflict, normalizeExpectedUpdatedAt } from '@/lib/mutation-guards';
+import { codeForText } from '@/lib/api-errors';
+import { conflictResponse, errorResponse, hasTimestampConflict, normalizeExpectedUpdatedAt } from '@/lib/mutation-guards';
 import { isDone } from '@/lib/match-status';
-import { decideMatchResult, downstreamBlockedMessage, downstreamBlocksReset } from '@/lib/match-result';
+import { decideMatchResult, downstreamBlocksReset } from '@/lib/match-result';
 
 /**
  * POST /api/matches/{id} — score / status / forfeit update. Staff (admin or marshal), because
@@ -50,7 +51,12 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         });
 
         if (!decision.ok) {
-            return NextResponse.json({ error: decision.error }, { status: decision.status });
+            // `decideMatchResult` is pure decision logic shared with a bare ts-node script, so it
+            // returns a sentence rather than a code; the code is looked up from it here.
+            const code = codeForText(decision.error);
+            return code
+                ? errorResponse(code, decision.status)
+                : NextResponse.json({ error: decision.error }, { status: decision.status });
         }
 
         const plan = decision.plan;
@@ -70,7 +76,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
             if (!holdsTeam) continue;
 
             if (downstreamBlocksReset(downstream)) {
-                return NextResponse.json({ error: downstreamBlockedMessage(downstream.id) }, { status: 409 });
+                return errorResponse('downstream_started', 409, { matchRef: downstream.id.slice(0, 8) });
             }
         }
 
