@@ -74,7 +74,7 @@ export function byPlayOrder(
  */
 export function matchStatusLabel(status: string | null | undefined): string {
   if (isLive(status)) return 'Live';
-  if (isDone(status)) return 'Final';
+  if (isDone(status)) return 'Done';
   if (isCalled(status)) return 'Called';
   return 'Scheduled';
 }
