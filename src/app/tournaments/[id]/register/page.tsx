@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, use } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -24,13 +25,9 @@ import { Badge, Button, Card, Input } from '@/components/ui';
 import { MockPersonaButtons } from '@/components/MockPersonaButtons';
 import { useToast } from '@/components/ToastProvider';
 import { RouteNotFoundState } from '@/components/RouteStates';
-import { SeatEditor, SEAT_HELPER_TEXT, SEAT_MAX_LENGTH } from '@/components/player/SeatEditor';
+import { SeatEditor, SEAT_MAX_LENGTH } from '@/components/player/SeatEditor';
 import { clientApi } from '@/lib/client-api';
 import { FORMAT_OPTIONS } from '@/lib/games';
-
-/** Never render the stored enum: SINGLE_ELIMINATION is a database value, not a sentence. */
-const formatName = (format?: string | null) =>
-    FORMAT_OPTIONS.find((option) => option.id === format)?.name ?? 'Bracket';
 
 /** The shell every state of this page sits in: the tournament it is about, then one panel. */
 function RegisterShell({
@@ -40,20 +37,27 @@ function RegisterShell({
     tournament?: any;
     children: React.ReactNode;
 }) {
+    const t = useTranslations('register');
+    /** Never render the stored enum: SINGLE_ELIMINATION is a database value, not a sentence. */
+    const formatName = (format?: string | null) =>
+        FORMAT_OPTIONS.find((option) => option.id === format)?.name ?? t('formatFallback');
+
     return (
         <div className="min-h-screen bg-page text-fg">
             <main className="mx-auto w-full max-w-2xl space-y-5 px-4 py-8 sm:px-6 sm:py-12">
                 {tournament && (
                     <header className="space-y-2">
-                        <p className="mds-uppercase-label text-fg-subtle">Register</p>
+                        <p className="mds-uppercase-label text-fg-subtle">{t('label')}</p>
                         {/* The organiser's own casing — a tournament name is content, not a label. */}
                         <h1 className="mds-name-lg text-2xl sm:text-3xl">{tournament.name}</h1>
                         <div className="flex flex-wrap items-center gap-2">
                             <Badge tone="neutral">{tournament.game}</Badge>
                             <Badge tone="neutral">{formatName(tournament.format)}</Badge>
                             <Badge tone="neutral">
-                                <span className="mds-numeric">{tournament.teamSize}</span>
-                                &nbsp;per team
+                                {t.rich('perTeam', {
+                                    count: tournament.teamSize,
+                                    n: (chunks) => <span className="mds-numeric">{chunks}</span>,
+                                })}
                             </Badge>
                         </div>
                     </header>
@@ -79,6 +83,10 @@ function ErrorNotice({ message }: { message: string }) {
 
 export default function RegisterPage(props: { params: Promise<{ id: string }> }) {
     const params = use(props.params);
+    const t = useTranslations('register');
+    // The seat vocabulary is the player desk's, not this page's: one wording for "your seat"
+    // and its helper line, wherever a player types it.
+    const tPlayer = useTranslations('player');
     const { data: session, status } = useSession();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -141,20 +149,20 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                         players: Array(current.teamSize || 5).fill({ name: '', nickname: '', countryCode: 'no', steamId: '' }),
                     }));
                 } else {
-                    setError('Tournament not found');
+                    setError(t('errorNotFound'));
                 }
 
                 if (session && sessionSteamId && current.steamSignupEnabled) {
                     await loadMyTeam();
                 }
             } catch (err) {
-                setError('Failed to load tournament details');
+                setError(t('errorLoadFailed'));
             } finally {
                 setLoading(false);
             }
         };
         fetchData();
-    }, [params.id, session, sessionSteamId, loadMyTeam]);
+    }, [params.id, session, sessionSteamId, loadMyTeam, t]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -167,7 +175,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                 const uploadData = new FormData();
                 uploadData.append('file', logoFile);
                 const uploadRes = await fetch('/api/upload', { method: 'POST', body: uploadData });
-                if (!uploadRes.ok) throw new Error('Logo upload failed');
+                if (!uploadRes.ok) throw new Error(t('errorLogoUpload'));
                 const { url } = await uploadRes.json();
                 logoUrl = url;
             }
@@ -186,7 +194,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
 
                 if (!res.ok) {
                     const data = await res.json();
-                    throw new Error(data.error || 'Registration failed');
+                    throw new Error(data.error || t('errorRegistration'));
                 }
                 const newTeam = await res.json();
                 setUserTeam(newTeam);
@@ -196,7 +204,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
             } else {
                 const cleanedPlayers = teamData.players.filter((p) => p.name.trim() !== '');
                 if (cleanedPlayers.length < (tournament?.teamSize || 1)) {
-                    throw new Error(`Minimum ${tournament?.teamSize || 1} players required`);
+                    throw new Error(t('errorMinPlayers', { count: tournament?.teamSize || 1 }));
                 }
 
                 const res = await fetch(`/api/tournaments/${params.id}/teams`, {
@@ -207,7 +215,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
 
                 if (!res.ok) {
                     const data = await res.json();
-                    throw new Error(data.error || 'Registration failed');
+                    throw new Error(data.error || t('errorRegistration'));
                 }
                 setSuccess(true);
             }
@@ -230,7 +238,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
 
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || 'Joining team failed');
+                throw new Error(data.error || t('errorJoin'));
             }
             const joinedTeam = await res.json();
             setUserTeam(joinedTeam);
@@ -263,20 +271,17 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
     };
 
     const handleLeaveTeam = async () => {
-        if (!window.confirm('Leave this team? Your registration for this tournament is removed.')) return;
+        if (!window.confirm(t('leaveConfirm'))) return;
         setLeaving(true);
         try {
             const result = await clientApi.leaveMyTeam(params.id);
             setUserTeam(null);
             setSuccess(false);
             setSeating('');
-            toast.success(
-                'You left the team',
-                result.teamDeleted ? 'The team had no players left, so it was removed.' : undefined
-            );
+            toast.success(t('leftTitle'), result.teamDeleted ? t('leftDeleted') : undefined);
             router.refresh();
         } catch (err: any) {
-            toast.error('Could not leave the team', err?.message || 'Please try again.');
+            toast.error(t('leaveErrorTitle'), err?.message || t('leaveErrorHint'));
         } finally {
             setLeaving(false);
         }
@@ -315,7 +320,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
             <RegisterShell>
                 <Card className="flex items-center gap-3" aria-busy="true">
                     <Loader2 className="animate-spin text-brand" size={18} />
-                    <span className="text-sm text-fg-muted">Loading this tournament…</span>
+                    <span className="text-sm text-fg-muted">{t('loading')}</span>
                 </Card>
             </RegisterShell>
         );
@@ -324,9 +329,9 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
     if (!tournament) {
         return (
             <RouteNotFoundState
-                title="Tournament Not Found"
-                description="This registration link is invalid or the tournament no longer exists."
-                primaryLabel="Back to Tournaments"
+                title={t('notFoundTitle')}
+                description={t('notFoundBody')}
+                primaryLabel={t('notFoundBack')}
                 primaryHref="/tournaments"
             />
         );
@@ -354,26 +359,28 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                         <div className="flex items-center gap-3">
                             <CheckCircle2 className="shrink-0 text-success" size={22} />
                             <h1 className="font-brand text-xl font-bold">
-                                {success ? 'Registration Confirmed' : 'Your Team'}
+                                {success ? t('confirmedTitle') : t('yourTeamTitle')}
                             </h1>
                         </div>
                         <p className="text-sm text-fg-muted">
-                            You&apos;re registered with{' '}
-                            <span className="mds-name text-fg">{userTeam?.name || teamData.name}</span>.
+                            {t.rich('registeredWith', {
+                                team: userTeam?.name || teamData.name,
+                                name: (chunks) => <span className="mds-name text-fg">{chunks}</span>,
+                            })}
                         </p>
                     </div>
 
                     {tournament.rosterLocked && (
                         <p className="mds-inline-notice flex items-center gap-2 border-l-warning text-sm text-fg-muted">
                             <Lock size={14} className="shrink-0 text-warning" />
-                            Bracket is live — roster locked
+                            {t('rosterLocked')}
                         </p>
                     )}
 
                     {/* The seat is the one field a player owns, and the floor runs on it. */}
                     {myPlayer && (
                         <div className="rounded border border-line bg-field/40 px-4 py-3">
-                            <p className="mds-uppercase-label text-fg-subtle">Your seat</p>
+                            <p className="mds-uppercase-label text-fg-subtle">{tPlayer('seat.label')}</p>
                             <SeatEditor
                                 className="mt-1.5"
                                 size="lg"
@@ -388,7 +395,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                     {players.length > 0 && (
                         <div className="space-y-2">
                             <p className="mds-uppercase-label text-fg-subtle">
-                                Roster ({players.length}/{teamSize})
+                                {t('roster', { count: players.length, size: teamSize })}
                             </p>
                             <ul className="space-y-1.5">
                                 {players.map((player) => (
@@ -399,16 +406,16 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                                         <span className="flex min-w-0 items-center gap-2">
                                             <span className="mds-name text-sm">{player.nickname || player.name}</span>
                                             {player.isLeader && (
-                                                <span title="Team leader">
+                                                <span title={t('teamLeader')}>
                                                     <Crown size={13} className="shrink-0 text-brand" />
                                                 </span>
                                             )}
-                                            {player.isMe && <Badge tone="info">You</Badge>}
+                                            {player.isMe && <Badge tone="info">{t('you')}</Badge>}
                                         </span>
                                         <span
                                             className={`mds-numeric shrink-0 text-sm ${player.seating ? 'font-bold' : 'text-fg-subtle'}`}
                                         >
-                                            {player.seating || 'No seat'}
+                                            {player.seating || t('noSeat')}
                                         </span>
                                     </li>
                                 ))}
@@ -419,10 +426,12 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                     {canInvite && (
                         <div className="space-y-3 rounded border border-brand bg-brand-soft p-4">
                             <div className="flex flex-wrap items-center justify-between gap-2">
-                                <p className="mds-uppercase-label text-brand">Invite Teammates</p>
+                                <p className="mds-uppercase-label text-brand">{t('inviteTitle')}</p>
                                 <p className="text-xs text-fg-muted">
-                                    <span className="mds-numeric">{slotsLeft}</span>{' '}
-                                    {slotsLeft === 1 ? 'slot' : 'slots'} left in the roster.
+                                    {t.rich('slotsLeft', {
+                                        count: slotsLeft,
+                                        n: (chunks) => <span className="mds-numeric">{chunks}</span>,
+                                    })}
                                 </p>
                             </div>
 
@@ -430,7 +439,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                                 pasted into Discord. Both are one tap from here. */}
                             <div className="flex flex-wrap items-center gap-3">
                                 <div>
-                                    <p className="mds-uppercase-label text-fg-subtle">Invite code</p>
+                                    <p className="mds-uppercase-label text-fg-subtle">{t('inviteCode')}</p>
                                     <p className="mds-numeric mt-0.5 text-2xl font-bold tracking-[0.12em]">
                                         {userTeam.inviteCode}
                                     </p>
@@ -441,11 +450,11 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                                     size="sm"
                                     onClick={() => {
                                         copyText(userTeam.inviteCode, 'code');
-                                        toast.success('Invite code copied');
+                                        toast.success(t('inviteCodeCopied'));
                                     }}
                                 >
                                     {copied === 'code' ? <Check size={14} /> : <Copy size={14} />}
-                                    Copy code
+                                    {t('copyCode')}
                                 </Button>
                             </div>
 
@@ -457,11 +466,11 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                                 className="w-full"
                                 onClick={() => {
                                     copyText(registrationLink, 'link');
-                                    toast.success('Invite link copied', 'Share it with the rest of your team.');
+                                    toast.success(t('inviteLinkCopied'), t('inviteLinkCopiedHint'));
                                 }}
                             >
                                 {copied === 'link' ? <Check size={15} /> : <Copy size={15} />}
-                                Copy Invite Link
+                                {t('copyInviteLink')}
                             </Button>
                         </div>
                     )}
@@ -469,12 +478,12 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                     <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
                         <Link href={`/tournaments/${params.id}`}>
                             <Button variant="secondary">
-                                Open Tournament Overview
+                                {t('openOverview')}
                                 <ArrowRight size={15} />
                             </Button>
                         </Link>
                         <Link href="/dashboard">
-                            <Button variant="ghost">Go to my desk</Button>
+                            <Button variant="ghost">{t('goToDesk')}</Button>
                         </Link>
                         {/* Leaving is self-service only until the bracket exists; after that the
                             API answers 423 and an organizer has to move the player. */}
@@ -486,7 +495,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                                 className="ml-auto inline-flex h-8 items-center gap-2 px-2 text-xs font-semibold text-fg-subtle transition-colors hover:text-danger disabled:opacity-50"
                             >
                                 {leaving ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} />}
-                                Leave Team
+                                {t('leaveTeam')}
                             </button>
                         )}
                     </div>
@@ -502,16 +511,18 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                 <Card className="space-y-3">
                     <div className="flex items-start gap-3 text-warning">
                         <Lock size={18} className="mt-1 shrink-0" />
-                        <h1 className="font-brand text-xl font-bold text-fg">Registration Closed</h1>
+                        <h1 className="font-brand text-xl font-bold text-fg">{t('closedTitle')}</h1>
                     </div>
                     <p className="text-sm text-fg-muted">
-                        The bracket for <span className="mds-name text-fg">{tournament.name}</span> is drawn, so
-                        teams can no longer sign up. Talk to an organizer if this is unexpected.
+                        {t.rich('closedBody', {
+                            tournament: tournament.name,
+                            name: (chunks) => <span className="mds-name text-fg">{chunks}</span>,
+                        })}
                     </p>
                     <div>
                         <Link href={`/tournaments/${params.id}`}>
                             <Button variant="secondary">
-                                Return to Tournament
+                                {t('returnToTournament')}
                                 <ArrowRight size={15} />
                             </Button>
                         </Link>
@@ -529,23 +540,25 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                         <Gamepad2 className="mt-0.5 shrink-0 text-brand" size={22} />
                         <div className="space-y-1">
                             <h1 className="font-brand text-xl font-bold">
-                                {tournament?.steamSignupEnabled ? 'Steam Verification Required' : 'Sign In Required'}
+                                {tournament?.steamSignupEnabled
+                                    ? t('steamRequiredTitle')
+                                    : t('signInRequiredTitle')}
                             </h1>
                             <p className="text-sm text-fg-muted">
                                 {tournament?.steamSignupEnabled
-                                    ? 'Sign in with Steam so the organizer can verify who is playing, and so your invite link knows it is you.'
-                                    : 'Registration is tied to your account, so sign in before entering a team.'}
+                                    ? t('steamRequiredBody')
+                                    : t('signInRequiredBody')}
                             </p>
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
                         <Button onClick={() => signIn('steam', { callbackUrl })}>
                             <Gamepad2 size={16} />
-                            Continue with Steam
+                            {t('continueWithSteam')}
                         </Button>
                         {session && !sessionSteamId && (
                             <Button variant="secondary" type="button" onClick={() => signOut({ callbackUrl })}>
-                                Switch Account
+                                {t('switchAccount')}
                             </Button>
                         )}
                     </div>
@@ -562,16 +575,18 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                     <div className="flex items-start gap-3">
                         <Users className="mt-0.5 shrink-0 text-brand" size={22} />
                         <div className="space-y-1">
-                            <h1 className="font-brand text-xl font-bold">Join Existing Team</h1>
+                            <h1 className="font-brand text-xl font-bold">{t('joinTitle')}</h1>
                             <p className="text-sm text-fg-muted">
-                                You have been invited to a team in{' '}
-                                <span className="mds-name text-fg">{tournament.name}</span>.
+                                {t.rich('joinBody', {
+                                    tournament: tournament.name,
+                                    name: (chunks) => <span className="mds-name text-fg">{chunks}</span>,
+                                })}
                             </p>
                         </div>
                     </div>
 
                     <div className="rounded border border-line bg-field/40 px-4 py-3">
-                        <p className="mds-uppercase-label text-fg-subtle">Invite code</p>
+                        <p className="mds-uppercase-label text-fg-subtle">{t('inviteCode')}</p>
                         <p className="mds-numeric mt-0.5 text-xl font-bold tracking-[0.12em] text-brand">
                             {inviteCode}
                         </p>
@@ -581,14 +596,14 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                     <div className="max-w-[14rem]">
                         <Input
                             id="join-seating"
-                            label="Your seat (optional)"
-                            hint={SEAT_HELPER_TEXT}
+                            label={t('seatOptional')}
+                            hint={tPlayer('seat.helper')}
                             type="text"
                             value={seating}
                             maxLength={SEAT_MAX_LENGTH}
                             onChange={(e) => setSeating(e.target.value)}
                             className="mds-numeric h-11 px-4 text-sm font-bold"
-                            placeholder="e.g. B12"
+                            placeholder={tPlayer('seat.placeholder')}
                         />
                     </div>
 
@@ -596,7 +611,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
 
                     <Button onClick={handleJoinTeam} disabled={submitting}>
                         {submitting ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
-                        Join Roster
+                        {t('joinRoster')}
                     </Button>
                 </Card>
             </RegisterShell>
@@ -608,28 +623,30 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
             <form onSubmit={handleSubmit} className="space-y-5">
                 <Card className="space-y-5">
                     <div className="space-y-1">
-                        <h1 className="font-brand text-xl font-bold">Create your team</h1>
+                        <h1 className="font-brand text-xl font-bold">{t('createTitle')}</h1>
                         <p className="text-sm text-fg-muted">
                             {tournament?.steamSignupEnabled
-                                ? `You lead the team. Once it exists you get an invite link for the other ${Math.max(0, (tournament?.teamSize || 1) - 1)} players.`
-                                : 'Enter the whole roster — this tournament is not using Steam sign-up.'}
+                                ? t('createBodySteam', {
+                                      count: Math.max(0, (tournament?.teamSize || 1) - 1),
+                                  })
+                                : t('createBodyManual')}
                         </p>
                     </div>
 
                     <Input
                         id="team-name"
-                        label="Team name"
+                        label={t('teamName')}
                         type="text"
                         required
                         value={teamData.name}
                         onChange={(e) => setTeamData({ ...teamData, name: e.target.value })}
                         className="h-11 px-4 text-sm"
-                        placeholder="Enter unique team name"
+                        placeholder={t('teamNamePlaceholder')}
                     />
 
                     <div className="space-y-1.5">
                         <label className="mds-uppercase-label" htmlFor="team-logo">
-                            Team logo (optional)
+                            {t('teamLogo')}
                         </label>
                         <div className="relative h-11">
                             <input
@@ -647,7 +664,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                             />
                             <div className="mds-input flex h-full items-center justify-between px-4">
                                 <span className="truncate text-sm text-fg-subtle">
-                                    {logoFile ? logoFile.name : 'Upload PNG or JPG'}
+                                    {logoFile ? logoFile.name : t('uploadHint')}
                                 </span>
                                 <Upload size={15} className="shrink-0 text-fg-subtle" />
                             </div>
@@ -660,14 +677,14 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                         <div className="max-w-[14rem]">
                             <Input
                                 id="create-seating"
-                                label="Your seat (optional)"
-                                hint={SEAT_HELPER_TEXT}
+                                label={t('seatOptional')}
+                                hint={tPlayer('seat.helper')}
                                 type="text"
                                 value={seating}
                                 maxLength={SEAT_MAX_LENGTH}
                                 onChange={(e) => setSeating(e.target.value)}
                                 className="mds-numeric h-11 px-4 text-sm font-bold"
-                                placeholder="e.g. B12"
+                                placeholder={tPlayer('seat.placeholder')}
                             />
                         </div>
                     )}
@@ -682,8 +699,8 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                                 )}
                             </div>
                             <div className="min-w-0">
-                                <p className="mds-uppercase-label text-fg-subtle">Your team</p>
-                                <p className="mds-name-lg text-lg">{teamData.name || 'Unnamed team'}</p>
+                                <p className="mds-uppercase-label text-fg-subtle">{t('yourTeam')}</p>
+                                <p className="mds-name-lg text-lg">{teamData.name || t('unnamedTeam')}</p>
                             </div>
                         </div>
                     )}
@@ -692,7 +709,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                 {!tournament?.steamSignupEnabled && (
                     <Card className="space-y-4">
                         <p className="mds-uppercase-label text-fg-subtle">
-                            Roster ({tournament?.teamSize} players)
+                            {t('rosterCount', { count: tournament?.teamSize ?? 0 })}
                         </p>
                         <div className="space-y-3">
                             {teamData.players.map((player, i) => (
@@ -701,22 +718,22 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
                                     className="grid grid-cols-1 gap-3 rounded border border-line bg-field/30 p-3 sm:grid-cols-2"
                                 >
                                     <Input
-                                        label={`Player ${i + 1}`}
+                                        label={t('playerLabel', { index: i + 1 })}
                                         type="text"
                                         required
                                         value={player.name}
                                         onChange={(e) => updatePlayer(i, 'name', e.target.value)}
                                         className="h-10 px-3 text-sm"
-                                        placeholder="Nickname or full name"
+                                        placeholder={t('playerPlaceholder')}
                                     />
                                     <Input
-                                        label="Steam profile / ID"
+                                        label={t('steamProfile')}
                                         type="text"
                                         required
                                         value={player.steamId}
                                         onChange={(e) => updatePlayer(i, 'steamId', e.target.value)}
                                         className="mds-numeric h-10 px-3 text-sm"
-                                        placeholder="Steam profile link or ID64"
+                                        placeholder={t('steamProfilePlaceholder')}
                                     />
                                 </div>
                             ))}
@@ -728,7 +745,7 @@ export default function RegisterPage(props: { params: Promise<{ id: string }> })
 
                 <Button type="submit" className="w-full" disabled={submitting}>
                     {submitting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                    {submitting ? 'Submitting…' : 'Complete Registration'}
+                    {submitting ? t('submitting') : t('submit')}
                 </Button>
             </form>
         </RegisterShell>

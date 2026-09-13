@@ -1,1 +1,99 @@
-{}
+{
+  "desk": {
+    "label": "Spillerdesk",
+    "signInTitle": "Logg inn for å se kampene dine",
+    "signInBody": "Koble til med Steam, så ser du neste kamp, plassen din og hvor du ligger i køen.",
+    "continueWithSteam": "Fortsett med Steam",
+    "errorTitle": "Klarte ikke å laste desken din",
+    "errorBody": "Prøv igjen om litt."
+  },
+  "alerts": {
+    "on": "Kampvarsler på",
+    "enable": "Skru på kampvarsler",
+    "enabling": "Skrur på…",
+    "tryAgain": "Prøv igjen",
+    "hint": "Få varsel på mobilen når du blir kalt opp.",
+    "errorHint": "Fikk ikke skrudd på varsler."
+  },
+  "queue": {
+    "label": "Køen din",
+    "region": "Kampstatus",
+    "refreshFailed": "Fikk ikke oppdatert køplassen din",
+    "matchup": "{home} <vs>vs</vs> {away}",
+    "yourTeam": "Laget ditt"
+  },
+  "headline": {
+    "live": "Live nå<rest> — kom deg til plassen din</rest>",
+    "called": "Din tur<rest> — gå til plassen din</rest>",
+    "next": "Du er neste",
+    "matchesAhead": "{count, plural, one {# kamp foran deg} other {# kamper foran deg}}"
+  },
+  "stage": {
+    "grandFinal": "Finale",
+    "thirdPlace": "Bronsefinale",
+    "lowerBracket": "Taperrunde {round}",
+    "round": "Runde {round}"
+  },
+  "fact": {
+    "match": "Kampen din",
+    "matchLine": "{stage} · BO{bestOf}",
+    "stillToPlay": "Igjen å spille",
+    "stillToPlayCount": "{count, plural, one {# kamp} other {# kamper}}"
+  },
+  "action": {
+    "oneClickJoin": "Koble til serveren",
+    "viewBracket": "Se kampoppsettet",
+    "openTournament": "Åpne turneringen",
+    "browseTournaments": "Se turneringene",
+    "browseAll": "Se alle"
+  },
+  "chip": {
+    "knockedOut": "Slått ut",
+    "notDrawn": "Ikke trukket ennå",
+    "playingNow": "Spiller nå",
+    "youreUp": "Din tur",
+    "upNext": "Du er neste",
+    "matchesAhead": "{count, plural, one {# kamp foran} other {# kamper foran}}"
+  },
+  "standby": {
+    "knockedOutTitle": "Slått ut",
+    "waitingTitle": "Venter på kampoppsettet",
+    "outOfNamed": "Laget ditt er ute av <name>{tournament}</name>. Resten av turneringen spilles videre.",
+    "outOfUnnamed": "Laget ditt er ute av kampoppsettet. Resten spilles videre.",
+    "notDrawnNamed": "<name>{tournament}</name> er ikke trukket ennå. Kampen din, plassen din og køplassen din dukker opp her så snart trekningen er gjort.",
+    "notDrawnNone": "Ingen av turneringene dine er trukket ennå. Kampen din, plassen din og køplassen din dukker opp her så snart trekningen er gjort."
+  },
+  "empty": {
+    "title": "Du er ikke med i noen turnering ennå",
+    "description": "Meld deg på en, så finner du kampen din, plassen din og køplassen din her."
+  },
+  "tournaments": {
+    "label": "Turneringene dine"
+  },
+  "seat": {
+    "label": "Plassen din",
+    "none": "Ingen plass satt",
+    "set": "Sett plassen din",
+    "helper": "Crewet bruker denne for å finne deg. Du kan endre den senere.",
+    "placeholder": "f.eks. B12",
+    "cancelAria": "Avbryt redigering av plass",
+    "savedTitle": "Plassen er lagret: {seat}",
+    "savedHint": "Nå er det lett å finne deg i lokalet.",
+    "clearedTitle": "Plassen er fjernet",
+    "errorTitle": "Fikk ikke lagret plassen din",
+    "errorHint": "Prøv igjen."
+  },
+  "profile": {
+    "label": "Spillerprofil",
+    "signInTitle": "Logg inn for å se profilen din",
+    "signInBody": "Lagene dine, turneringene du er med i, og plassen hver av dem kjenner deg på.",
+    "steamConnected": "Steam tilkoblet",
+    "statTournaments": "{count, plural, one {<n>#</n> turnering} other {<n>#</n> turneringer}}",
+    "statOpenMatches": "{count, plural, one {<n>#</n> åpen kamp} other {<n>#</n> åpne kamper}}",
+    "statSeats": "{count, plural, one {<n>#</n> plass lagret} other {<n>#</n> plasser lagret}}",
+    "loading": "Laster turneringene dine…",
+    "emptyTitle": "Ingen turneringer ennå",
+    "emptyBody": "Meld deg på en, så dukker den opp her med laget ditt og plassen din.",
+    "leaderSuffix": "(lagleder)"
+  }
+}

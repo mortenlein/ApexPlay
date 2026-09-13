@@ -1,6 +1,7 @@
 'use client';
 
 import { useSession, signIn, signOut } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -15,6 +16,8 @@ import { SeatEditor } from '@/components/player/SeatEditor';
  * that doesn't exist, a second "linked account" nobody links) is deliberately not here.
  */
 export default function ProfilePage() {
+    const t = useTranslations('player');
+    const tCommon = useTranslations('common');
     const { data: session, status } = useSession();
     const queryClient = useQueryClient();
 
@@ -36,14 +39,12 @@ export default function ProfilePage() {
                     <ShieldCheck size={34} className="text-brand" />
                 </div>
                 <div className="max-w-md space-y-3">
-                    <h1 className="font-brand text-3xl font-bold tracking-tight">Sign in to see your profile</h1>
-                    <p className="text-fg-muted">
-                        Your teams, the tournaments you&apos;re in, and the seat each of them knows you by.
-                    </p>
+                    <h1 className="font-brand text-3xl font-bold tracking-tight">{t('profile.signInTitle')}</h1>
+                    <p className="text-fg-muted">{t('profile.signInBody')}</p>
                 </div>
                 <Button onClick={() => signIn('steam')}>
                     <Zap size={15} />
-                    Continue with Steam
+                    {t('desk.continueWithSteam')}
                 </Button>
                 <MockPersonaButtons callbackUrl="/profile" />
             </div>
@@ -52,10 +53,12 @@ export default function ProfilePage() {
 
     const loading = status === 'loading' || (status === 'authenticated' && isLoading);
     const { registrations = [], stats } = profile || {};
-    const facts = [
-        { n: stats?.tournamentsJoined ?? 0, one: 'tournament', many: 'tournaments' },
-        { n: stats?.activeMatches ?? 0, one: 'open match', many: 'open matches' },
-        { n: stats?.seatAssignments ?? 0, one: 'seat saved', many: 'seats saved' },
+    // ICU plurals, not an `n === 1 ?` pair: Norwegian counts differently and "1 turneringer"
+    // would be the first thing a player notices. The figure keeps its numeric face via <n>.
+    const facts: { key: 'statTournaments' | 'statOpenMatches' | 'statSeats'; n: number }[] = [
+        { key: 'statTournaments', n: stats?.tournamentsJoined ?? 0 },
+        { key: 'statOpenMatches', n: stats?.activeMatches ?? 0 },
+        { key: 'statSeats', n: stats?.seatAssignments ?? 0 },
     ];
 
     return (
@@ -77,23 +80,31 @@ export default function ProfilePage() {
                             </span>
                         )}
                     </div>
-                    <div className="min-w-0 flex-1">
-                        <p className="mds-uppercase-label text-fg-subtle">Player profile</p>
+                    {/* A floor, not just flex-1: with `min-w-0` alone this column collapses to a
+                        few pixels on a phone whenever the badge and the sign-out button happen to
+                        fit beside it, and the player's own name wraps one letter per line. The
+                        minimum makes the actions wrap to their own row instead. */}
+                    <div className="min-w-[12rem] flex-1">
+                        <p className="mds-uppercase-label text-fg-subtle">{t('profile.label')}</p>
                         {/* The player's own casing — never shouted back at them. */}
                         <h1 className="mds-name-lg text-2xl">{session?.user?.name}</h1>
                         <p className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-fg-muted">
                             {/* Counts of nothing are noise — the empty state below says it better. */}
                             {registrations.length > 0 &&
                                 facts.map((f) => (
-                                    <span key={f.one}>
-                                        <span className="mds-numeric font-bold text-fg">{f.n}</span>{' '}
-                                        {f.n === 1 ? f.one : f.many}
+                                    <span key={f.key}>
+                                        {t.rich(`profile.${f.key}`, {
+                                            count: f.n,
+                                            n: (chunks) => (
+                                                <span className="mds-numeric font-bold text-fg">{chunks}</span>
+                                            ),
+                                        })}
                                     </span>
                                 ))}
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Badge tone="ready">Steam connected</Badge>
+                        <Badge tone="ready">{t('profile.steamConnected')}</Badge>
                         <Button
                             variant="secondary"
                             type="button"
@@ -107,29 +118,29 @@ export default function ProfilePage() {
                             }}
                         >
                             <LogOut size={15} />
-                            Sign out
+                            {tCommon('signOut')}
                         </Button>
                     </div>
                 </header>
 
                 <section className="space-y-3">
-                    <p className="mds-uppercase-label text-fg-subtle">Your tournaments</p>
+                    <p className="mds-uppercase-label text-fg-subtle">{t('tournaments.label')}</p>
 
                     {loading && registrations.length === 0 && (
                         <Card className="flex items-center gap-3" aria-busy="true">
                             <Loader2 size={16} className="animate-spin text-brand" />
-                            <span className="text-sm text-fg-muted">Loading your tournaments…</span>
+                            <span className="text-sm text-fg-muted">{t('profile.loading')}</span>
                         </Card>
                     )}
 
                     {!loading && registrations.length === 0 && (
                         <EmptyState
                             icon={<Gamepad2 size={26} />}
-                            title="No tournaments yet"
-                            description="Sign up for one and it shows up here with your team and your seat."
+                            title={t('profile.emptyTitle')}
+                            description={t('profile.emptyBody')}
                             action={
                                 <Link href="/tournaments">
-                                    <Button>Browse tournaments</Button>
+                                    <Button>{t('action.browseTournaments')}</Button>
                                 </Link>
                             }
                         />
@@ -157,16 +168,21 @@ export default function ProfilePage() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-3 border-t border-line pt-3">
                                     <div className="min-w-0">
-                                        <p className="mds-uppercase-label text-fg-subtle">Team</p>
+                                        <p className="mds-uppercase-label text-fg-subtle">{tCommon('team')}</p>
                                         <p className="mds-name mt-1 text-sm">
                                             {reg.team.name}
+                                            {/* nowrap: "(lagleder)" is long enough to land on the
+                                                wrap point after a team name, and the name style
+                                                hyphenates — it broke as "(lagle- der)" on a phone. */}
                                             {reg.isLeader && (
-                                                <span className="ml-1 text-xs text-fg-subtle">(leader)</span>
+                                                <span className="ml-1 whitespace-nowrap text-xs text-fg-subtle">
+                                                    {t('profile.leaderSuffix')}
+                                                </span>
                                             )}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="mds-uppercase-label text-fg-subtle">Your seat</p>
+                                        <p className="mds-uppercase-label text-fg-subtle">{t('seat.label')}</p>
                                         <SeatEditor
                                             className="mt-1"
                                             tournamentId={reg.team.tournament.id}
