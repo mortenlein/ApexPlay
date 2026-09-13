@@ -20,6 +20,7 @@ import { clientApi } from "@/lib/client-api";
 import { Card, Badge, StatusBadge, Button, EmptyState } from "@/components/ui";
 import { useMatchStream } from "@/hooks/useMatchStream";
 import { byPlayOrder, isCalled, isDone, isLive } from "@/lib/match-status";
+import { notificationText, notificationTitle } from "@/lib/notification-display";
 
 /**
  * Marshal board — the floor tool.
@@ -289,6 +290,7 @@ function Section({
 }
 
 export default function MarshalDashboard() {
+  const tNotif = useTranslations("notifications");
   const t = useTranslations("marshal");
   const tc = useTranslations("common");
   const router = useRouter();
@@ -839,9 +841,9 @@ export default function MarshalDashboard() {
                           {new Date(n.timestamp).toLocaleTimeString()}
                         </span>
                       </div>
-                      <p className="mt-2 text-sm font-semibold">{n.embed?.title}</p>
+                      <p className="mt-2 text-sm font-semibold">{notificationTitle(n.embed?.title, tNotif)}</p>
                       {n.embed?.description && (
-                        <p className="text-xs text-fg-muted">{n.embed.description}</p>
+                        <p className="text-xs text-fg-muted">{notificationText(n.embed.description)}</p>
                       )}
                     </div>
                   ))}

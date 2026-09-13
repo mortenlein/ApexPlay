@@ -277,7 +277,7 @@ export default function StreamOverlay(props: { params: Promise<{ id: string }> }
 
         setNodes(newNodes);
         setEdges(newEdges);
-    }, [t]);
+    }, [t, tStage]);
 
     // Initial fetch
     useEffect(() => {

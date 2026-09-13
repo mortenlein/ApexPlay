@@ -8,6 +8,8 @@ export const dynamic = 'force-dynamic';
 type PublicPlayer = {
     id: string;
     name: string;
+    /** The gamertag a player is actually called by at a LAN — the crew board leads with it. */
+    nickname: string | null;
     seating: string | null;
     isOnline: boolean;
     /** At-seat state set by floor staff — public, the bracket shows who has arrived. */
@@ -22,9 +24,10 @@ function toPublicTeam<T extends { players: (PublicPlayer & { steamId: string | n
 
     return {
         ...team,
-        players: team.players.map(({ id, name, seating, isOnline, checkedInAt }): PublicPlayer => ({
+        players: team.players.map(({ id, name, nickname, seating, isOnline, checkedInAt }): PublicPlayer => ({
             id,
             name,
+            nickname,
             seating,
             isOnline,
             checkedInAt,
@@ -64,7 +67,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
                         logoUrl: true,
                         seed: true,
                         players: {
-                            select: { id: true, name: true, seating: true, steamId: true, isOnline: true, checkedInAt: true }
+                            select: { id: true, name: true, nickname: true, seating: true, steamId: true, isOnline: true, checkedInAt: true }
                         }
                     }
                 },
@@ -75,7 +78,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
                         logoUrl: true,
                         seed: true,
                         players: {
-                            select: { id: true, name: true, seating: true, steamId: true, isOnline: true, checkedInAt: true }
+                            select: { id: true, name: true, nickname: true, seating: true, steamId: true, isOnline: true, checkedInAt: true }
                         }
                     }
                 }

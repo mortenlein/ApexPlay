@@ -204,7 +204,7 @@ const matchSelect = {
       logoUrl: true,
       seed: true,
       players: {
-        select: { id: true, name: true, seating: true, steamId: true, isOnline: true, checkedInAt: true },
+        select: { id: true, name: true, nickname: true, seating: true, steamId: true, isOnline: true, checkedInAt: true },
       },
     },
   },
@@ -215,13 +215,13 @@ const matchSelect = {
       logoUrl: true,
       seed: true,
       players: {
-        select: { id: true, name: true, seating: true, steamId: true, isOnline: true, checkedInAt: true },
+        select: { id: true, name: true, nickname: true, seating: true, steamId: true, isOnline: true, checkedInAt: true },
       },
     },
   },
 } as const;
 
-type PublicMatchPlayer = { id: string; name: string; seating: string | null; isOnline: boolean; checkedInAt: Date | null };
+type PublicMatchPlayer = { id: string; name: string; nickname: string | null; seating: string | null; isOnline: boolean; checkedInAt: Date | null };
 
 /** Player steamIds are staff-only; seating and presence stay public for the bracket. */
 function toPublicMatchTeam<T extends { players: (PublicMatchPlayer & { steamId: string | null })[] }>(
@@ -233,9 +233,10 @@ function toPublicMatchTeam<T extends { players: (PublicMatchPlayer & { steamId: 
 
   return {
     ...team,
-    players: team.players.map(({ id, name, seating, isOnline, checkedInAt }): PublicMatchPlayer => ({
+    players: team.players.map(({ id, name, nickname, seating, isOnline, checkedInAt }): PublicMatchPlayer => ({
       id,
       name,
+      nickname,
       seating,
       isOnline,
       checkedInAt,
