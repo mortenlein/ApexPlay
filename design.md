@@ -194,6 +194,15 @@ the full value is also shown elsewhere. Never set a fixed `max-w-[…px]` on a n
 - **Player** — Steam login: register, team invite link, queue position, notifications.
 - **Control** — admin (`/admin`) + marshal (`/marshal/dashboard`). Day-to-day: `docs/LAN-RUNBOOK.md`.
 
+
+### Alpha modifiers on tokens
+
+Every colour token is declared through `color-mix(... <alpha-value> ...)` in `tailwind.config.ts`,
+so `bg-danger/15`, `border-brand/30` and friends compile. **Do not "simplify" a token back to a
+bare `var(--x)`**: Tailwind then emits *nothing at all* for the `/alpha` variant, so the tint
+silently vanishes rather than failing loudly. Solid usage is unaffected either way, which is
+exactly what makes the regression hard to spot.
+
 ## 7. Do / Don't
 
 **Do** use the Tailwind semantic utilities; use `StatusBadge` for any match/tournament state;

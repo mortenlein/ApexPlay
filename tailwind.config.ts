@@ -23,68 +23,73 @@ const config: Config = {
     theme: {
         extend: {
             colors: {
+                // Every token below is wrapped in color-mix so Tailwind's alpha modifiers
+                // (`bg-danger/15`, `border-brand/30`) actually compile. A bare `var(--x)` value
+                // makes Tailwind emit NOTHING for the /alpha variant — the tint silently
+                // disappears instead of failing loudly. With <alpha-value> substituted as 1 by
+                // default, the solid form is unchanged.
                 // --- surfaces ---
-                page: "var(--mds-page)",
-                card: "var(--mds-card)",
-                "card-hover": "var(--mds-card-hover)",
-                field: "var(--mds-input)",
+                page: "color-mix(in oklab, var(--mds-page) calc(<alpha-value> * 100%), transparent)",
+                card: "color-mix(in oklab, var(--mds-card) calc(<alpha-value> * 100%), transparent)",
+                "card-hover": "color-mix(in oklab, var(--mds-card-hover) calc(<alpha-value> * 100%), transparent)",
+                field: "color-mix(in oklab, var(--mds-input) calc(<alpha-value> * 100%), transparent)",
                 // Raw surface steps, for anything that needs more than page/card.
-                "surface-0": "var(--bg-0)",
-                "surface-1": "var(--bg-1)",
-                "surface-2": "var(--bg-2)",
-                "surface-3": "var(--bg-3)",
-                "surface-4": "var(--bg-4)",
+                "surface-0": "color-mix(in oklab, var(--bg-0) calc(<alpha-value> * 100%), transparent)",
+                "surface-1": "color-mix(in oklab, var(--bg-1) calc(<alpha-value> * 100%), transparent)",
+                "surface-2": "color-mix(in oklab, var(--bg-2) calc(<alpha-value> * 100%), transparent)",
+                "surface-3": "color-mix(in oklab, var(--bg-3) calc(<alpha-value> * 100%), transparent)",
+                "surface-4": "color-mix(in oklab, var(--bg-4) calc(<alpha-value> * 100%), transparent)",
 
                 // --- lines ---
-                line: "var(--mds-border)",
-                "line-hover": "var(--mds-border-hover)",
-                "line-strong": "var(--line-2)",
-                "line-field": "var(--mds-input-border)",
+                line: "color-mix(in oklab, var(--mds-border) calc(<alpha-value> * 100%), transparent)",
+                "line-hover": "color-mix(in oklab, var(--mds-border-hover) calc(<alpha-value> * 100%), transparent)",
+                "line-strong": "color-mix(in oklab, var(--line-2) calc(<alpha-value> * 100%), transparent)",
+                "line-field": "color-mix(in oklab, var(--mds-input-border) calc(<alpha-value> * 100%), transparent)",
 
                 // --- brand / action ---
-                brand: "var(--mds-action)",
-                "brand-hover": "var(--mds-action-hover)",
-                "brand-soft": "var(--mds-action-soft)",
-                "brand-ink": "var(--accent-ink)",
-                "brand-line": "var(--accent-line)",
+                brand: "color-mix(in oklab, var(--mds-action) calc(<alpha-value> * 100%), transparent)",
+                "brand-hover": "color-mix(in oklab, var(--mds-action-hover) calc(<alpha-value> * 100%), transparent)",
+                "brand-soft": "color-mix(in oklab, var(--mds-action-soft) calc(<alpha-value> * 100%), transparent)",
+                "brand-ink": "color-mix(in oklab, var(--accent-ink) calc(<alpha-value> * 100%), transparent)",
+                "brand-line": "color-mix(in oklab, var(--accent-line) calc(<alpha-value> * 100%), transparent)",
 
                 // --- status ---
-                success: "var(--mds-green)",
-                danger: "var(--mds-red)",
-                warning: "var(--mds-amber)",
-                "success-dim": "var(--win-dim)",
-                "danger-dim": "var(--loss-dim)",
-                "warning-dim": "var(--warn-dim)",
+                success: "color-mix(in oklab, var(--mds-green) calc(<alpha-value> * 100%), transparent)",
+                danger: "color-mix(in oklab, var(--mds-red) calc(<alpha-value> * 100%), transparent)",
+                warning: "color-mix(in oklab, var(--mds-amber) calc(<alpha-value> * 100%), transparent)",
+                "success-dim": "color-mix(in oklab, var(--win-dim) calc(<alpha-value> * 100%), transparent)",
+                "danger-dim": "color-mix(in oklab, var(--loss-dim) calc(<alpha-value> * 100%), transparent)",
+                "warning-dim": "color-mix(in oklab, var(--warn-dim) calc(<alpha-value> * 100%), transparent)",
                 // LIVE is its own token, not "danger": a live match is not an error, and it is
                 // the one thing on screen allowed to be the loudest.
-                live: "var(--live)",
-                "live-ink": "var(--live-ink)",
+                live: "color-mix(in oklab, var(--live) calc(<alpha-value> * 100%), transparent)",
+                "live-ink": "color-mix(in oklab, var(--live-ink) calc(<alpha-value> * 100%), transparent)",
 
                 // --- CS2 side coding ---
-                "team-t": "var(--t)",
-                "team-t-dim": "var(--t-dim)",
-                "team-t-ghost": "var(--t-ghost)",
-                "team-ct": "var(--ct)",
-                "team-ct-dim": "var(--ct-dim)",
-                "team-ct-ghost": "var(--ct-ghost)",
+                "team-t": "color-mix(in oklab, var(--t) calc(<alpha-value> * 100%), transparent)",
+                "team-t-dim": "color-mix(in oklab, var(--t-dim) calc(<alpha-value> * 100%), transparent)",
+                "team-t-ghost": "color-mix(in oklab, var(--t-ghost) calc(<alpha-value> * 100%), transparent)",
+                "team-ct": "color-mix(in oklab, var(--ct) calc(<alpha-value> * 100%), transparent)",
+                "team-ct-dim": "color-mix(in oklab, var(--ct-dim) calc(<alpha-value> * 100%), transparent)",
+                "team-ct-ghost": "color-mix(in oklab, var(--ct-ghost) calc(<alpha-value> * 100%), transparent)",
 
                 // --- ink ---
-                fg: "var(--mds-text-primary)",
-                "fg-soft": "var(--ink-1)",
-                "fg-muted": "var(--mds-text-muted)",
-                "fg-subtle": "var(--mds-text-subtle)",
-                "fg-faint": "var(--ink-4)",
+                fg: "color-mix(in oklab, var(--mds-text-primary) calc(<alpha-value> * 100%), transparent)",
+                "fg-soft": "color-mix(in oklab, var(--ink-1) calc(<alpha-value> * 100%), transparent)",
+                "fg-muted": "color-mix(in oklab, var(--mds-text-muted) calc(<alpha-value> * 100%), transparent)",
+                "fg-subtle": "color-mix(in oklab, var(--mds-text-subtle) calc(<alpha-value> * 100%), transparent)",
+                "fg-faint": "color-mix(in oklab, var(--ink-4) calc(<alpha-value> * 100%), transparent)",
 
                 // Theme-aware surface tints. `bg-tint` replaces `bg-white/5`, which is
                 // invisible in light mode. Same idea for hover fills and faint washes.
-                tint: "var(--tint-1)",
-                "tint-strong": "var(--tint-2)",
-                "tint-faint": "var(--tint-3)",
+                tint: "color-mix(in oklab, var(--tint-1) calc(<alpha-value> * 100%), transparent)",
+                "tint-strong": "color-mix(in oklab, var(--tint-2) calc(<alpha-value> * 100%), transparent)",
+                "tint-faint": "color-mix(in oklab, var(--tint-3) calc(<alpha-value> * 100%), transparent)",
 
                 // --- overlays ---
-                scrim: "var(--scrim)",
-                overlay: "var(--mds-overlay)",
-                ring: "var(--ring)",
+                scrim: "color-mix(in oklab, var(--scrim) calc(<alpha-value> * 100%), transparent)",
+                overlay: "color-mix(in oklab, var(--mds-overlay) calc(<alpha-value> * 100%), transparent)",
+                ring: "color-mix(in oklab, var(--ring) calc(<alpha-value> * 100%), transparent)",
             },
             fontFamily: {
                 // One job each (design.md §3): Inter for prose/UI/names, JetBrains Mono for
