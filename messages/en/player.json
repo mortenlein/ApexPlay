@@ -1,1 +1,99 @@
-{}
+{
+  "desk": {
+    "label": "Player desk",
+    "signInTitle": "Sign in to see your matches",
+    "signInBody": "Connect with Steam to see your next match, your seat and your place in the queue.",
+    "continueWithSteam": "Continue with Steam",
+    "errorTitle": "Couldn't load your desk",
+    "errorBody": "Please try again in a moment."
+  },
+  "alerts": {
+    "on": "Match alerts on",
+    "enable": "Enable match alerts",
+    "enabling": "Enabling…",
+    "tryAgain": "Try again",
+    "hint": "Get a push when you are called.",
+    "errorHint": "Alerts could not be turned on."
+  },
+  "queue": {
+    "label": "Your queue",
+    "region": "Match status",
+    "refreshFailed": "Couldn't refresh your queue position",
+    "matchup": "{home} <vs>vs</vs> {away}",
+    "yourTeam": "Your team"
+  },
+  "headline": {
+    "live": "Live now<rest> — get to your station</rest>",
+    "called": "You're up<rest> — go to your station</rest>",
+    "next": "You're up next",
+    "matchesAhead": "{count, plural, one {# match ahead of you} other {# matches ahead of you}}"
+  },
+  "stage": {
+    "grandFinal": "Grand Final",
+    "thirdPlace": "3rd Place",
+    "lowerBracket": "Lower Bracket · R{round}",
+    "round": "Round {round}"
+  },
+  "fact": {
+    "match": "Your match",
+    "matchLine": "{stage} · BO{bestOf}",
+    "stillToPlay": "Still to play",
+    "stillToPlayCount": "{count, plural, one {# match} other {# matches}}"
+  },
+  "action": {
+    "oneClickJoin": "One-click join",
+    "viewBracket": "View bracket",
+    "openTournament": "Open tournament",
+    "browseTournaments": "Browse tournaments",
+    "browseAll": "Browse all"
+  },
+  "chip": {
+    "knockedOut": "Knocked out",
+    "notDrawn": "Not drawn yet",
+    "playingNow": "Playing now",
+    "youreUp": "You're up",
+    "upNext": "Up next",
+    "matchesAhead": "{count, plural, one {# match ahead} other {# matches ahead}}"
+  },
+  "standby": {
+    "knockedOutTitle": "Knocked out",
+    "waitingTitle": "Waiting for the bracket",
+    "outOfNamed": "Your team is out of <name>{tournament}</name>. The rest of it is still being played.",
+    "outOfUnnamed": "Your team is out of the bracket. The rest of it is still being played.",
+    "notDrawnNamed": "<name>{tournament}</name> hasn't been drawn yet. Your match, your seat and your place in line show up here the moment it is.",
+    "notDrawnNone": "None of your tournaments has been drawn yet. Your match, your seat and your place in line show up here the moment it is."
+  },
+  "empty": {
+    "title": "You're not in a tournament yet",
+    "description": "Sign up for one and your match, your seat and your place in line live here."
+  },
+  "tournaments": {
+    "label": "Your tournaments"
+  },
+  "seat": {
+    "label": "Your seat",
+    "none": "No seat set",
+    "set": "Set your seat",
+    "helper": "Marshals use this to find you. You can change it later.",
+    "placeholder": "e.g. B12",
+    "cancelAria": "Cancel seat edit",
+    "savedTitle": "Seat saved: {seat}",
+    "savedHint": "Marshals can now find you on the floor.",
+    "clearedTitle": "Seat cleared",
+    "errorTitle": "Could not save your seat",
+    "errorHint": "Please try again."
+  },
+  "profile": {
+    "label": "Player profile",
+    "signInTitle": "Sign in to see your profile",
+    "signInBody": "Your teams, the tournaments you're in, and the seat each of them knows you by.",
+    "steamConnected": "Steam connected",
+    "statTournaments": "{count, plural, one {<n>#</n> tournament} other {<n>#</n> tournaments}}",
+    "statOpenMatches": "{count, plural, one {<n>#</n> open match} other {<n>#</n> open matches}}",
+    "statSeats": "{count, plural, one {<n>#</n> seat saved} other {<n>#</n> seats saved}}",
+    "loading": "Loading your tournaments…",
+    "emptyTitle": "No tournaments yet",
+    "emptyBody": "Sign up for one and it shows up here with your team and your seat.",
+    "leaderSuffix": "(leader)"
+  }
+}

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowRight } from 'lucide-react';
 import { isCalled, isLive } from '@/lib/match-status';
@@ -26,6 +27,8 @@ export function PlayerHome({
   profile: any;
   loading?: boolean;
 }) {
+  const t = useTranslations('player');
+  const tCommon = useTranslations('common');
   const queryClient = useQueryClient();
   const { registrations = [], activeMatches = [] } = profile || {};
   const refreshProfile = () => queryClient.invalidateQueries({ queryKey: ['profile'] });
@@ -58,7 +61,7 @@ export function PlayerHome({
       tournamentId,
       tournamentName: match.tournament.name,
       game: match.tournament.game,
-      teamName: mine?.name ?? 'Your team',
+      teamName: mine?.name ?? t('queue.yourTeam'),
       state: 'SCHEDULED',
       matchesAhead: null,
       totalPending: 0,
@@ -68,7 +71,7 @@ export function PlayerHome({
         status: match.status,
         bracketType: match.bracketType,
         bestOf: match.bestOf ?? 1,
-        opponent: opponent?.name ?? 'TBD',
+        opponent: opponent?.name ?? tCommon('tbd'),
         youAreHome,
         hasOpponent: Boolean(opponent?.name),
       },
@@ -80,7 +83,7 @@ export function PlayerHome({
       <main className="mds-container space-y-6 py-6 sm:py-8">
         <header className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
           <div>
-            <p className="mds-uppercase-label text-fg-subtle">Player desk</p>
+            <p className="mds-uppercase-label text-fg-subtle">{t('desk.label')}</p>
             {user?.name && <h1 className="mds-name-lg mt-0.5 text-2xl">{user.name}</h1>}
           </div>
           <EnableAlertsButton />
@@ -104,21 +107,18 @@ export function PlayerHome({
 
 /** What the queue says about a tournament, as a chip on its card. Never a raw state enum. */
 function StateChip({ entry }: { entry?: QueueEntry }) {
+  const t = useTranslations('player');
   if (!entry) return null;
-  if (entry.state === 'OUT') return <Badge tone="done">Knocked out</Badge>;
+  if (entry.state === 'OUT') return <Badge tone="done">{t('chip.knockedOut')}</Badge>;
   if (entry.state === 'NO_BRACKET' || entry.state === 'AWAITING_DRAW') {
-    return <Badge tone="neutral">Not drawn yet</Badge>;
+    return <Badge tone="neutral">{t('chip.notDrawn')}</Badge>;
   }
   const status = (entry.nextMatch?.status || '').toUpperCase();
-  if (isLive(status)) return <Badge tone="live">Playing now</Badge>;
-  if (isCalled(status)) return <Badge tone="ready">You&apos;re up</Badge>;
-  if (entry.matchesAhead === 0) return <Badge tone="ready">Up next</Badge>;
+  if (isLive(status)) return <Badge tone="live">{t('chip.playingNow')}</Badge>;
+  if (isCalled(status)) return <Badge tone="ready">{t('chip.youreUp')}</Badge>;
+  if (entry.matchesAhead === 0) return <Badge tone="ready">{t('chip.upNext')}</Badge>;
   if (entry.matchesAhead === null) return null;
-  return (
-    <Badge tone="neutral">
-      {entry.matchesAhead} {entry.matchesAhead === 1 ? 'match' : 'matches'} ahead
-    </Badge>
-  );
+  return <Badge tone="neutral">{t('chip.matchesAhead', { count: entry.matchesAhead })}</Badge>;
 }
 
 function TournamentList({
@@ -130,13 +130,15 @@ function TournamentList({
   loading: boolean;
   onSeatSaved: () => void;
 }) {
+  const t = useTranslations('player');
+  const tCommon = useTranslations('common');
   const { data } = useMyQueue({ enabled: !loading });
   const byTournament = new Map((data?.queue ?? []).map((e) => [e.tournamentId, e]));
 
   if (loading && registrations.length === 0) {
     return (
       <section className="space-y-3" aria-busy="true">
-        <p className="mds-uppercase-label text-fg-subtle">Your tournaments</p>
+        <p className="mds-uppercase-label text-fg-subtle">{t('tournaments.label')}</p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           <Card className="space-y-3">
             <div className="h-3 w-1/4 animate-pulse rounded-sm bg-white/5" />
@@ -154,9 +156,9 @@ function TournamentList({
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="mds-uppercase-label text-fg-subtle">Your tournaments</p>
+        <p className="mds-uppercase-label text-fg-subtle">{t('tournaments.label')}</p>
         <Link href="/tournaments" className="text-xs font-semibold text-brand hover:underline">
-          Browse all
+          {t('action.browseAll')}
         </Link>
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -179,11 +181,11 @@ function TournamentList({
             </div>
             <div className="grid grid-cols-2 gap-3 border-t border-line pt-3">
               <div>
-                <p className="mds-uppercase-label text-fg-subtle">Team</p>
+                <p className="mds-uppercase-label text-fg-subtle">{tCommon('team')}</p>
                 <p className="mds-name mt-1 text-sm">{reg.team.name}</p>
               </div>
               <div>
-                <p className="mds-uppercase-label text-fg-subtle">Your seat</p>
+                <p className="mds-uppercase-label text-fg-subtle">{t('seat.label')}</p>
                 <SeatEditor
                   className="mt-1"
                   tournamentId={reg.team.tournament.id}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Check, Loader2, Pencil, X } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { clientApi } from '@/lib/client-api';
@@ -8,8 +9,6 @@ import { useToast } from '@/components/ToastProvider';
 
 /** Max length of Player.seating accepted by PATCH /api/me/player. */
 export const SEAT_MAX_LENGTH = 16;
-
-export const SEAT_HELPER_TEXT = 'Marshals use this to find you. You can change it later.';
 
 /**
  * Inline "your seat" editor for the signed-in player's own Player row in one tournament.
@@ -32,6 +31,8 @@ export function SeatEditor({
     size?: 'sm' | 'lg';
     className?: string;
 }) {
+    const t = useTranslations('player');
+    const tCommon = useTranslations('common');
     const toast = useToast();
     const [editing, setEditing] = useState(false);
     const [value, setValue] = useState(seating || '');
@@ -45,11 +46,13 @@ export function SeatEditor({
             setValue(player?.seating || '');
             setEditing(false);
             toast.success(
-                player?.seating ? `Seat saved: ${player.seating}` : 'Seat cleared',
-                player?.seating ? 'Marshals can now find you on the floor.' : undefined
+                player?.seating
+                    ? t('seat.savedTitle', { seat: player.seating })
+                    : t('seat.clearedTitle'),
+                player?.seating ? t('seat.savedHint') : undefined
             );
         } catch (error: any) {
-            toast.error('Could not save your seat', error?.message || 'Please try again.');
+            toast.error(t('seat.errorTitle'), error?.message || t('seat.errorHint'));
         } finally {
             setSaving(false);
         }
@@ -80,12 +83,12 @@ export function SeatEditor({
                     </span>
                 ) : (
                     <span className={size === 'lg' ? 'text-sm text-fg-muted' : 'text-xs text-fg-subtle'}>
-                        No seat set
+                        {t('seat.none')}
                     </span>
                 )}
                 <Button type="button" variant="ghost" size="sm" onClick={startEditing}>
                     <Pencil size={12} />
-                    {seating ? 'Edit' : 'Set your seat'}
+                    {seating ? tCommon('edit') : t('seat.set')}
                 </Button>
             </div>
         );
@@ -98,8 +101,8 @@ export function SeatEditor({
                     autoFocus
                     value={value}
                     maxLength={SEAT_MAX_LENGTH}
-                    placeholder="e.g. B12"
-                    aria-label="Your seat"
+                    placeholder={t('seat.placeholder')}
+                    aria-label={t('seat.label')}
                     onClick={(event) => event.stopPropagation()}
                     onChange={(event) => setValue(event.target.value)}
                     onKeyDown={(event) => {
@@ -125,13 +128,13 @@ export function SeatEditor({
                     }}
                 >
                     {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
-                    Save
+                    {tCommon('save')}
                 </Button>
                 <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    aria-label="Cancel seat edit"
+                    aria-label={t('seat.cancelAria')}
                     disabled={saving}
                     onClick={(event) => {
                         event.preventDefault();
@@ -142,7 +145,7 @@ export function SeatEditor({
                     <X size={12} />
                 </Button>
             </div>
-            <p className="text-xs text-fg-subtle">{SEAT_HELPER_TEXT}</p>
+            <p className="text-xs text-fg-subtle">{t('seat.helper')}</p>
         </div>
     );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Bell, BellOff, BellRing } from 'lucide-react';
 import { Button } from '@/components/ui';
 
@@ -15,6 +16,7 @@ type State = 'unsupported' | 'idle' | 'enabling' | 'enabled' | 'error';
 
 /** Lets a signed-in player opt into web-push match alerts. Hidden when unsupported/unconfigured. */
 export function EnableAlertsButton() {
+  const t = useTranslations('player');
   const [state, setState] = useState<State>('idle');
 
   useEffect(() => {
@@ -77,7 +79,7 @@ export function EnableAlertsButton() {
     return (
       <span className="inline-flex items-center gap-2 text-xs font-semibold text-success">
         <BellRing size={14} />
-        Match alerts on
+        {t('alerts.on')}
       </span>
     );
   }
@@ -89,11 +91,15 @@ export function EnableAlertsButton() {
       <Button variant="secondary" size="sm" onClick={enable} disabled={state === 'enabling'}>
         {state === 'error' ? <BellOff size={14} /> : <Bell size={14} />}
         <span className="whitespace-nowrap">
-          {state === 'enabling' ? 'Enabling…' : state === 'error' ? 'Try again' : 'Enable match alerts'}
+          {state === 'enabling'
+            ? t('alerts.enabling')
+            : state === 'error'
+              ? t('alerts.tryAgain')
+              : t('alerts.enable')}
         </span>
       </Button>
       <p className="text-xs text-fg-subtle">
-        {state === 'error' ? 'Alerts could not be turned on.' : 'Get a push when you are called.'}
+        {state === 'error' ? t('alerts.errorHint') : t('alerts.hint')}
       </p>
     </div>
   );

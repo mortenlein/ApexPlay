@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Radio, Flag, Hourglass, AlertTriangle, RefreshCw, Zap, ArrowRight, Trophy, Clock } from 'lucide-react';
 import { Button, Card, StatusBadge, EmptyState } from '@/components/ui';
 import { isCalled, isLive } from '@/lib/match-status';
@@ -41,16 +42,17 @@ export function useMyQueue({ poll = false, enabled = true }: { poll?: boolean; e
   });
 }
 
-function stageLabel(bracketType: string, round: number) {
+/** The message key for where a match sits, so the stage name is translated, never built. */
+function stageKey(bracketType: string): 'grandFinal' | 'thirdPlace' | 'lowerBracket' | 'round' {
   switch (bracketType) {
     case 'GRAND_FINAL':
-      return 'Grand Final';
+      return 'grandFinal';
     case 'THIRD_PLACE':
-      return '3rd Place';
+      return 'thirdPlace';
     case 'LOSERS':
-      return `Lower Bracket · R${round}`;
+      return 'lowerBracket';
     default:
-      return `Round ${round}`;
+      return 'round';
   }
 }
 
@@ -66,27 +68,24 @@ function toneOf(entry: QueueEntry): Tone {
 /**
  * The one line the player came to read. A called or live match always outranks the queue
  * position — "3 matches ahead" is wrong and alarming once a marshal has called you.
+ *
+ * The words live in `player.headline.*`: one whole sentence per tone, with the trailing clause
+ * marked up as <rest> rather than glued on here, so the em dash and the word order belong to
+ * the translation. The waiting line is an ICU plural — "1 kamper foran deg" must not exist.
  */
-function headlineOf(entry: QueueEntry, tone: Tone) {
-  if (tone === 'live') {
-    return {
-      icon: <Radio size={20} className="animate-pulse" />,
-      lead: 'Live now',
-      rest: 'get to your station',
-    };
-  }
-  if (tone === 'called') {
-    return { icon: <Flag size={20} />, lead: "You're up", rest: 'go to your station' };
-  }
-  if (tone === 'next') {
-    return { icon: <Flag size={20} />, lead: "You're up next", rest: null };
-  }
-  const n = entry.matchesAhead ?? 0;
-  return {
-    icon: <Hourglass size={18} />,
-    lead: `${n} ${n === 1 ? 'match' : 'matches'} ahead of you`,
-    rest: null,
-  };
+function Headline({ entry, tone }: { entry: QueueEntry; tone: Tone }) {
+  const t = useTranslations('player');
+  const rest = (chunks: React.ReactNode) => <span className="font-normal opacity-80">{chunks}</span>;
+  if (tone === 'live') return <>{t.rich('headline.live', { rest })}</>;
+  if (tone === 'called') return <>{t.rich('headline.called', { rest })}</>;
+  if (tone === 'next') return <>{t('headline.next')}</>;
+  return <>{t('headline.matchesAhead', { count: entry.matchesAhead ?? 0 })}</>;
+}
+
+function headlineIcon(tone: Tone) {
+  if (tone === 'live') return <Radio size={20} className="animate-pulse" />;
+  if (tone === 'called' || tone === 'next') return <Flag size={20} />;
+  return <Hourglass size={18} />;
 }
 
 // Called and live are solid fills on purpose: this is the frame a player has to read from
@@ -143,9 +142,10 @@ function CallCard({
   connectUrl: string | null;
   onSeatSaved?: () => void;
 }) {
+  const t = useTranslations('player');
+  const tCommon = useTranslations('common');
   const m = entry.nextMatch!;
   const tone = toneOf(entry);
-  const { icon, lead, rest } = headlineOf(entry, tone);
   const onNow = tone === 'live' || tone === 'called';
 
   return (
@@ -154,12 +154,11 @@ function CallCard({
       {/* role=status: the queue polls, so this line changes under the player's eyes — a screen
           reader should announce "you're up" the moment a marshal calls the match. */}
       <div role="status" className={`flex items-start gap-3 px-4 py-3 sm:px-5 ${STRIP[tone]}`}>
-        <span className="mt-0.5 shrink-0">{icon}</span>
+        <span className="mt-0.5 shrink-0">{headlineIcon(tone)}</span>
         <p
           className={`font-brand font-bold leading-tight [text-wrap:balance] ${onNow ? 'text-2xl sm:text-3xl' : 'text-base sm:text-lg'}`}
         >
-          {lead}
-          {rest ? <span className="font-normal opacity-80"> — {rest}</span> : null}
+          <Headline entry={entry} tone={tone} />
         </p>
       </div>
 
@@ -171,13 +170,16 @@ function CallCard({
         </div>
 
         <h2 className="mds-name-lg text-xl sm:text-2xl">
-          {entry.teamName} <span className="font-normal text-fg-subtle">vs</span>{' '}
-          {m.hasOpponent ? m.opponent : 'TBD'}
+          {t.rich('queue.matchup', {
+            home: entry.teamName,
+            away: m.hasOpponent ? m.opponent : tCommon('tbd'),
+            vs: (chunks) => <span className="font-normal text-fg-subtle">{chunks}</span>,
+          })}
         </h2>
 
         <div className="grid gap-3 sm:grid-cols-3">
           <Fact
-            label="Your seat"
+            label={t('seat.label')}
             accent={tone === 'live' ? 'danger' : tone === 'called' ? 'success' : undefined}
             className={onNow ? 'sm:col-span-2' : ''}
           >
@@ -188,15 +190,18 @@ function CallCard({
               onSaved={() => onSeatSaved?.()}
             />
           </Fact>
-          <Fact label="Your match">
+          <Fact label={t('fact.match')}>
             <p className="mds-numeric text-sm font-bold">
-              {stageLabel(m.bracketType, m.round)} · BO{m.bestOf}
+              {t('fact.matchLine', {
+                stage: t(`stage.${stageKey(m.bracketType)}`, { round: m.round }),
+                bestOf: m.bestOf,
+              })}
             </p>
           </Fact>
           {!onNow && entry.totalPending > 0 && (
-            <Fact label="Still to play">
+            <Fact label={t('fact.stillToPlay')}>
               <p className="mds-numeric text-sm font-bold">
-                {entry.totalPending} {entry.totalPending === 1 ? 'match' : 'matches'}
+                {t('fact.stillToPlayCount', { count: entry.totalPending })}
               </p>
             </Fact>
           )}
@@ -209,13 +214,13 @@ function CallCard({
             <a href={connectUrl} data-testid={`join-match-${m.id}`}>
               <Button>
                 <Zap size={15} />
-                One-click join
+                {t('action.oneClickJoin')}
               </Button>
             </a>
           )}
           <Link href={`/tournaments/${entry.tournamentId}`}>
             <Button variant="secondary">
-              View bracket
+              {t('action.viewBracket')}
               <ArrowRight size={15} />
             </Button>
           </Link>
@@ -230,42 +235,35 @@ function CallCard({
  * the desk must never dress "nothing to do" up as a fixture, or promise a match that isn't coming.
  */
 function Standby({ entries }: { entries: QueueEntry[] }) {
+  const t = useTranslations('player');
   const out = entries.filter((e) => e.state === 'OUT');
   const waiting = entries.filter((e) => e.state !== 'OUT');
   const knockedOut = waiting.length === 0 && out.length > 0;
   const one = knockedOut ? (out.length === 1 ? out[0] : null) : waiting.length === 1 ? waiting[0] : null;
+  // Whole sentences, named and unnamed, rather than one sentence assembled around a hole: the
+  // tournament name has to stay a bare name (Norwegian puts the definite form on the noun, so
+  // "ute av {navn}" works and "ute av {navn}en" cannot).
+  const name = (chunks: React.ReactNode) => <span className="mds-name">{chunks}</span>;
+  const body = knockedOut
+    ? one
+      ? t.rich('standby.outOfNamed', { tournament: one.tournamentName, name })
+      : t('standby.outOfUnnamed')
+    : one
+      ? t.rich('standby.notDrawnNamed', { tournament: one.tournamentName, name })
+      : t('standby.notDrawnNone');
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-dashed border-line bg-white/[0.02] px-5 py-6">
       <div className="space-y-1">
         <h2 className="font-brand text-lg font-bold">
-          {knockedOut ? 'Knocked out' : 'Waiting for the bracket'}
+          {knockedOut ? t('standby.knockedOutTitle') : t('standby.waitingTitle')}
         </h2>
-        <p className="max-w-xl text-sm text-fg-muted">
-          {knockedOut ? (
-            <>
-              Your team is out of{' '}
-              {one ? <span className="mds-name">{one.tournamentName}</span> : 'the bracket'}. The rest of it is
-              still being played.
-            </>
-          ) : (
-            <>
-              {one ? (
-                <>
-                  <span className="mds-name">{one.tournamentName}</span> hasn&apos;t been drawn yet.
-                </>
-              ) : (
-                'None of your tournaments has been drawn yet.'
-              )}{' '}
-              Your match, your seat and your place in line show up here the moment it is.
-            </>
-          )}
-        </p>
+        <p className="max-w-xl text-sm text-fg-muted">{body}</p>
       </div>
       <Link href={one ? `/tournaments/${one.tournamentId}` : '/tournaments'}>
         <Button variant="secondary">
           {!knockedOut && <Clock size={15} />}
-          {knockedOut ? 'View bracket' : 'Open tournament'}
+          {knockedOut ? t('action.viewBracket') : t('action.openTournament')}
           {knockedOut && <ArrowRight size={15} />}
         </Button>
       </Link>
@@ -308,6 +306,8 @@ export function MyQueue({
   registered?: boolean;
   onSeatSaved?: () => void;
 }) {
+  const t = useTranslations('player');
+  const tCommon = useTranslations('common');
   const { data, isLoading, error, refetch, isFetching } = useMyQueue({ poll: true, enabled });
 
   const entries = data?.queue ?? fallback;
@@ -321,7 +321,7 @@ export function MyQueue({
   if ((!enabled || isLoading || profileLoading) && entries.length === 0) {
     return (
       <section className="space-y-3" aria-busy="true">
-        <p className="mds-uppercase-label text-fg-subtle">Your queue</p>
+        <p className="mds-uppercase-label text-fg-subtle">{t('queue.label')}</p>
         <CardSkeleton />
       </section>
     );
@@ -333,28 +333,28 @@ export function MyQueue({
     <Card className="flex flex-wrap items-center justify-between gap-3 border-danger">
       <div className="flex items-center gap-2">
         <AlertTriangle size={16} className="text-danger" />
-        <p className="text-sm font-semibold">Couldn&apos;t refresh your queue position</p>
+        <p className="text-sm font-semibold">{t('queue.refreshFailed')}</p>
       </div>
       <Button variant="secondary" size="sm" onClick={() => void refetch()} disabled={isFetching}>
         <RefreshCw size={14} className={isFetching ? 'animate-spin' : undefined} />
-        Retry
+        {tCommon('retry')}
       </Button>
     </Card>
   ) : null;
 
   if (scheduled.length === 0) {
     return (
-      <section className="space-y-3" aria-label="Match status">
+      <section className="space-y-3" aria-label={t('queue.region')}>
         {errorBanner}
         {entries.length > 0 && <Standby entries={entries} />}
         {entries.length === 0 && !registered && (
           <EmptyState
             icon={<Trophy size={26} />}
-            title="You're not in a tournament yet"
-            description="Sign up for one and your match, your seat and your place in line live here."
+            title={t('empty.title')}
+            description={t('empty.description')}
             action={
               <Link href="/tournaments">
-                <Button>Browse tournaments</Button>
+                <Button>{t('action.browseTournaments')}</Button>
               </Link>
             }
           />
@@ -365,7 +365,7 @@ export function MyQueue({
 
   return (
     <section className="space-y-3">
-      <p className="mds-uppercase-label text-fg-subtle">Your queue</p>
+      <p className="mds-uppercase-label text-fg-subtle">{t('queue.label')}</p>
       {errorBanner}
       {scheduled.map((entry) => {
         const server = servers[entry.nextMatch!.id];
