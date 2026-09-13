@@ -1,1 +1,37 @@
-{}
+{
+  "eyebrow": "CS2 LAN tournaments",
+  "subtitle": "Run a LAN from sign-up to grand final: Steam registration, seeded brackets, live match control and an OBS overlay — one surface the whole room can follow.",
+  "playingNow": "{count, plural, one {# match is being played right now} other {# matches are being played right now}}",
+  "nothingPlaying": "Nothing is being played right now.",
+  "ctaDashboard": "My dashboard",
+  "ctaOrganizer": "Organizer",
+  "floorHeadingLive": "Playing now",
+  "floorHeadingCalled": "Called to station",
+  "moreCalled": "{count} more called to station",
+  "listed": "{count, plural, other {# listed}}",
+  "browseAll": "Browse all →",
+  "emptyTitle": "No tournaments yet",
+  "emptyAdmin": "Create the first tournament from the organizer workspace.",
+  "emptyPublic": "Nothing is running right now. Check back when the LAN opens.",
+  "openOrganizer": "Open organizer",
+  "latestResults": "Latest results",
+  "roundGrandFinal": "Grand final",
+  "roundThirdPlace": "Third place",
+  "roundLower": "Lower round {round}",
+  "round": "Round {round}",
+  "login": {
+    "title": "Sign In",
+    "titleStaff": "Staff Access",
+    "blurb": "Sign in with Steam to register for tournaments and follow your own matches.",
+    "blurbStaff": "Sign in with Steam. Organizer and marshal tools unlock automatically for accounts on the staff allowlist.",
+    "steamButton": "Sign in through Steam",
+    "backHome": "Back to home",
+    "mockPersonas": "Mock personas (dev only)",
+    "loadingLabel": "login",
+    "errorTitle": "Login Error",
+    "errorBody": "The login page failed to load.",
+    "notFoundTitle": "Login Route Not Found",
+    "notFoundBody": "This login route is not available.",
+    "openLogin": "Open Login"
+  }
+}

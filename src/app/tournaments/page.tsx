@@ -4,9 +4,11 @@ import { getQueryClient } from "@/lib/query-client";
 import TournamentsOverviewClient from "@/components/TournamentsOverviewClient";
 import prisma from "@/lib/prisma";
 import { getTournamentStage } from "@/lib/tournament-stage";
+import { getTranslations } from "next-intl/server";
 import { RouteLoadingState } from "@/components/RouteStates";
 
 export default async function TournamentsOverview() {
+  const t = await getTranslations("directory");
   const queryClient = getQueryClient();
 
   // Prefetch the initial tournament list
@@ -42,7 +44,7 @@ export default async function TournamentsOverview() {
   });
 
   return (
-    <Suspense fallback={<RouteLoadingState label="tournaments" />}>
+    <Suspense fallback={<RouteLoadingState label={t("loadingLabel")} />}>
       <HydrationBoundary state={dehydrate(queryClient)}>
         <TournamentsOverviewClient />
       </HydrationBoundary>

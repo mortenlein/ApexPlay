@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
 type ToastTone = 'success' | 'error' | 'info';
@@ -21,6 +22,7 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const tc = useTranslations('common');
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const removeToast = useCallback((id: string) => {
@@ -71,7 +73,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 </div>
                 <button
                   type="button"
-                  aria-label="Dismiss notification"
+                  aria-label={tc('close')}
                   onClick={() => removeToast(toast.id)}
                   className="mds-tap rounded-sm p-1 text-fg-subtle transition-colors hover:text-fg"
                 >

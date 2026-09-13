@@ -25,5 +25,16 @@
   "matches": "Kamper",
   "round": "Runde",
   "tournament": "Turnering",
-  "tournaments": "Turneringer"
+  "tournaments": "Turneringer",
+  "format": "Format",
+  "teamCount": "{count, plural, one {# lag} other {# lag}}",
+  "liveMatches": "Live-kamper",
+  "matchesLive": "{count, plural, one {# kamp live} other {# kamper live}}",
+  "matchesPlayed": "Kamper spilt",
+  "watchLive": "Se live",
+  "openTournament": "Åpne turneringen",
+  "goHome": "Til forsiden",
+  "skipToContent": "Hopp til innhold",
+  "somethingWentWrong": "Noe gikk galt",
+  "loadingThing": "Laster {thing}"
 }

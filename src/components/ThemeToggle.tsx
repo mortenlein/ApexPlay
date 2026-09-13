@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
+import { useTranslations } from "next-intl";
 import { Sun, Moon } from "lucide-react";
 
 /**
@@ -10,6 +11,7 @@ import { Sun, Moon } from "lucide-react";
  * at 11:00 gets a readable screen, the room gets the dark one at 21:00.
  */
 export default function ThemeToggle() {
+  const t = useTranslations("nav");
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
 
@@ -30,9 +32,9 @@ export default function ThemeToggle() {
       type="button"
       onClick={() => setTheme(isDark ? "light" : "dark")}
       className="mds-tap flex h-9 w-9 items-center justify-center rounded-sm border border-line bg-tint text-fg-muted transition-colors hover:border-line-hover hover:text-fg"
-      aria-label="Toggle Theme"
+      aria-label={t("toggleTheme")}
       aria-pressed={!isDark}
-      title={isDark ? "Switch to light theme" : "Switch to dark theme"}
+      title={isDark ? t("switchToLight") : t("switchToDark")}
     >
       {isDark ? <Sun size={17} aria-hidden /> : <Moon size={17} aria-hidden />}
     </button>

@@ -1,1 +1,37 @@
-{}
+{
+  "eyebrow": "CS2 LAN-turneringer",
+  "subtitle": "Kjør hele LAN-et fra påmelding til finale: Steam-påmelding, seedet kampoppsett, live kampkontroll og en OBS-overlay — én flate hele rommet kan følge.",
+  "playingNow": "{count, plural, one {# kamp spilles akkurat nå} other {# kamper spilles akkurat nå}}",
+  "nothingPlaying": "Ingen kamper spilles akkurat nå.",
+  "ctaDashboard": "Min side",
+  "ctaOrganizer": "Arrangør",
+  "floorHeadingLive": "Spilles nå",
+  "floorHeadingCalled": "Kalt opp",
+  "moreCalled": "{count} til er kalt opp",
+  "listed": "{count, plural, other {# oppført}}",
+  "browseAll": "Se alle →",
+  "emptyTitle": "Ingen turneringer ennå",
+  "emptyAdmin": "Lag den første turneringen i arrangørflaten.",
+  "emptyPublic": "Ingenting går akkurat nå. Kom tilbake når LAN-et åpner.",
+  "openOrganizer": "Åpne arrangør",
+  "latestResults": "Siste resultater",
+  "roundGrandFinal": "Finale",
+  "roundThirdPlace": "Bronsefinale",
+  "roundLower": "Nedre runde {round}",
+  "round": "Runde {round}",
+  "login": {
+    "title": "Logg inn",
+    "titleStaff": "Crew-tilgang",
+    "blurb": "Logg inn med Steam for å melde deg på turneringer og følge dine egne kamper.",
+    "blurbStaff": "Logg inn med Steam. Arrangør- og crew-verktøy låses opp automatisk for kontoer som står på crew-lista.",
+    "steamButton": "Logg inn via Steam",
+    "backHome": "Tilbake til forsiden",
+    "mockPersonas": "Testbrukere (kun i utvikling)",
+    "loadingLabel": "innlogging",
+    "errorTitle": "Feil ved innlogging",
+    "errorBody": "Innloggingssiden kunne ikke lastes.",
+    "notFoundTitle": "Fant ikke innloggingssiden",
+    "notFoundBody": "Denne innloggingsadressen finnes ikke.",
+    "openLogin": "Åpne innlogging"
+  }
+}

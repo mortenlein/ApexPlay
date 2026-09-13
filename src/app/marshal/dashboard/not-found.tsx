@@ -1,14 +1,16 @@
+import { useTranslations } from "next-intl";
 import { RouteNotFoundState } from "@/components/RouteStates";
 
 export default function NotFound() {
+  const t = useTranslations("marshal");
   return (
     <RouteNotFoundState
-      title="Marshal Board Not Found"
-      description="This marshal route is not available."
+      title={t("notFoundTitle")}
+      description={t("notFoundBody")}
       primaryHref="/marshal/dashboard"
-      primaryLabel="Marshal Home"
+      primaryLabel={t("marshalHome")}
       secondaryHref="/admin"
-      secondaryLabel="Open Admin"
+      secondaryLabel={t("openAdmin")}
     />
   );
 }

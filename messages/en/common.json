@@ -25,5 +25,16 @@
   "matches": "Matches",
   "round": "Round",
   "tournament": "Tournament",
-  "tournaments": "Tournaments"
+  "tournaments": "Tournaments",
+  "format": "Format",
+  "teamCount": "{count, plural, one {# team} other {# teams}}",
+  "liveMatches": "Live matches",
+  "matchesLive": "{count, plural, one {# match live} other {# matches live}}",
+  "matchesPlayed": "Matches played",
+  "watchLive": "Watch live",
+  "openTournament": "Open tournament",
+  "goHome": "Go Home",
+  "skipToContent": "Skip to content",
+  "somethingWentWrong": "Something went wrong",
+  "loadingThing": "Loading {thing}"
 }

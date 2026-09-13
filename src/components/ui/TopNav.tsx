@@ -59,14 +59,14 @@ export function TopNav() {
         href="#main"
         className="sr-only rounded-sm bg-brand px-3 py-2 text-meta font-bold text-white focus:not-sr-only focus:absolute focus:left-3 focus:top-2 focus:z-50"
       >
-        Skip to content
+        {tc('skipToContent')}
       </a>
       <div className="mds-container flex h-14 items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-6">
           <Link href="/" className="shrink-0 rounded-sm font-brand text-title font-bold tracking-tight">
             Apex<span className="text-brand">Play</span>
           </Link>
-          <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
+          <nav aria-label={t('primary')} className="hidden items-center gap-1 md:flex">
             {links.map((l) => (
               <Link
                 key={l.href}
@@ -117,8 +117,8 @@ export function TopNav() {
               a phone has no keyboard, and nothing else in the chrome announces it exists. */}
           <button
             type="button"
-            aria-label="Open command palette"
-            title="Command palette (⌘K)"
+            aria-label={t('palette.open')}
+            title={t('palette.openTitle')}
             data-testid="open-command-palette"
             onClick={openCommandPalette}
             className="mds-tap flex items-center justify-center rounded-sm p-2 text-fg-muted transition-colors hover:bg-tint hover:text-fg"
@@ -129,7 +129,7 @@ export function TopNav() {
           <ThemeToggle />
           <button
             type="button"
-            aria-label="Toggle menu"
+            aria-label={t('toggleMenu')}
             aria-expanded={menuOpen}
             aria-controls="mobile-nav-panel"
             data-testid="mobile-nav-toggle"
@@ -144,7 +144,7 @@ export function TopNav() {
       {menuOpen && (
         <nav
           id="mobile-nav-panel"
-          aria-label="Primary"
+          aria-label={t('primary')}
           data-testid="mobile-nav-panel"
           className="border-t border-line bg-page md:hidden"
         >

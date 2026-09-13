@@ -1,14 +1,17 @@
+import { useTranslations } from "next-intl";
 import { RouteNotFoundState } from "@/components/RouteStates";
 
 export default function NotFound() {
+  const t = useTranslations("directory");
+  const tc = useTranslations("common");
   return (
     <RouteNotFoundState
-      title="Directory Not Found"
-      description="This tournaments page is not available."
+      title={t("notFoundTitle")}
+      description={t("notFoundBody")}
       primaryHref="/"
-      primaryLabel="Go Home"
+      primaryLabel={tc("goHome")}
       secondaryHref="/dashboard"
-      secondaryLabel="Open Dashboard"
+      secondaryLabel={t("openDashboard")}
     />
   );
 }
