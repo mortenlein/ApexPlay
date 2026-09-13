@@ -7,7 +7,7 @@ import {
   BO3_STAGES,
   BO5_STAGES,
   FORMAT_OPTIONS,
-  STAGE_LABELS,
+  STAGE_LABEL_KEYS,
   getGameMetadata,
   teamSizeLabel,
 } from '@/lib/games';
@@ -85,6 +85,7 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
   updating,
 }) => {
   const t = useTranslations('organizer.settings');
+  const tStage = useTranslations('stage');
   const tWizard = useTranslations('organizer.wizard');
   const tConfirm = useTranslations('organizer.confirm');
   // Renaming is a local edit until the organizer commits it. Every PATCH carries the
@@ -308,7 +309,7 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
                   className={selectClass}
                 >
                   {BO3_STAGES.map((v) => (
-                    <option key={v} value={String(v)}>{STAGE_LABELS[v]}</option>
+                    <option key={v} value={String(v)}>{tStage(STAGE_LABEL_KEYS[v])}</option>
                   ))}
                 </select>
                 <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 opacity-40">
@@ -331,7 +332,7 @@ export const ManageSettings: React.FC<ManageSettingsProps> = ({
                   className={selectClass}
                 >
                   {BO5_STAGES.map((v) => (
-                    <option key={v} value={String(v)}>{STAGE_LABELS[v]}</option>
+                    <option key={v} value={String(v)}>{tStage(STAGE_LABEL_KEYS[v])}</option>
                   ))}
                 </select>
                 <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 opacity-40">

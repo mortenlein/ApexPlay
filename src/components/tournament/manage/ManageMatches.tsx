@@ -38,6 +38,7 @@ export const ManageMatches: React.FC<ManageMatchesProps> = ({
 }) => {
   const t = useTranslations('organizer.matches');
   const tCommon = useTranslations('common');
+  const tStage = useTranslations('stage');
   const completedMatches = matches.filter((m) => isDone(m.status)).length;
   const liveMatches = matches.filter((m) => isLive(m.status)).length;
   const totalRounds = totalRoundsOf(matches);
@@ -95,7 +96,7 @@ export const ManageMatches: React.FC<ManageMatchesProps> = ({
                 >
                   <div className="flex items-center justify-between gap-2 border-b border-[var(--mds-border)]/60 bg-[var(--mds-input)]/20 px-4 py-2.5">
                     <span className="mds-uppercase-label text-[var(--mds-text-subtle)]">
-                      {stageLabel(m, totalRounds)}
+                      {stageLabel(m, totalRounds, tStage)}
                     </span>
                     <StatusBadge status={m.status} />
                   </div>

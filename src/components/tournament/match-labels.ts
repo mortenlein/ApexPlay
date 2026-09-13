@@ -7,7 +7,8 @@
  *
  * i18n: every function here is pure and takes the translator it should speak through, so the
  * bracket canvas (a plain layout function, not a component) and the React tree share one set of
- * words. Callers pass `useTranslations('tournament')`; `slotLabel` also takes the `common`
+ * words. Bracket-stage words come from the SHARED `stage` namespace (so the organizer screens
+ * and the public board cannot drift apart); `slotLabel` also takes the `common`
  * translator because "TBD" is a shared word, not a bracket word.
  *
  * The stage decision itself lives in `stageDescriptor` and is language-free: it yields message
@@ -111,17 +112,17 @@ function stageDescriptor(match: StageMatch, matches: StageMatch[]): StageDescrip
 export function stageName(
   match: StageMatch,
   matches: StageMatch[],
-  t: Translator,
+  tStage: Translator,
   { short = false }: { short?: boolean } = {}
 ): string {
   const stage = stageDescriptor(match, matches);
-  return t(`bracketStage.${short ? stage.short : stage.long}`, stage.values);
+  return tStage(`bracket.${short ? stage.short : stage.long}`, stage.values);
 }
 
 /** How one match is referred to from somewhere else: "QF2", "WB2". */
-export function matchRef(match: StageMatch, matches: StageMatch[], t: Translator): string {
+export function matchRef(match: StageMatch, matches: StageMatch[], tStage: Translator): string {
   const stage = stageDescriptor(match, matches);
-  const base = t(`abbr.${stage.abbr}`, stage.values);
+  const base = tStage(`abbr.${stage.abbr}`, stage.values);
   const peers = matches
     .filter((m) => {
       const other = stageDescriptor(m, matches);
@@ -143,7 +144,8 @@ export function slotLabel(
   side: "HOME" | "AWAY",
   matches: StageMatch[],
   t: Translator,
-  tCommon: Translator
+  tCommon: Translator,
+  tStage: Translator
 ): string {
   const team = side === "HOME" ? match.homeTeam : match.awayTeam;
   if (team?.name) return team.name;
@@ -158,9 +160,9 @@ export function slotLabel(
     // the feeder for a given side is known exactly.
     const bySide = (m: StageMatch) => ((m.matchOrder ?? 0) % 2 === 0 ? "HOME" : "AWAY") === side;
     const winner = winnerFeeders.find(bySide);
-    if (winner) return t("slot.winnerOf", { ref: matchRef(winner, matches, t) });
+    if (winner) return t("slot.winnerOf", { ref: matchRef(winner, matches, tStage) });
     const loser = loserFeeders.find(bySide);
-    if (loser) return t("slot.loserOf", { ref: matchRef(loser, matches, t) });
+    if (loser) return t("slot.loserOf", { ref: matchRef(loser, matches, tStage) });
     return tbd;
   }
 
@@ -172,7 +174,7 @@ export function slotLabel(
     ...loserFeeders.map((m) => ({ m, key: "slot.loserOf" })),
   ];
   if (emptySlots === 1 && feeders.length === 1) {
-    return t(feeders[0].key, { ref: matchRef(feeders[0].m, matches, t) });
+    return t(feeders[0].key, { ref: matchRef(feeders[0].m, matches, tStage) });
   }
   return tbd;
 }
@@ -191,9 +193,9 @@ const FORMAT_KEYS: Record<string, string> = {
   DOUBLE_ELIMINATION: "format.doubleElimination",
 };
 
-export function formatName(format: string | null | undefined, t: Translator): string {
+export function formatName(format: string | null | undefined, tStage: Translator): string {
   const key = FORMAT_KEYS[(format || "").toUpperCase()];
-  return key ? t(key) : "";
+  return key ? tStage(key) : "";
 }
 
 /**
@@ -203,7 +205,7 @@ export function formatName(format: string | null | undefined, t: Translator): st
  */
 export function currentStageProgress(
   matches: (StageMatch & { status?: string | null })[],
-  t: Translator
+  tStage: Translator
 ): { label: string; played: number; total: number } | null {
   if (!matches.length) return null;
 
@@ -220,7 +222,7 @@ export function currentStageProgress(
   });
 
   return {
-    label: stageName(stage, matches, t),
+    label: stageName(stage, matches, tStage),
     played: siblings.filter((m) => isDone(m.status)).length,
     total: siblings.length,
   };

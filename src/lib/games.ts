@@ -131,6 +131,21 @@ export function isTournamentFormat(value: unknown): value is TournamentFormat {
  */
 export const LAST_ROUNDS_MAX = 4;
 
+/**
+ * Best-of escalation is expressed as "the last N rounds", and each N names a bracket stage.
+ * These are KEYS into the shared `stage` message namespace, not display strings — the wizard
+ * and the settings card translate them, so the dropdown reads "Semifinale" in Norwegian rather
+ * than leaking English into an otherwise translated screen.
+ */
+export const STAGE_LABEL_KEYS: Record<number, string> = {
+    0: 'bracket.none',
+    1: 'bracket.grandFinal',
+    2: 'bracket.semiFinals',
+    3: 'bracket.quarterFinals',
+    4: 'bracket.roundOf16',
+};
+
+/** English fallback for non-React callers (logs, scripts). UI must translate the key instead. */
 export const STAGE_LABELS: Record<number, string> = {
     0: 'None (BO1)',
     1: 'Grand Final',

@@ -1,40 +1,7 @@
 {
-  "bracketStage": {
-    "grandFinal": "Finale",
-    "bracketReset": "Omkamp",
-    "semiFinals": "Semifinale",
-    "quarterFinals": "Kvartfinale",
-    "roundOf16": "Åttendedelsfinale",
-    "round": "Runde {n}",
-    "thirdPlace": "Bronsefinale",
-    "thirdPlaceShort": "Bronsefinale",
-    "winnersFinal": "Vinnerfinale",
-    "winnersRound": "Vinnerrunde {n}",
-    "winnersRoundShort": "VB-runde {n}",
-    "losersFinal": "Taperfinale",
-    "losersRound": "Taperrunde {n}",
-    "losersRoundShort": "TB-runde {n}"
-  },
-  "abbr": {
-    "grandFinal": "FIN",
-    "bracketReset": "FIN2",
-    "semiFinals": "SF",
-    "quarterFinals": "KF",
-    "roundOf16": "8DF",
-    "round": "R{n}",
-    "thirdPlace": "bronse",
-    "winnersFinal": "VF",
-    "winnersRound": "VB{n}",
-    "losersFinal": "TF",
-    "losersRound": "TB{n}"
-  },
   "slot": {
     "winnerOf": "Vinner av {ref}",
     "loserOf": "Taper av {ref}"
-  },
-  "format": {
-    "singleElimination": "Enkel utslagning",
-    "doubleElimination": "Dobbel utslagning"
   },
   "tabs": {
     "overview": "Oversikt",

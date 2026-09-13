@@ -30,6 +30,7 @@ interface TournamentManageClientProps {
 export default function TournamentManageClient({ tournamentId }: TournamentManageClientProps) {
     usePerformanceBudget('TournamentManageClient', 250);
     const t = useTranslations('organizer.workspace');
+    const tStage = useTranslations('stage');
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -247,7 +248,7 @@ export default function TournamentManageClient({ tournamentId }: TournamentManag
                     onLoadMatch={workspace.loadMatch}
                     isSaving={workspace.isSavingMatch}
                     isLoadingMatch={workspace.isLoadingMatch}
-                    stageName={stageLabel(editingMatch, totalRoundsOf(matches))}
+                    stageName={stageLabel(editingMatch, totalRoundsOf(matches), tStage)}
                 />
             )}
         </div>

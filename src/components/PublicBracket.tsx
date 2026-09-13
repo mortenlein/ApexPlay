@@ -91,6 +91,7 @@ function buildLayout(
     matches: any[],
     t: Translator,
     tCommon: Translator,
+    tStage: Translator,
     onMatchClick?: (id: string) => void
 ) {
     const de = isDoubleElimination(matches);
@@ -115,16 +116,16 @@ function buildLayout(
         data: {
             id: m.id,
             homeTeam: m.homeTeam,
-            homeLabel: slotLabel(m, 'HOME', matches, t, tCommon),
+            homeLabel: slotLabel(m, 'HOME', matches, t, tCommon, tStage),
             homeScore: m.homeScore,
             awayTeam: m.awayTeam,
-            awayLabel: slotLabel(m, 'AWAY', matches, t, tCommon),
+            awayLabel: slotLabel(m, 'AWAY', matches, t, tCommon, tStage),
             awayScore: m.awayScore,
             status: m.status,
             decided: isDone(m.status),
             isRightSide: false,
             isFinal,
-            stageName: stageName(m, matches, t, { short: true }),
+            stageName: stageName(m, matches, tStage, { short: true }),
             onMatchClick,
         },
     });
@@ -188,14 +189,15 @@ function buildLayout(
 
 export default function PublicBracket({ matches, onMatchClick }: { tournamentId: string, matches: any[], onMatchClick?: (id: string) => void }) {
     const t = useTranslations('tournament');
+    const tStage = useTranslations('stage');
     const tCommon = useTranslations('common');
     // Memoized so React Flow doesn't warn about a new nodeTypes object on every render.
     const nodeTypes = useMemo(() => ({ publicMatch: PublicMatchNode }), []);
 
     const { nodes, edges } = useMemo(() => {
         if (!Array.isArray(matches) || matches.length === 0) return { nodes: [], edges: [] };
-        return buildLayout(matches, t, tCommon, onMatchClick);
-    }, [matches, t, tCommon, onMatchClick]);
+        return buildLayout(matches, t, tCommon, tStage, onMatchClick);
+    }, [matches, t, tCommon, tStage, onMatchClick]);
 
     return (
         <div className="h-full w-full bg-page">

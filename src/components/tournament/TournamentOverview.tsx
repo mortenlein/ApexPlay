@@ -26,8 +26,9 @@ export function TournamentOverview({
   onSetTab,
 }: TournamentOverviewProps) {
   const t = useTranslations("tournament");
+  const tStage = useTranslations("stage");
   const tCommon = useTranslations("common");
-  const progress = currentStageProgress(matches, t);
+  const progress = currentStageProgress(matches, tStage);
   const upNext = matches
     .filter((m: any) => !isDone(m.status) && !isLive(m.status))
     .sort(byPlayOrder)
@@ -45,7 +46,7 @@ export function TournamentOverview({
       : null;
 
   const stageLine = champion
-    ? t("overview.won", { team: champion.name, stage: stageName(decider, matches, t) })
+    ? t("overview.won", { team: champion.name, stage: stageName(decider, matches, tStage) })
     : progress
       ? t("overview.progress", {
           stage: progress.label,
@@ -72,7 +73,7 @@ export function TournamentOverview({
                 key={match.id}
                 match={match}
                 tournamentId={tournament.id}
-                stageName={stageName(match, matches, t)}
+                stageName={stageName(match, matches, tStage)}
               />
             ))}
           </div>
@@ -97,10 +98,10 @@ export function TournamentOverview({
                 key={match.id}
                 className="rounded border border-line bg-card p-4"
               >
-                <span className="mds-uppercase-label text-[10px]">{stageName(match, matches, t)}</span>
+                <span className="mds-uppercase-label text-[10px]">{stageName(match, matches, tStage)}</span>
                 <div className="mt-1.5 space-y-0.5 text-sm">
-                  <p className="mds-name m-0">{slotLabel(match, "HOME", matches, t, tCommon)}</p>
-                  <p className="mds-name m-0 text-fg-muted">{slotLabel(match, "AWAY", matches, t, tCommon)}</p>
+                  <p className="mds-name m-0">{slotLabel(match, "HOME", matches, t, tCommon, tStage)}</p>
+                  <p className="mds-name m-0 text-fg-muted">{slotLabel(match, "AWAY", matches, t, tCommon, tStage)}</p>
                 </div>
               </div>
             ))}

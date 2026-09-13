@@ -6,6 +6,7 @@ import { Check, ChevronDown, ChevronRight, MapPin, Crown, Users, Trophy, GitBran
 import PublicBracket from '@/components/PublicBracket';
 import { Card, Badge, StatusBadge } from '@/components/ui';
 import { byPlayOrder, isActive, isDone } from '@/lib/match-status';
+import type { Translator } from '@/components/tournament/match-labels';
 import { EonBridgePanel } from './EonBridgePanel';
 
 interface ManageControlProps {
@@ -21,16 +22,21 @@ const byOrder = (a: any, b: any) => byPlayOrder(a, b);
  * The human name for where a match sits in the bracket. This is what an organizer says out loud
  * ("the second quarter-final"), and it is what identifies a match on screen — never its uuid.
  * Shared by every manage surface so one match is called the same thing everywhere.
+ *
+ * The words come from the SHARED bracket vocabulary (the `stage` message namespace), which is
+ * what the public board and the OBS overlay also read; `tStage` is `useTranslations('stage')`.
+ * Do not reintroduce a local table here — the organizer calling a match "Lower R2" while the
+ * spectator page calls it "Taperrunde 2" is exactly the drift that namespace exists to prevent.
  */
-export function stageLabel(match: any, totalRounds: number) {
-  if (match.bracketType === 'GRAND_FINAL') return 'Grand Final';
-  if (match.bracketType === 'THIRD_PLACE') return '3rd Place';
-  if (match.bracketType === 'LOSERS') return `Lower R${match.round}`;
+export function stageLabel(match: any, totalRounds: number, tStage: Translator) {
+  if (match.bracketType === 'GRAND_FINAL') return tStage('bracket.grandFinal');
+  if (match.bracketType === 'THIRD_PLACE') return tStage('bracket.thirdPlace');
+  if (match.bracketType === 'LOSERS') return tStage('bracket.losersRound', { n: match.round });
   const fromFinal = totalRounds - match.round;
-  if (fromFinal === 0) return 'Final';
-  if (fromFinal === 1) return 'Semi-Final';
-  if (fromFinal === 2) return 'Quarter-Final';
-  return `Round ${match.round}`;
+  if (fromFinal === 0) return tStage('bracket.grandFinal');
+  if (fromFinal === 1) return tStage('bracket.semiFinals');
+  if (fromFinal === 2) return tStage('bracket.quarterFinals');
+  return tStage('bracket.round', { n: match.round });
 }
 
 /** How many of a team's players floor staff have confirmed at their seat. */
@@ -85,6 +91,7 @@ function TeamLine({
 }
 
 function GameRow({ match, totalRounds, onClick }: { match: any; totalRounds: number; onClick: () => void }) {
+  const tStage = useTranslations('stage');
   const live = isActive(match.status);
   return (
     <button
@@ -93,7 +100,7 @@ function GameRow({ match, totalRounds, onClick }: { match: any; totalRounds: num
       className="w-full rounded-sm border border-line bg-field px-3 py-2.5 text-left transition-all hover:border-line-hover"
     >
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="mds-uppercase-label whitespace-nowrap text-fg-subtle">{stageLabel(match, totalRounds)}</span>
+        <span className="mds-uppercase-label whitespace-nowrap text-fg-subtle">{stageLabel(match, totalRounds, tStage)}</span>
         <StatusBadge status={match.status} />
       </div>
       <div className="space-y-1.5">

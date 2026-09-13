@@ -83,6 +83,7 @@ function useModalA11y(
 export default function TournamentView({ id }: TournamentViewProps) {
   usePerformanceBudget("TournamentView", 240);
   const t = useTranslations("tournament");
+  const tStage = useTranslations("stage");
   const tCommon = useTranslations("common");
   const tStatus = useTranslations("status");
   const queryClient = useQueryClient();
@@ -140,7 +141,7 @@ export default function TournamentView({ id }: TournamentViewProps) {
     .filter((m: any) => !isDone(m.status) && !isLive(m.status))
     .sort(byPlayOrder)
     .slice(0, 5);
-  const progress = currentStageProgress(matches, t);
+  const progress = currentStageProgress(matches, tStage);
   const gameMeta = getGameMetadata(tournament?.game || "CS2");
   const tabItems = getTournamentTabItems(tournament?.category || "BRACKET");
   const primaryMobileTabs = tabItems.slice(0, 4);
@@ -335,7 +336,7 @@ export default function TournamentView({ id }: TournamentViewProps) {
                     >
                       <div className="mb-2 flex items-center justify-between gap-2">
                         {/* The stage, not "R1 | BADE" — that was a UUID fragment. */}
-                        <span className="mds-uppercase-label text-[10px]">{stageName(match, matches, t)}</span>
+                        <span className="mds-uppercase-label text-[10px]">{stageName(match, matches, tStage)}</span>
                         <span className="mds-uppercase-label text-[10px] text-danger">
                           {tStatus(matchStatusKey(match.status))}
                         </span>
@@ -343,7 +344,7 @@ export default function TournamentView({ id }: TournamentViewProps) {
                       <div className="space-y-1.5">
                         <div className="flex items-start justify-between gap-2">
                           <span className="mds-name mds-clamp-2 min-w-0 flex-1 text-[13px]">
-                            {slotLabel(match, "HOME", matches, t, tCommon)}
+                            {slotLabel(match, "HOME", matches, t, tCommon, tStage)}
                           </span>
                           <span className="mds-numeric text-base font-bold text-fg">
                             {match.homeScore}
@@ -351,7 +352,7 @@ export default function TournamentView({ id }: TournamentViewProps) {
                         </div>
                         <div className="flex items-start justify-between gap-2">
                           <span className="mds-name mds-clamp-2 min-w-0 flex-1 text-[13px] text-fg-muted">
-                            {slotLabel(match, "AWAY", matches, t, tCommon)}
+                            {slotLabel(match, "AWAY", matches, t, tCommon, tStage)}
                           </span>
                           <span className="mds-numeric text-base font-bold text-fg-muted">
                             {match.awayScore}
@@ -375,10 +376,10 @@ export default function TournamentView({ id }: TournamentViewProps) {
                       key={match.id}
                       className="rounded border border-line bg-field p-3"
                     >
-                      <span className="mds-uppercase-label text-[10px]">{stageName(match, matches, t)}</span>
+                      <span className="mds-uppercase-label text-[10px]">{stageName(match, matches, tStage)}</span>
                       <div className="mt-1.5 space-y-0.5 text-[13px]">
-                        <p className="mds-name m-0">{slotLabel(match, "HOME", matches, t, tCommon)}</p>
-                        <p className="mds-name m-0 text-fg-muted">{slotLabel(match, "AWAY", matches, t, tCommon)}</p>
+                        <p className="mds-name m-0">{slotLabel(match, "HOME", matches, t, tCommon, tStage)}</p>
+                        <p className="mds-name m-0 text-fg-muted">{slotLabel(match, "AWAY", matches, t, tCommon, tStage)}</p>
                       </div>
                     </div>
                   ))}
@@ -493,6 +494,7 @@ export default function TournamentView({ id }: TournamentViewProps) {
 // Sub-modals for details
 function TeamDetailsModal({ team, onClose, matches, modalRef }: any) {
     const t = useTranslations("tournament");
+    const tStage = useTranslations("stage");
     const tCommon = useTranslations("common");
     const tStatus = useTranslations("status");
     const history = matches
@@ -575,7 +577,7 @@ function TeamDetailsModal({ team, onClose, matches, modalRef }: any) {
                        return (
                          <li key={m.id} className="flex items-center justify-between gap-3 rounded-sm border border-line bg-field px-3 py-2">
                            <div className="min-w-0">
-                              <span className="mds-uppercase-label text-[10px]">{stageName(m, matches, t)}</span>
+                              <span className="mds-uppercase-label text-[10px]">{stageName(m, matches, tStage)}</span>
                               <p className="mds-name m-0 text-[13px]">
                                 {t("team.versus", { opponent: opponent || tCommon("tbd") })}
                               </p>
@@ -610,6 +612,7 @@ function TeamDetailsModal({ team, onClose, matches, modalRef }: any) {
 
 function PlayerDetailsModal({ player, onClose, modalRef }: any) {
     const t = useTranslations("tournament");
+    const tStage = useTranslations("stage");
     const tCommon = useTranslations("common");
 
     return (
@@ -651,9 +654,10 @@ function PlayerDetailsModal({ player, onClose, modalRef }: any) {
 
 function MatchAnalysisModal({ match, matches, onClose, modalRef }: any) {
     const t = useTranslations("tournament");
+    const tStage = useTranslations("stage");
     const tCommon = useTranslations("common");
     const tStatus = useTranslations("status");
-    const stage = stageName(match, matches, t);
+    const stage = stageName(match, matches, tStage);
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 lg:p-10 animate-in fade-in duration-300">

@@ -30,8 +30,9 @@ export function TournamentHero({
   onShare,
 }: TournamentHeroProps) {
   const t = useTranslations("tournament");
+  const tStage = useTranslations("stage");
   const canRegister = Boolean(tournament?.steamSignupEnabled) && !Boolean(tournament?.rosterLocked);
-  const format = formatName(tournament?.format || tournament?.type, t);
+  const format = formatName(tournament?.format || tournament?.type, tStage);
 
   return (
     <header className="relative w-full shrink-0 overflow-hidden border-b border-line bg-card">

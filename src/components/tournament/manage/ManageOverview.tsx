@@ -74,6 +74,7 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
   const t = useTranslations('organizer.overview');
   const tConfirm = useTranslations('organizer.confirm');
   const tCommon = useTranslations('common');
+  const tStage = useTranslations('stage');
   const liveMatches = matches.filter((match) => isLive(match.status)).length;
   const waitingMatches = matches.filter((match) => isCalled(match.status)).length;
   const completedMatches = matches.filter((match) => isDone(match.status)).length;
@@ -177,7 +178,7 @@ export const ManageOverview: React.FC<ManageOverviewProps> = ({
                     <div className="min-w-0">
                       <div className="mb-1.5 flex items-center gap-2">
                         <span className="mds-uppercase-label text-[var(--mds-text-subtle)]">
-                          {stageLabel(match, totalRounds)}
+                          {stageLabel(match, totalRounds, tStage)}
                         </span>
                         <StatusBadge status={match.status} />
                       </div>

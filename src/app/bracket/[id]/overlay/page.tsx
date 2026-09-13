@@ -38,6 +38,7 @@ const StreamState = ({ status }: { status?: string | null }) => {
 // A custom high-contrast node for the overlay
 const StreamMatchNode = ({ data }: any) => {
     const t = useTranslations('tournament');
+    const tStage = useTranslations('stage');
     const tCommon = useTranslations('common');
     const isRightSide = data.isRightSide;
     const isCenter = data.isCenter;
@@ -141,6 +142,7 @@ const StreamMatchNode = ({ data }: any) => {
 export default function StreamOverlay(props: { params: Promise<{ id: string }> }) {
     const params = use(props.params);
     const t = useTranslations('tournament');
+    const tStage = useTranslations('stage');
     const searchParams = useSearchParams();
     const compact = searchParams.get('compact') === 'true';
     const chromaKey = searchParams.get('chroma') || 'transparent';

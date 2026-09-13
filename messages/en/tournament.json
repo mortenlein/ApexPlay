@@ -1,40 +1,7 @@
 {
-  "bracketStage": {
-    "grandFinal": "Grand Final",
-    "bracketReset": "Bracket Reset",
-    "semiFinals": "Semi-Finals",
-    "quarterFinals": "Quarter-Finals",
-    "roundOf16": "Round of 16",
-    "round": "Round {n}",
-    "thirdPlace": "3rd Place Match",
-    "thirdPlaceShort": "3rd Place",
-    "winnersFinal": "Winners Final",
-    "winnersRound": "Winners Round {n}",
-    "winnersRoundShort": "WB Round {n}",
-    "losersFinal": "Losers Final",
-    "losersRound": "Losers Round {n}",
-    "losersRoundShort": "LB Round {n}"
-  },
-  "abbr": {
-    "grandFinal": "GF",
-    "bracketReset": "GF2",
-    "semiFinals": "SF",
-    "quarterFinals": "QF",
-    "roundOf16": "R16",
-    "round": "R{n}",
-    "thirdPlace": "3rd place",
-    "winnersFinal": "WF",
-    "winnersRound": "WB{n}",
-    "losersFinal": "LF",
-    "losersRound": "LB{n}"
-  },
   "slot": {
     "winnerOf": "Winner of {ref}",
     "loserOf": "Loser of {ref}"
-  },
-  "format": {
-    "singleElimination": "Single Elimination",
-    "doubleElimination": "Double Elimination"
   },
   "tabs": {
     "overview": "Overview",

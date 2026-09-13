@@ -43,6 +43,7 @@ function TeamRow({ team, name, score, won, dim }: { team: any; name: string; sco
 
 export function MatchList({ matches, tournamentId }: MatchListProps) {
   const t = useTranslations("tournament");
+  const tStage = useTranslations("stage");
   const tCommon = useTranslations("common");
   const tStatus = useTranslations("status");
   // Grouped by stage in play order — in a double-elimination bracket "round 1" is two different
@@ -52,7 +53,7 @@ export function MatchList({ matches, tournamentId }: MatchListProps) {
     .slice()
     .sort(byPlayOrder)
     .forEach((match: any) => {
-      const label = stageName(match, matches, t);
+      const label = stageName(match, matches, tStage);
       const group = groups.find((g) => g.label === label);
       if (group) {
         group.matches.push(match);
@@ -92,7 +93,7 @@ export function MatchList({ matches, tournamentId }: MatchListProps) {
                     <div className="flex items-center justify-between gap-2">
                       {/* The same short reference other views point at ("Winner of QF3"). */}
                       <span className="mds-uppercase-label text-[10px]">
-                        {matchRef(match, matches, t)}
+                        {matchRef(match, matches, tStage)}
                         {match.bestOf > 1 ? ` · BO${match.bestOf}` : ""}
                       </span>
                       <span
@@ -108,14 +109,14 @@ export function MatchList({ matches, tournamentId }: MatchListProps) {
                     <div className="space-y-2">
                       <TeamRow
                         team={match.homeTeam}
-                        name={slotLabel(match, "HOME", matches, t, tCommon)}
+                        name={slotLabel(match, "HOME", matches, t, tCommon, tStage)}
                         score={match.homeScore}
                         won={homeWon}
                         dim={awayWon}
                       />
                       <TeamRow
                         team={match.awayTeam}
-                        name={slotLabel(match, "AWAY", matches, t, tCommon)}
+                        name={slotLabel(match, "AWAY", matches, t, tCommon, tStage)}
                         score={match.awayScore}
                         won={awayWon}
                         dim={homeWon}

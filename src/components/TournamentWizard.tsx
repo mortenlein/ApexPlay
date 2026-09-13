@@ -8,7 +8,7 @@ import {
     BO3_STAGES,
     BO5_STAGES,
     FORMAT_OPTIONS,
-    STAGE_LABELS,
+    STAGE_LABEL_KEYS,
     SUPPORTED_GAMES,
     defaultTeamSize,
     stageLabel,
@@ -45,6 +45,7 @@ function StepHeader({ title, hint }: { title: string; hint: string }) {
 
 export default function TournamentWizard({ onClose, onComplete }: TournamentWizardProps) {
     const t = useTranslations('organizer.wizard');
+    const tStage = useTranslations('stage');
     const tCommon = useTranslations('common');
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
@@ -262,7 +263,7 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                             className="mds-input h-11 cursor-pointer appearance-none px-4 pr-10 text-sm font-semibold"
                                         >
                                             {BO3_STAGES.map((v) => (
-                                                <option key={v} value={String(v)}>{STAGE_LABELS[v]}</option>
+                                                <option key={v} value={String(v)}>{tStage(STAGE_LABEL_KEYS[v])}</option>
                                             ))}
                                         </select>
                                         <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 opacity-40">
@@ -281,7 +282,7 @@ export default function TournamentWizard({ onClose, onComplete }: TournamentWiza
                                             className="mds-input h-11 cursor-pointer appearance-none px-4 pr-10 text-sm font-semibold"
                                         >
                                             {BO5_STAGES.map((v) => (
-                                                <option key={v} value={String(v)}>{STAGE_LABELS[v]}</option>
+                                                <option key={v} value={String(v)}>{tStage(STAGE_LABEL_KEYS[v])}</option>
                                             ))}
                                         </select>
                                         <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 opacity-40">
