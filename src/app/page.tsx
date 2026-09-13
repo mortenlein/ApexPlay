@@ -4,9 +4,12 @@ import { Gamepad2, LayoutDashboard, Trophy } from "lucide-react";
 import prisma from "@/lib/prisma";
 import { getSessionIdentity } from "@/lib/route-auth";
 import { getGameMetadata, teamSizeLabel } from "@/lib/games";
-import { getTournamentStage, STAGE_META, type TournamentStage } from "@/lib/tournament-stage";
+import { getTournamentStage, type TournamentStage } from "@/lib/tournament-stage";
 import { ACTIVE_STATUSES, DONE_STATUSES, LIVE_STATUSES, isLive } from "@/lib/match-status";
+import { STAGE_KEY } from "@/lib/stage-keys";
 import { Badge, EmptyState, PageHeader, TournamentCard } from "@/components/ui";
+import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 
 // Reads the signed-in identity and the live tournament list on every request — a prerendered
 // page would bake in one visitor's session and a stale bracket list.
@@ -38,12 +41,19 @@ const MATCH_CARD_SELECT = {
   awayTeam: { select: { name: true } },
 } as const;
 
-function roundLabel(match: { round: number; bracketType: string | null }) {
+/** A `next-intl` translator, narrowed to what the helpers below actually call. */
+type Translate = (key: string, values?: Record<string, string | number | Date>) => string;
+
+/**
+ * Bracket position as a word. Not a component, so it takes the `landing` translator as an
+ * argument rather than calling a hook.
+ */
+function roundLabel(match: { round: number; bracketType: string | null }, t: Translate) {
   const bracket = (match.bracketType || "WINNERS").toUpperCase();
-  if (bracket === "GRAND_FINAL") return "Grand final";
-  if (bracket === "THIRD_PLACE") return "Third place";
-  if (bracket === "LOSERS") return `Lower round ${match.round}`;
-  return `Round ${match.round}`;
+  if (bracket === "GRAND_FINAL") return t("roundGrandFinal");
+  if (bracket === "THIRD_PLACE") return t("roundThirdPlace");
+  if (bracket === "LOSERS") return t("roundLower", { round: match.round });
+  return t("round", { round: match.round });
 }
 
 interface FloorMatch {
@@ -66,24 +76,28 @@ const matchHref = (m: FloorMatch) => `/tournaments/${m.tournament.id}?tab=matche
  * them, big enough to read standing up. This is the loudest thing the landing page renders.
  */
 function LiveMatchCard({ match }: { match: FloorMatch }) {
+  // Sync Server Components: `useTranslations` is the supported call here, not `getTranslations`.
+  const t = useTranslations("landing");
+  const tc = useTranslations("common");
+  const tStatus = useTranslations("status");
   return (
     <Link
       href={matchHref(match)}
       className="mds-live-panel block p-5 transition-colors hover:border-line-hover"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Badge tone="live">Live</Badge>
+        <Badge tone="live">{tStatus("live")}</Badge>
         <span className="mds-name text-meta font-semibold text-fg-subtle">
-          {match.tournament.name} · {roundLabel(match)} · <span className="mds-numeric">Bo{match.bestOf}</span>
+          {match.tournament.name} · {roundLabel(match, t)} · <span className="mds-numeric">Bo{match.bestOf}</span>
         </span>
       </div>
 
       <div className="mt-4 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
-        <span className="mds-name text-right text-lead text-fg">{match.homeTeam?.name || "TBD"}</span>
+        <span className="mds-name text-right text-lead text-fg">{match.homeTeam?.name || tc("tbd")}</span>
         <span className="mds-numeric rounded-sm bg-tint px-3 py-1 text-title font-bold text-live">
           {match.homeScore} – {match.awayScore}
         </span>
-        <span className="mds-name text-lead text-fg">{match.awayTeam?.name || "TBD"}</span>
+        <span className="mds-name text-lead text-fg">{match.awayTeam?.name || tc("tbd")}</span>
       </div>
     </Link>
   );
@@ -91,6 +105,8 @@ function LiveMatchCard({ match }: { match: FloorMatch }) {
 
 /** A called or finished match: compact, stacked, built to sit in a row of six. */
 function MatchLine({ match, tone }: { match: FloorMatch; tone: "next" | "done" }) {
+  const t = useTranslations("landing");
+  const tc = useTranslations("common");
   const showScore = tone === "done";
   const homeWon = match.homeScore > match.awayScore;
 
@@ -100,7 +116,7 @@ function MatchLine({ match, tone }: { match: FloorMatch; tone: "next" | "done" }
       className="mds-card block p-4 transition-colors hover:border-line-hover"
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="mds-uppercase-label text-fg-subtle">{roundLabel(match)}</span>
+        <span className="mds-uppercase-label text-fg-subtle">{roundLabel(match, t)}</span>
         <span className="mds-numeric text-meta font-semibold text-fg-subtle">Bo{match.bestOf}</span>
       </div>
 
@@ -115,7 +131,7 @@ function MatchLine({ match, tone }: { match: FloorMatch; tone: "next" | "done" }
         ].map((side, i) => (
           <div key={i} className="flex items-baseline justify-between gap-3">
             <span className={`mds-name text-body ${side.won ? "text-fg" : "text-fg-muted"}`}>
-              {side.name || "TBD"}
+              {side.name || tc("tbd")}
             </span>
             {showScore && (
               <span
@@ -136,7 +152,11 @@ function MatchLine({ match, tone }: { match: FloorMatch; tone: "next" | "done" }
 }
 
 export default async function Home() {
-  const [{ steamId, role }, tournaments, floorMatches, results] = await Promise.all([
+  const [t, tc, tNav, tStage, { steamId, role }, tournaments, floorMatches, results] = await Promise.all([
+    getTranslations("landing"),
+    getTranslations("common"),
+    getTranslations("nav"),
+    getTranslations("stage"),
     getSessionIdentity(),
     prisma.tournament.findMany({
       orderBy: { createdAt: 'desc' },
@@ -174,21 +194,22 @@ export default async function Home() {
     .filter((m) => !isLive(m.status))
     .slice(0, Math.max(0, FLOOR_LIMIT - liveMatches.length));
 
+  // `row`, not `t`: `t` is the translator in this scope.
   const cards = tournaments
-    .map((t) => {
-      const stage = getTournamentStage(t.teams, t.matches);
-      const gameMeta = getGameMetadata(t.game);
-      const done = t.matches.filter((m) => DONE_STATUSES.includes(String(m.status || '').toUpperCase())).length;
+    .map((row) => {
+      const stage = getTournamentStage(row.teams, row.matches);
+      const gameMeta = getGameMetadata(row.game);
+      const done = row.matches.filter((m) => DONE_STATUSES.includes(String(m.status || '').toUpperCase())).length;
       return {
-        id: t.id,
-        name: t.name,
+        id: row.id,
+        name: row.name,
         stage,
-        game: gameMeta?.name || t.game,
-        format: t.format === "DOUBLE_ELIMINATION" ? "Double elim" : "Single elim",
-        roster: teamSizeLabel(gameMeta, t.teamSize),
-        teamCount: t.teams.length,
-        progress: t.matches.length > 0 ? { done, total: t.matches.length } : undefined,
-        liveCount: t.matches.filter((m) => LIVE_STATUSES.includes(String(m.status || '').toUpperCase())).length,
+        game: gameMeta?.name || row.game,
+        format: row.format === "DOUBLE_ELIMINATION" ? "Double elim" : "Single elim",
+        roster: teamSizeLabel(gameMeta, row.teamSize),
+        teamCount: row.teams.length,
+        progress: row.matches.length > 0 ? { done, total: row.matches.length } : undefined,
+        liveCount: row.matches.filter((m) => LIVE_STATUSES.includes(String(m.status || '').toUpperCase())).length,
       };
     })
     // Live tournaments first: what is running now outranks what was created most recently.
@@ -197,26 +218,22 @@ export default async function Home() {
   return (
     <div className="flex min-h-screen flex-col bg-page text-fg">
       <PageHeader
-        eyebrow="CS2 LAN tournaments"
+        eyebrow={t("eyebrow")}
         title={
           <>
             Apex<span className="text-brand">Play</span>
           </>
         }
-        subtitle="Run a LAN from sign-up to grand final: Steam registration, seeded brackets, live match control and an OBS overlay — one surface the whole room can follow."
+        subtitle={t("subtitle")}
         meta={
           liveMatches.length > 0 ? (
-            <span className="inline-flex items-center gap-2 text-body font-semibold text-live">
+            <span className="mds-tabular inline-flex items-center gap-2 text-body font-semibold text-live">
               <span className="mds-dot is-live" aria-hidden />
-              <span className="mds-tabular">{liveMatches.length}</span>
-              &nbsp;
-              {liveMatches.length === 1
-                ? "match is being played right now"
-                : "matches are being played right now"}
+              {t("playingNow", { count: liveMatches.length })}
             </span>
           ) : (
             <span className="text-body font-semibold text-fg-subtle">
-              Nothing is being played right now.
+              {t("nothingPlaying")}
             </span>
           )
         }
@@ -229,7 +246,7 @@ export default async function Home() {
                 className="mds-btn-primary h-11 px-6 text-meta font-bold uppercase tracking-widest"
               >
                 <LayoutDashboard size={15} aria-hidden />
-                My dashboard
+                {t("ctaDashboard")}
               </Link>
             ) : (
               <Link
@@ -238,7 +255,7 @@ export default async function Home() {
                 className="mds-btn-primary h-11 px-6 text-meta font-bold uppercase tracking-widest"
               >
                 <Gamepad2 size={15} aria-hidden />
-                Sign in with Steam
+                {tc("signInWithSteam")}
               </Link>
             )}
             {role === "admin" && (
@@ -248,7 +265,7 @@ export default async function Home() {
                 className="mds-btn-secondary h-11 px-6 text-meta font-bold uppercase tracking-widest"
               >
                 <Trophy size={15} aria-hidden />
-                Organizer
+                {t("ctaOrganizer")}
               </Link>
             )}
           </>
@@ -263,12 +280,12 @@ export default async function Home() {
               <div className="flex items-center gap-2.5">
                 {liveMatches.length > 0 && <span className="mds-dot is-live" aria-hidden />}
                 <h2 id="floor-heading" className="mds-uppercase-label text-fg">
-                  {liveMatches.length > 0 ? "Playing now" : "Called to station"}
+                  {liveMatches.length > 0 ? t("floorHeadingLive") : t("floorHeadingCalled")}
                 </h2>
               </div>
               {calledMatches.length > 0 && liveMatches.length > 0 && (
                 <p className="mds-uppercase-label text-fg-subtle">
-                  {calledMatches.length} more called to station
+                  {t("moreCalled", { count: calledMatches.length })}
                 </p>
               )}
             </div>
@@ -296,17 +313,17 @@ export default async function Home() {
           <div className="mds-section-head">
             <div className="flex items-center gap-3">
               <h2 id="board-heading" className="mds-uppercase-label text-fg">
-                Tournaments
+                {tc("tournaments")}
               </h2>
-              <Badge tone="neutral">
-                <span className="mds-tabular">{tournaments.length}</span>&nbsp;listed
+              <Badge tone="neutral" className="mds-tabular">
+                {t("listed", { count: tournaments.length })}
               </Badge>
             </div>
             <Link
               href="/tournaments"
               className="rounded-sm text-meta font-semibold text-fg-muted transition-colors hover:text-fg"
             >
-              Browse all →
+              {t("browseAll")}
             </Link>
           </div>
 
@@ -314,38 +331,34 @@ export default async function Home() {
             <EmptyState
               className="flex-1"
               icon={<Gamepad2 size={24} />}
-              title="No tournaments yet"
-              description={
-                role === "admin"
-                  ? "Create the first tournament from the organizer workspace."
-                  : "Nothing is running right now. Check back when the LAN opens."
-              }
+              title={t("emptyTitle")}
+              description={role === "admin" ? t("emptyAdmin") : t("emptyPublic")}
               action={
                 role === "admin" ? (
                   <Link
                     href="/admin"
                     className="mds-btn-primary h-10 px-5 text-label font-bold uppercase tracking-widest"
                   >
-                    Open organizer
+                    {t("openOrganizer")}
                   </Link>
                 ) : undefined
               }
             />
           ) : (
             <ul className="mds-card-grid">
-              {cards.map((t) => (
-                <li key={t.id}>
+              {cards.map((card) => (
+                <li key={card.id}>
                   <TournamentCard
-                    href={`/tournaments/${t.id}`}
-                    name={t.name}
-                    game={t.game}
-                    format={t.format}
-                    roster={t.roster}
-                    teamCount={t.teamCount}
-                    stageLabel={STAGE_META[t.stage].label}
-                    stageTone={STAGE_TONE[t.stage]}
-                    progress={t.progress}
-                    liveCount={t.liveCount}
+                    href={`/tournaments/${card.id}`}
+                    name={card.name}
+                    game={card.game}
+                    format={card.format}
+                    roster={card.roster}
+                    teamCount={card.teamCount}
+                    stageLabel={tStage(STAGE_KEY[card.stage])}
+                    stageTone={STAGE_TONE[card.stage]}
+                    progress={card.progress}
+                    liveCount={card.liveCount}
                   />
                 </li>
               ))}
@@ -358,7 +371,7 @@ export default async function Home() {
           <section aria-labelledby="results-heading" className="space-y-4">
             <div className="mds-section-head">
               <h2 id="results-heading" className="mds-uppercase-label text-fg">
-                Latest results
+                {t("latestResults")}
               </h2>
             </div>
             {/* Deliberately not a list: the tournament board above is the page's only <ul>,
@@ -380,15 +393,15 @@ export default async function Home() {
           </span>
           <div className="flex items-center gap-4 text-meta font-semibold text-fg-muted">
             <Link href="/tournaments" className="rounded-sm transition-colors hover:text-fg">
-              Tournaments
+              {tc("tournaments")}
             </Link>
             {signedIn ? (
               <Link href="/dashboard" className="rounded-sm transition-colors hover:text-fg">
-                My desk
+                {tNav("myDesk")}
               </Link>
             ) : (
               <Link href="/login" className="rounded-sm transition-colors hover:text-fg">
-                Sign in
+                {tc("signIn")}
               </Link>
             )}
           </div>

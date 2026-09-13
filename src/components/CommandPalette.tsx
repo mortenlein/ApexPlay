@@ -3,6 +3,7 @@
 import React from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { Command, Search, X } from "lucide-react";
 import { deriveNavContext, CommandAction } from "@/lib/navigation";
 
@@ -26,6 +27,7 @@ export function openCommandPalette() {
 }
 
 export default function CommandPalette() {
+  const t = useTranslations("nav");
   const router = useRouter();
   const pathname = usePathname();
   const { data: session, status } = useSession();
@@ -88,21 +90,21 @@ export default function CommandPalette() {
     const base: CommandAction[] = [
       {
         id: "go-tournaments",
-        label: "Go to Tournaments",
+        label: t("palette.goTournaments"),
         keywords: ["directory", "events", "public"],
         contexts: ["public", "player", "admin", "marshal"],
         run: () => router.push("/tournaments"),
       },
       {
         id: "go-dashboard",
-        label: "Go to Dashboard",
+        label: t("palette.goDashboard"),
         keywords: ["player", "matches"],
         contexts: ["public", "player", "admin", "marshal"],
         run: () => router.push("/dashboard"),
       },
       {
         id: "go-profile",
-        label: "Open Profile",
+        label: t("palette.goProfile"),
         keywords: ["account", "user"],
         contexts: ["public", "player", "admin", "marshal"],
         run: () => router.push("/profile"),
@@ -112,7 +114,7 @@ export default function CommandPalette() {
     if (isAdmin) {
       base.push({
         id: "go-admin",
-        label: context === "admin" ? "Admin Overview" : "Open Admin Workspace",
+        label: context === "admin" ? t("palette.adminOverview") : t("palette.openAdmin"),
         keywords: ["control", "workspace", "manage"],
         contexts: ["admin", "marshal", "player", "public"],
         run: () => router.push("/admin"),
@@ -122,7 +124,7 @@ export default function CommandPalette() {
     if (isStaff) {
       base.push({
         id: "go-marshal",
-        label: "Open Marshal Board",
+        label: t("palette.openMarshal"),
         keywords: ["seats", "floor", "readiness"],
         contexts: ["admin", "marshal", "player"],
         run: () => router.push("/marshal/dashboard"),
@@ -132,7 +134,7 @@ export default function CommandPalette() {
     if (tournamentId && pathname.startsWith("/tournaments/")) {
       base.push({
         id: "copy-tournament-link",
-        label: "Copy Tournament Link",
+        label: t("palette.copyTournamentLink"),
         keywords: ["share", "url", "clipboard"],
         contexts: ["public", "player", "admin", "marshal"],
         run: async () => {
@@ -144,28 +146,28 @@ export default function CommandPalette() {
     if (tournamentId && pathname.startsWith("/admin/tournaments/")) {
       base.push({
         id: "open-public-tournament",
-        label: "Open Public Tournament Page",
+        label: t("palette.openPublicTournament"),
         keywords: ["public", "view", "page"],
         contexts: ["admin", "marshal"],
         run: () => { window.open(`/tournaments/${tournamentId}`, "_blank", "noopener,noreferrer"); },
       });
       base.push({
         id: "start-match",
-        label: "Start Match Workflow",
+        label: t("palette.startMatch"),
         keywords: ["admin", "matches", "load"],
         contexts: ["admin", "marshal"],
         run: () => router.push(`/admin/tournaments/${tournamentId}?tab=matches`),
       });
       base.push({
         id: "create-team",
-        label: "Create Team",
+        label: t("palette.createTeam"),
         keywords: ["participants", "add", "roster"],
         contexts: ["admin"],
         run: () => router.push(`/admin/tournaments/${tournamentId}?tab=participants`),
       });
       base.push({
         id: "open-settings",
-        label: "Open Tournament Settings",
+        label: t("palette.openSettings"),
         keywords: ["config", "admin"],
         contexts: ["admin"],
         run: () => router.push(`/admin/tournaments/${tournamentId}?tab=settings`),
@@ -175,7 +177,7 @@ export default function CommandPalette() {
     if (tournamentId && pathname.startsWith("/tournaments/")) {
       base.push({
         id: "go-tournament-matches",
-        label: "Go to Tournament Matches",
+        label: t("palette.goTournamentMatches"),
         keywords: ["tab", "matches"],
         contexts: ["public", "player", "admin", "marshal"],
         run: () => router.push(`/tournaments/${tournamentId}?tab=matches`),
@@ -183,7 +185,7 @@ export default function CommandPalette() {
     }
 
     return base;
-  }, [context, isAdmin, isStaff, pathname, router, tournamentId]);
+  }, [context, isAdmin, isStaff, pathname, router, t, tournamentId]);
 
   const filtered = React.useMemo(() => {
     const visible = commands.filter((command) => command.contexts.includes(context));
@@ -298,7 +300,7 @@ export default function CommandPalette() {
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Command palette"
+        aria-label={t("palette.label")}
         data-testid="command-palette"
         className="flex w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-line-hover bg-card shadow-lg"
         onClick={(event) => event.stopPropagation()}
@@ -309,8 +311,8 @@ export default function CommandPalette() {
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search commands…"
-            aria-label="Search commands"
+            placeholder={t("palette.searchPlaceholder")}
+            aria-label={t("palette.searchLabel")}
             role="combobox"
             aria-expanded
             aria-controls="command-palette-list"
@@ -325,15 +327,15 @@ export default function CommandPalette() {
             type="button"
             onClick={() => setOpen(false)}
             className="mds-tap flex h-8 w-8 items-center justify-center rounded-sm border border-line text-fg-muted transition-colors hover:bg-tint hover:text-fg"
-            aria-label="Close command palette"
+            aria-label={t("palette.close")}
           >
             <X size={14} aria-hidden />
           </button>
         </div>
 
-        <div id="command-palette-list" role="listbox" aria-label="Commands" className="max-h-[50vh] overflow-y-auto p-2">
+        <div id="command-palette-list" role="listbox" aria-label={t("palette.list")} className="max-h-[50vh] overflow-y-auto p-2">
           {filtered.length === 0 ? (
-            <div className="p-6 text-center text-body text-fg-muted">No matching command.</div>
+            <div className="p-6 text-center text-body text-fg-muted">{t("palette.empty")}</div>
           ) : (
             filtered.map((command, index) => (
               <button
@@ -360,7 +362,7 @@ export default function CommandPalette() {
         </div>
 
         <p className="border-t border-line px-4 py-2 text-label uppercase tracking-[0.1em] text-fg-subtle">
-          ↑↓ to move · ↵ to run · esc to close
+          {t("palette.hint")}
         </p>
       </div>
     </div>

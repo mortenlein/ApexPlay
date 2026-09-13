@@ -1,6 +1,7 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 
 const PERSONAS = [
   { id: 'marcus', label: 'Marcus' },
@@ -11,6 +12,9 @@ const PERSONAS = [
 ];
 
 export function MockPersonaButtons({ callbackUrl }: { callbackUrl: string }) {
+  // Before the env guard: hooks must not sit behind a conditional return.
+  const t = useTranslations('landing');
+
   if (process.env.NEXT_PUBLIC_MOCK_AUTH !== 'true') {
     return null;
   }
@@ -18,7 +22,7 @@ export function MockPersonaButtons({ callbackUrl }: { callbackUrl: string }) {
   return (
     <div className="w-full space-y-3 border-t border-line pt-5">
       {/* A persona is a *name*, so the buttons carry it as content: no uppercase, no tracking. */}
-      <p className="mds-uppercase-label text-center text-fg-subtle">Mock personas (dev only)</p>
+      <p className="mds-uppercase-label text-center text-fg-subtle">{t('login.mockPersonas')}</p>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {PERSONAS.map((persona) => (
           <button

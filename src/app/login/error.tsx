@@ -1,7 +1,9 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { RouteErrorState } from "@/components/RouteStates";
 
 export default function Error() {
-  return <RouteErrorState title="Login Error" description="The login page failed to load." />;
+  const t = useTranslations("landing");
+  return <RouteErrorState title={t("login.errorTitle")} description={t("login.errorBody")} />;
 }

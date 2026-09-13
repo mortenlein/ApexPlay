@@ -1,14 +1,17 @@
+import { useTranslations } from "next-intl";
 import { RouteNotFoundState } from "@/components/RouteStates";
 
 export default function NotFound() {
+  const t = useTranslations("landing");
+  const tc = useTranslations("common");
   return (
     <RouteNotFoundState
-      title="Login Route Not Found"
-      description="This login route is not available."
+      title={t("login.notFoundTitle")}
+      description={t("login.notFoundBody")}
       primaryHref="/login"
-      primaryLabel="Open Login"
+      primaryLabel={t("login.openLogin")}
       secondaryHref="/"
-      secondaryLabel="Go Home"
+      secondaryLabel={tc("goHome")}
     />
   );
 }

@@ -3,17 +3,19 @@
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { ShieldCheck, Loader2, ArrowLeft } from "lucide-react";
 import Link from 'next/link';
 import { MockPersonaButtons } from "@/components/MockPersonaButtons";
 
 function LoginContent() {
+  const t = useTranslations("landing");
   const searchParams = useSearchParams();
   const rawCallbackUrl = searchParams.get("callbackUrl") || "/admin";
   const callbackUrl = rawCallbackUrl.startsWith("/") ? rawCallbackUrl : "/admin";
 
   const staff = callbackUrl.startsWith("/marshal") || callbackUrl.startsWith("/admin");
-  const heading = callbackUrl.startsWith("/marshal") ? "Staff Access" : "Sign In";
+  const heading = callbackUrl.startsWith("/marshal") ? t("login.titleStaff") : t("login.title");
 
   return (
     <div className="relative flex min-h-[calc(100vh-3.5rem)] flex-col items-center justify-center overflow-hidden bg-page p-6">
@@ -30,9 +32,7 @@ function LoginContent() {
           <div className="space-y-2">
             <h1 className="font-brand text-head font-bold tracking-tight text-fg">{heading}</h1>
             <p className="mx-auto max-w-sm text-body text-fg-muted">
-              {staff
-                ? "Sign in with Steam. Organizer and marshal tools unlock automatically for accounts on the staff allowlist."
-                : "Sign in with Steam to register for tournaments and follow your own matches."}
+              {staff ? t("login.blurbStaff") : t("login.blurb")}
             </p>
           </div>
         </div>
@@ -45,7 +45,7 @@ function LoginContent() {
             className="mds-btn-primary mds-tap h-12 w-full gap-3 text-label font-bold uppercase tracking-[0.16em]"
           >
             <ShieldCheck size={17} aria-hidden />
-            Sign in through Steam
+            {t("login.steamButton")}
           </button>
 
           <MockPersonaButtons callbackUrl={callbackUrl} />
@@ -57,7 +57,7 @@ function LoginContent() {
             className="group mds-tap inline-flex items-center gap-2 rounded-sm text-meta font-semibold text-fg-muted transition-colors hover:text-fg"
           >
             <ArrowLeft size={15} aria-hidden className="transition-transform group-hover:-translate-x-0.5" />
-            Back to home
+            {t("login.backHome")}
           </Link>
           <p className="mds-uppercase-label text-fg-subtle">Steam OpenID</p>
         </div>

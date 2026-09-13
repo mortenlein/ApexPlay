@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ArrowRight, Gamepad2, Trophy, Users } from "lucide-react";
 import { Badge } from "./Badge";
 import { Card, CardTitle } from "./Card";
@@ -43,6 +44,7 @@ export function TournamentCard({
   progress,
   liveCount = 0,
 }: TournamentCardProps) {
+  const t = useTranslations("common");
   const isLive = stageTone === "live";
   const pct = progress && progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : null;
 
@@ -62,26 +64,22 @@ export function TournamentCard({
 
         <dl className="mds-stat-row">
           <div className="mds-stat">
-            <dt className="sr-only">Format</dt>
+            <dt className="sr-only">{t("format")}</dt>
             <Trophy size={13} aria-hidden />
             <dd>
               {format} · {roster}
             </dd>
           </div>
           <div className="mds-stat">
-            <dt className="sr-only">Teams</dt>
+            <dt className="sr-only">{t("teams")}</dt>
             <Users size={13} aria-hidden />
-            <dd>
-              {teamCount} {teamCount === 1 ? "team" : "teams"}
-            </dd>
+            <dd>{t("teamCount", { count: teamCount })}</dd>
           </div>
           {isLive && liveCount > 0 && (
             <div className="mds-stat text-live">
-              <dt className="sr-only">Live matches</dt>
+              <dt className="sr-only">{t("liveMatches")}</dt>
               <span className="mds-dot is-live" aria-hidden />
-              <dd>
-                {liveCount} {liveCount === 1 ? "match" : "matches"} live
-              </dd>
+              <dd>{t("matchesLive", { count: liveCount })}</dd>
             </div>
           )}
         </dl>
@@ -89,7 +87,7 @@ export function TournamentCard({
         {pct !== null && (
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-meta font-semibold text-fg-subtle">
-              <span className="mds-uppercase-label">Matches played</span>
+              <span className="mds-uppercase-label">{t("matchesPlayed")}</span>
               <span className="mds-numeric">
                 {progress!.done}/{progress!.total}
               </span>
@@ -104,7 +102,7 @@ export function TournamentCard({
         )}
 
         <div className="mt-auto flex items-center justify-between border-t border-line pt-3 text-body font-semibold">
-          <span>{isLive ? "Watch live" : "Open tournament"}</span>
+          <span>{isLive ? t("watchLive") : t("openTournament")}</span>
           <ArrowRight
             size={16}
             aria-hidden

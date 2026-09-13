@@ -1,12 +1,9 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { RouteErrorState } from "@/components/RouteStates";
 
 export default function Error() {
-  return (
-    <RouteErrorState
-      title="Marshal Board Error"
-      description="The marshal dashboard failed to load."
-    />
-  );
+  const t = useTranslations("marshal");
+  return <RouteErrorState title={t("errorTitle")} description={t("errorBody")} />;
 }

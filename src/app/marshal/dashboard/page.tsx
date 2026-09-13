@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   Users,
   MapPin,
@@ -85,14 +86,20 @@ function PlayerSeatRow({
   saving: boolean;
   onToggle: () => void;
 }) {
-  const displayName = player.nickname || player.name?.split(" ")[0] || "Player";
+  const t = useTranslations("marshal");
+  const tc = useTranslations("common");
+  const displayName = player.nickname || player.name?.split(" ")[0] || tc("player");
   return (
     <button
       type="button"
       onClick={onToggle}
       disabled={saving}
       aria-pressed={atSeat}
-      aria-label={`${displayName}, seat ${player.seating || "unknown"}, ${atSeat ? "at seat" : "not at seat"}`}
+      aria-label={t("playerRow", {
+        name: displayName,
+        seat: player.seating || t("unknownSeat"),
+        state: atSeat ? t("atSeat") : t("notAtSeat"),
+      })}
       data-testid={`marshal-player-${player.id}`}
       className={`flex min-h-[3.25rem] w-full items-center gap-3 rounded-md border px-3 py-2 text-left transition-all active:scale-[0.99] disabled:opacity-60 ${
         atSeat
@@ -132,6 +139,7 @@ function TeamColumn({
   isSaving: (playerId: string) => boolean;
   onToggle: (player: any) => void;
 }) {
+  const t = useTranslations("marshal");
   const players = useMemo(() => [...(team?.players || [])].sort(bySeat), [team?.players]);
   const seated = players.filter((p: any) => isAtSeat(p)).length;
   const complete = players.length > 0 && seated === players.length;
@@ -141,7 +149,7 @@ function TeamColumn({
         <span className="truncate text-sm font-bold">{team?.name || label}</span>
         {players.length > 0 && (
           <span className={`shrink-0 text-xs font-semibold ${complete ? "text-success" : "text-fg-muted"}`}>
-            {seated}/{players.length} at seat
+            {t("atSeatCount", { seated, total: players.length })}
           </span>
         )}
       </div>
@@ -159,7 +167,7 @@ function TeamColumn({
         </div>
       ) : (
         <p className="rounded-sm border border-dashed border-line px-3 py-2 text-xs text-fg-subtle">
-          Roster not set
+          {t("rosterNotSet")}
         </p>
       )}
     </div>
@@ -185,6 +193,7 @@ function MatchCard({
   onCall: (match: any) => void;
   onLive: (match: any) => void;
 }) {
+  const t = useTranslations("marshal");
   const called = isCalled(match.status);
   const live = isLive(match.status);
   const canCall = !called && !live;
@@ -203,23 +212,24 @@ function MatchCard({
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={match.status} />
           <span className="text-xs font-semibold text-fg-subtle">
-            Round {match.round} · #{match.id.slice(0, 4)}
+            {t("roundShort", { round: match.round })} · #{match.id.slice(0, 4)}
           </span>
           {calledFor !== null && (
             <span
               className={`flex basis-full items-center gap-1 whitespace-nowrap text-xs font-semibold sm:basis-auto ${
                 calledFor >= 10 ? "text-warning" : "text-fg-subtle"
               }`}
-              title="Time since the match was called"
+              title={t("calledSince")}
             >
-              <Clock size={12} /> called {calledFor === 0 ? "just now" : `${calledFor} min ago`}
+              <Clock size={12} />{" "}
+              {calledFor === 0 ? t("calledJustNow") : t("calledMinutesAgo", { minutes: calledFor })}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
           {players.length > 0 && (called || live) && (
             <span className={`text-xs font-bold ${allSeated ? "text-success" : "text-fg-muted"}`}>
-              {seated}/{players.length} seated
+              {t("seatedCount", { seated, total: players.length })}
             </span>
           )}
           {canCall && (
@@ -231,7 +241,7 @@ function MatchCard({
               onClick={() => onCall(match)}
             >
               {busy ? <Loader2 size={14} className="animate-spin" /> : <Megaphone size={14} />}
-              Call match
+              {t("callMatch")}
             </Button>
           )}
           {canGoLive && (
@@ -243,14 +253,14 @@ function MatchCard({
               onClick={() => onLive(match)}
             >
               {busy ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
-              Mark live
+              {t("markLive")}
             </Button>
           )}
         </div>
       </div>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <TeamColumn team={match.homeTeam} label="Team A" isAtSeat={isAtSeat} isSaving={isSaving} onToggle={onToggle} />
-        <TeamColumn team={match.awayTeam} label="Team B" isAtSeat={isAtSeat} isSaving={isSaving} onToggle={onToggle} />
+        <TeamColumn team={match.homeTeam} label={t("teamA")} isAtSeat={isAtSeat} isSaving={isSaving} onToggle={onToggle} />
+        <TeamColumn team={match.awayTeam} label={t("teamB")} isAtSeat={isAtSeat} isSaving={isSaving} onToggle={onToggle} />
       </div>
     </Card>
   );
@@ -279,6 +289,8 @@ function Section({
 }
 
 export default function MarshalDashboard() {
+  const t = useTranslations("marshal");
+  const tc = useTranslations("common");
   const router = useRouter();
 
   const [tournaments, setTournaments] = useState<any[]>([]);
@@ -365,9 +377,9 @@ export default function MarshalDashboard() {
           /* private mode etc. */
         }
         const chosen =
-          (requested && list.find((t) => t.id === requested)) ||
-          (stored && list.find((t) => t.id === stored)) ||
-          list.find((t) => (t._count?.matches || 0) > 0) ||
+          (requested && list.find((row) => row.id === requested)) ||
+          (stored && list.find((row) => row.id === stored)) ||
+          list.find((row) => (row._count?.matches || 0) > 0) ||
           list[0] ||
           null;
 
@@ -382,7 +394,7 @@ export default function MarshalDashboard() {
         setError(null);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load marshal board");
+          setError(err instanceof Error ? err.message : t("loadFailed"));
           setLoading(false);
         }
       }
@@ -392,7 +404,7 @@ export default function MarshalDashboard() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   // Load the chosen tournament's matches + notification feed (also runs when the marshal
   // switches tournament).
@@ -416,7 +428,7 @@ export default function MarshalDashboard() {
         setNotifications(notificationResponse?.notifications || []);
         setError(null);
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load marshal board");
+        if (!cancelled) setError(err instanceof Error ? err.message : t("loadFailed"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -424,7 +436,7 @@ export default function MarshalDashboard() {
     return () => {
       cancelled = true;
     };
-  }, [tournamentId, applyMatches]);
+  }, [tournamentId, applyMatches, t]);
 
   const chooseTournament = useCallback(
     (id: string) => {
@@ -563,12 +575,14 @@ export default function MarshalDashboard() {
         setCheckins((prev) => ({ ...prev, [playerId]: confirmed ? String(confirmed) : null }));
       } catch (err) {
         setCheckins((prev) => ({ ...prev, [playerId]: previous ? String(previous) : null }));
-        setActionError(err instanceof Error ? `Check-in failed: ${err.message}` : "Check-in failed");
+        setActionError(
+          err instanceof Error ? t("checkinFailedReason", { message: err.message }) : t("checkinFailed")
+        );
       } finally {
         setSavingPlayers((prev) => prev.filter((id) => id !== playerId));
       }
     },
-    [checkins]
+    [checkins, t]
   );
 
   const mergeMatch = useCallback((matchId: string, patch: any) => {
@@ -587,12 +601,14 @@ export default function MarshalDashboard() {
         if (fresh) absorbCheckins(checkinsFromMatches([fresh]));
         if (tournamentId) void refreshNotifications(tournamentId).catch(() => {});
       } catch (err) {
-        setActionError(err instanceof Error ? `Could not call match: ${err.message}` : "Could not call match");
+        setActionError(
+          err instanceof Error ? t("callFailedReason", { message: err.message }) : t("callFailed")
+        );
       } finally {
         setBusyMatch(null);
       }
     },
-    [absorbCheckins, mergeMatch, refreshNotifications, tournamentId]
+    [absorbCheckins, mergeMatch, refreshNotifications, t, tournamentId]
   );
 
   /** "Mark live" — the teams are seated and the game has started. Scores stay in Control. */
@@ -604,50 +620,50 @@ export default function MarshalDashboard() {
         const response = await clientApi.setMatchStatus(match.id, "LIVE");
         mergeMatch(match.id, { status: response?.status || response?.match?.status || "LIVE" });
       } catch (err) {
-        setActionError(err instanceof Error ? `Could not mark live: ${err.message}` : "Could not mark live");
+        setActionError(
+          err instanceof Error ? t("liveFailedReason", { message: err.message }) : t("liveFailed")
+        );
       } finally {
         setBusyMatch(null);
       }
     },
-    [mergeMatch]
+    [mergeMatch, t]
   );
 
-  const activeTournament = tournaments.find((t) => t.id === tournamentId);
+  // `row`, not `t`: `t` is the translator in this scope.
+  const activeTournament = tournaments.find((row) => row.id === tournamentId);
   const connection =
     stream.status === "open"
-      ? { label: "Live", dot: "bg-success animate-pulse", icon: null }
+      ? { label: t("connection.live"), dot: "bg-success animate-pulse", icon: null }
       : stream.status === "reconnecting"
-        ? { label: "Reconnecting…", dot: "bg-warning", icon: <WifiOff size={12} /> }
+        ? { label: t("connection.reconnecting"), dot: "bg-warning", icon: <WifiOff size={12} /> }
         : stream.status === "connecting"
-          ? { label: "Connecting…", dot: "bg-fg-subtle", icon: null }
-          : { label: "Not connected", dot: "bg-fg-subtle", icon: <WifiOff size={12} /> };
+          ? { label: t("connection.connecting"), dot: "bg-fg-subtle", icon: null }
+          : { label: t("connection.offline"), dot: "bg-fg-subtle", icon: <WifiOff size={12} /> };
 
   return (
     <div className="min-h-screen bg-page text-fg">
       <main className="mds-container space-y-6 py-6 sm:py-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="mds-uppercase-label text-brand">Floor control</p>
-            <h1 className="mt-1 font-brand text-3xl font-bold tracking-tight">Marshal board</h1>
-            <p className="mt-2 max-w-2xl text-fg-muted">
-              Find players by their seat and bring them to station when a match is called. Tap a
-              player once they&apos;re seated — every marshal sees it.
-            </p>
+            <p className="mds-uppercase-label text-brand">{t("eyebrow")}</p>
+            <h1 className="mt-1 font-brand text-3xl font-bold tracking-tight">{t("title")}</h1>
+            <p className="mt-2 max-w-2xl text-fg-muted">{t("subtitle")}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {tournaments.length > 1 && (
               <label className="flex items-center gap-2 text-xs font-semibold text-fg-subtle">
-                <span className="sr-only">Tournament</span>
+                <span className="sr-only">{tc("tournament")}</span>
                 <select
-                  aria-label="Tournament"
+                  aria-label={tc("tournament")}
                   data-testid="marshal-tournament-select"
                   value={tournamentId || ""}
                   onChange={(e) => chooseTournament(e.target.value)}
                   className="mds-input h-10 max-w-[16rem] text-sm"
                 >
-                  {tournaments.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
+                  {tournaments.map((row) => (
+                    <option key={row.id} value={row.id}>
+                      {row.name}
                     </option>
                   ))}
                 </select>
@@ -656,7 +672,11 @@ export default function MarshalDashboard() {
             <span
               className="flex items-center gap-2 text-xs font-semibold text-fg-subtle"
               data-testid="marshal-connection"
-              title={lastSyncAt ? `Last update ${new Date(lastSyncAt).toLocaleTimeString()}` : undefined}
+              title={
+                lastSyncAt
+                  ? t("lastUpdate", { time: new Date(lastSyncAt).toLocaleTimeString() })
+                  : undefined
+              }
             >
               <span className={`h-2 w-2 rounded-full ${connection.dot}`} />
               {connection.icon}
@@ -665,9 +685,12 @@ export default function MarshalDashboard() {
             <Button
               variant="ghost"
               size="sm"
-              aria-label="Refresh"
+              aria-label={tc("refresh")}
               disabled={!tournamentId || refreshing}
-              onClick={() => tournamentId && void refreshAll(tournamentId).catch((err) => setError(err?.message || "Refresh failed"))}
+              onClick={() =>
+                tournamentId &&
+                void refreshAll(tournamentId).catch((err) => setError(err?.message || t("refreshFailed")))
+              }
             >
               <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
             </Button>
@@ -676,10 +699,10 @@ export default function MarshalDashboard() {
 
         {error && (
           <Card className="border-danger/30">
-            <p className="text-sm font-semibold text-danger">Could not load board</p>
+            <p className="text-sm font-semibold text-danger">{t("loadErrorTitle")}</p>
             <p className="mt-1 text-sm text-fg-muted">{error}</p>
             <Button variant="secondary" size="sm" className="mt-3" onClick={() => window.location.reload()}>
-              <RefreshCw size={14} /> Reload
+              <RefreshCw size={14} /> {t("reload")}
             </Button>
           </Card>
         )}
@@ -689,7 +712,7 @@ export default function MarshalDashboard() {
             <p className="text-sm font-semibold text-danger">{actionError}</p>
             <button
               type="button"
-              aria-label="Dismiss"
+              aria-label={tc("close")}
               className="text-fg-subtle hover:text-fg"
               onClick={() => setActionError(null)}
             >
@@ -705,8 +728,8 @@ export default function MarshalDashboard() {
         ) : !tournamentId ? (
           <EmptyState
             icon={<Users size={26} />}
-            title="No tournament yet"
-            description="Once an organizer creates a tournament and generates the bracket, it appears here."
+            title={t("noTournamentTitle")}
+            description={t("noTournamentBody")}
           />
         ) : (
           <>
@@ -714,10 +737,10 @@ export default function MarshalDashboard() {
               <p className="text-sm text-fg-subtle">{activeTournament.name}</p>
             )}
 
-            <Section title="Called — go find them" count={calledMatches.length} tone="ready">
+            <Section title={t("calledSection")} count={calledMatches.length} tone="ready">
               {calledMatches.length === 0 ? (
                 <p className="rounded-sm border border-dashed border-line px-4 py-3 text-sm text-fg-subtle">
-                  Nothing called right now.
+                  {t("nothingCalled")}
                 </p>
               ) : (
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
@@ -739,7 +762,7 @@ export default function MarshalDashboard() {
             </Section>
 
             {liveMatches.length > 0 && (
-              <Section title="Live" count={liveMatches.length} tone="live">
+              <Section title={t("liveSection")} count={liveMatches.length} tone="live">
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                   {liveMatches.map((match: any) => (
                     <MatchCard
@@ -758,12 +781,12 @@ export default function MarshalDashboard() {
               </Section>
             )}
 
-            <Section title="Up next" count={upNext.length} tone="neutral">
+            <Section title={t("upNextSection")} count={upNext.length} tone="neutral">
               {upNext.length === 0 && waitingOnResults === 0 ? (
                 <EmptyState
                   icon={<Users size={26} />}
-                  title="No open matches"
-                  description="When the bracket has matches with both teams known, they appear here."
+                  title={t("noOpenTitle")}
+                  description={t("noOpenBody")}
                 />
               ) : (
                 <>
@@ -786,7 +809,7 @@ export default function MarshalDashboard() {
                   )}
                   {waitingOnResults > 0 && (
                     <p className="text-xs text-fg-subtle">
-                      {waitingOnResults} more {waitingOnResults === 1 ? "match is" : "matches are"} waiting on earlier results.
+                      {t("waitingOnResults", { count: waitingOnResults })}
                     </p>
                   )}
                 </>
@@ -796,11 +819,11 @@ export default function MarshalDashboard() {
             <section className="space-y-3 pt-2">
               <div className="flex items-center gap-2">
                 <Bell size={15} className="text-brand" />
-                <h2 className="mds-uppercase-label text-fg-subtle">Match calls</h2>
+                <h2 className="mds-uppercase-label text-fg-subtle">{t("callsSection")}</h2>
               </div>
               {notifications.length === 0 ? (
                 <p className="rounded-sm border border-dashed border-line px-4 py-3 text-sm text-fg-subtle">
-                  No alerts yet.
+                  {t("noCalls")}
                 </p>
               ) : (
                 <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
